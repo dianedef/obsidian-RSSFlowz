@@ -1,11 +1,12 @@
 'use strict';
 
-const { Plugin, PluginSettingTab, Setting, requestUrl } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, requestUrl, Notice, Modal } = require('obsidian');
 
 class RSSReaderPlugin extends Plugin {
    async onload() {
       this.settings = Object.assign({}, {
          feeds: [],
+         groups: ['Défaut', 'Tech', 'News', 'Blog'],
          openaiKey: '',
          rssFolder: 'RSS',
          fetchFrequency: 'hourly',
@@ -198,6 +199,57 @@ class RSSReaderSettingTab extends PluginSettingTab {
       const {containerEl} = this;
       containerEl.empty();
 
+      // Section de gestion des groupes
+      containerEl.createEl('h2', {text: 'Gestion des Groupes'});
+      
+      // Afficher les groupes existants
+      this.plugin.settings.groups.forEach((group, index) => {
+         if (group !== 'Sans groupe') {
+            new Setting(containerEl)
+               .setName(group)
+               .addButton(button => button
+                  .setButtonText('Supprimer')
+                  .setWarning()
+                  .onClick(async () => {
+                     this.plugin.settings.groups.splice(index, 1);
+                     this.plugin.settings.feeds.forEach(feed => {
+                        if (feed.group === group) {
+                           feed.group = '';
+                        }
+                     });
+                     await this.plugin.saveData(this.plugin.settings);
+                     new Notice(`Groupe supprimé : ${group}`);
+                     this.display();
+                  }));
+         }
+      });
+
+      // Ajouter un nouveau groupe
+      let inputText = '';
+      new Setting(containerEl)
+         .setName('Ajouter un groupe')
+         .setDesc('Créer un nouveau groupe pour organiser vos feeds (appuyez sur Entrée pour ajouter)')
+         .addText(text => text
+            .setPlaceholder('Nom du nouveau groupe')
+            .setValue('')
+            .onChange(value => {
+               inputText = value;
+            })
+            .inputEl.addEventListener('keypress', async (e) => {
+               if (e.key === 'Enter' && inputText.trim()) {
+                  if (!this.plugin.settings.groups.includes(inputText)) {
+                     this.plugin.settings.groups.push(inputText);
+                     await this.plugin.saveData(this.plugin.settings);
+                     new Notice(`Groupe ajouté : ${inputText}`);
+                     this.display();
+                  } else {
+                     new Notice('Ce groupe existe déjà !');
+                  }
+               }
+            }));
+
+      containerEl.createEl('hr');
+
       new Setting(containerEl)
          .setName('Clé API OpenAI')
          .setDesc('Votre clé API OpenAI pour la génération de sommaires')
@@ -261,62 +313,166 @@ class RSSReaderSettingTab extends PluginSettingTab {
       // Affichage des feeds avec plus d'options
       containerEl.createEl('h3', {text: 'Feeds RSS'});
       
+      const groupedFeeds = {};
       this.plugin.settings.feeds.forEach((feed, index) => {
-         const feedContainer = containerEl.createDiv('feed-container');
-         
-         new Setting(feedContainer)
-            .setName(feed.title)
-            .setDesc(feed.url)
-            .addDropdown(d => d
-               .addOption('active', 'Actif')
-               .addOption('paused', 'Pausé')
-               .setValue(feed.status)
-               .onChange(async (value) => {
-                  this.plugin.settings.feeds[index].status = value;
-                  await this.plugin.saveData(this.plugin.settings);
-               }))
-            .addDropdown(d => d
-               .addOption('feed', 'Un fichier par article')
-               .addOption('uniqueFile', 'Fichier unique')
-               .setValue(feed.type)
-               .onChange(async (value) => {
-                  this.plugin.settings.feeds[index].type = value;
-                  await this.plugin.saveData(this.plugin.settings);
-               }));
-
-         new Setting(feedContainer)
-            .setName('Options avancées')
-            .addToggle(toggle => toggle
-               .setValue(feed.summarize || false)
-               .setTooltip('Générer un résumé AI')
-               .onChange(async (value) => {
-                  this.plugin.settings.feeds[index].summarize = value;
-                  await this.plugin.saveData(this.plugin.settings);
-               }))
-            .addToggle(toggle => toggle
-               .setValue(feed.transcribe || false)
-               .setTooltip('Transcrire les vidéos YouTube')
-               .onChange(async (value) => {
-                  this.plugin.settings.feeds[index].transcribe = value;
-                  await this.plugin.saveData(this.plugin.settings);
-               }))
-            .addButton(button => button
-               .setButtonText('Supprimer')
-               .onClick(async () => {
-                  this.plugin.settings.feeds.splice(index, 1);
-                  await this.plugin.saveData(this.plugin.settings);
-                  this.display();
-               }));
+         const group = feed.group || 'Sans groupe';
+         if (!groupedFeeds[group]) {
+            groupedFeeds[group] = [];
+         }
+         groupedFeeds[group].push({feed, index});
       });
 
-      // Bouton pour ajouter un nouveau feed
+      // Afficher les feeds par groupe
+      Object.entries(groupedFeeds).forEach(([groupName, feeds]) => {
+         if (groupName !== 'Sans groupe') {
+            containerEl.createEl('h3', {text: groupName});
+         }
+         
+         feeds.forEach(({feed, index}) => {
+            const feedContainer = containerEl.createDiv('feed-container');
+            
+            // Options principales du feed
+            new Setting(feedContainer)
+               .setName(feed.title)
+               .setDesc(feed.url)
+               .addDropdown(d => d
+                  .addOption('active', 'Actif')
+                  .addOption('paused', 'Pausé')
+                  .setValue(feed.status)
+                  .onChange(async (value) => {
+                     this.plugin.settings.feeds[index].status = value;
+                     await this.plugin.saveData(this.plugin.settings);
+                  }))
+               .addDropdown(d => d
+                  .addOption('feed', 'Un fichier par article')
+                  .addOption('uniqueFile', 'Fichier unique')
+                  .setValue(feed.type)
+                  .onChange(async (value) => {
+                     this.plugin.settings.feeds[index].type = value;
+                     await this.plugin.saveData(this.plugin.settings);
+                  }));
+
+            // Option de groupe
+            new Setting(feedContainer)
+               .setName('Groupe')
+               .setDesc('Assigner ce feed à un groupe')
+               .addDropdown(dropdown => {
+                  dropdown.addOption('', 'Sans groupe');
+                  this.plugin.settings.groups.forEach(g => 
+                     dropdown.addOption(g, g)
+                  );
+                  
+                  dropdown.setValue(feed.group || '');
+                  dropdown.onChange(async (value) => {
+                     if (value === 'new') {
+                        const newGroup = prompt('Nom du nouveau groupe :');
+                        if (newGroup && newGroup.trim()) {
+                           this.plugin.settings.groups.push(newGroup);
+                           this.plugin.settings.feeds[index].group = newGroup;
+                           await this.plugin.saveData(this.plugin.settings);
+                           this.display();
+                        }
+                        dropdown.setValue(feed.group || '');
+                     } else {
+                        this.plugin.settings.feeds[index].group = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                     }
+                  });
+               });
+
+            // Option de résumé AI
+            new Setting(feedContainer)
+               .setName('Résumé AI')
+               .setDesc('Génère automatiquement un résumé concis de chaque article en utilisant OpenAI')
+               .addToggle(toggle => toggle
+                   .setValue(feed.summarize || false)
+                   .onChange(async (value) => {
+                       if (value && !this.plugin.settings.openaiKey) {
+                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           toggle.setValue(false);
+                           return;
+                       }
+                       this.plugin.settings.feeds[index].summarize = value;
+                       await this.plugin.saveData(this.plugin.settings);
+                   }))
+               .addExtraButton(button => button
+                   .setIcon('help-circle')
+                   .setTooltip('Utilise GPT pour générer un résumé de 2-3 paragraphes de l\'article'));
+
+            // Option de réécriture AI
+            new Setting(feedContainer)
+               .setName('Réécriture AI')
+               .setDesc('Réécrit l\'article complet dans un style plus clair et concis')
+               .addToggle(toggle => toggle
+                   .setValue(feed.rewrite || false)
+                   .onChange(async (value) => {
+                       if (value && !this.plugin.settings.openaiKey) {
+                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           toggle.setValue(false);
+                           return;
+                       }
+                       if (value) {
+                           new Notice('⚠️ La réécriture consomme plus de tokens OpenAI', 5000);
+                       }
+                       this.plugin.settings.feeds[index].rewrite = value;
+                       await this.plugin.saveData(this.plugin.settings);
+                   }))
+               .addExtraButton(button => button
+                   .setIcon('help-circle')
+                   .setTooltip('Utilise GPT pour réécrire l\'article complet dans un style plus clair'));
+
+            // Option de transcription YouTube
+            new Setting(feedContainer)
+               .setName('Transcription YouTube')
+               .setDesc('Transcrit automatiquement les vidéos YouTube trouvées dans les articles')
+               .addToggle(toggle => toggle
+                   .setValue(feed.transcribe || false)
+                   .onChange(async (value) => {
+                       if (value && !this.plugin.settings.openaiKey) {
+                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           toggle.setValue(false);
+                           return;
+                       }
+                       this.plugin.settings.feeds[index].transcribe = value;
+                       await this.plugin.saveData(this.plugin.settings);
+                   }))
+               .addExtraButton(button => button
+                   .setIcon('help-circle')
+                   .setTooltip('Convertit les vidéos YouTube en texte pour une lecture facile'));
+
+            // Bouton de suppression
+            new Setting(feedContainer)
+               .addButton(button => button
+                   .setButtonText('Supprimer ce feed')
+                   .setWarning()
+                   .onClick(async () => {
+                       this.plugin.settings.feeds.splice(index, 1);
+                       await this.plugin.saveData(this.plugin.settings);
+                       new Notice(`Feed supprimé : ${feed.title}`);
+                       this.display();
+                   }));
+         });
+      });
+
+      // Bouton d'ajout de feed
       new Setting(containerEl)
          .setName('Ajouter un feed')
+         .setDesc('Entrez l\'URL d\'un flux RSS')
          .addText(text => text
             .setPlaceholder('URL du feed RSS')
             .onChange(async (value) => {
                if (value) {
                   try {
+                     // Vérifier si le feed existe déjà
+                     const feedExists = this.plugin.settings.feeds.some(feed => 
+                        feed.url.toLowerCase() === value.toLowerCase()
+                     );
+
+                     if (feedExists) {
+                        new Notice('⚠️ Ce feed RSS est déjà dans votre liste');
+                        return;
+                     }
+
                      const response = await requestUrl({
                         url: value
                      });
@@ -336,12 +492,81 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      });
                      
                      await this.plugin.saveData(this.plugin.settings);
+                     new Notice(`✅ Feed ajouté : ${title}`);
                      this.display();
                   } catch (error) {
                      console.error('Erreur lors de l\'ajout du feed:', error);
+                     new Notice('❌ Erreur : Impossible de charger le feed RSS');
                   }
                }
             }));
+   }
+
+   async confirmDelete(feedTitle) {
+      return new Promise((resolve) => {
+         const modal = new Modal(this.app);
+         modal.titleEl.setText("Confirmer la suppression");
+         
+         modal.contentEl.empty();
+         modal.contentEl.createEl("p", { 
+            text: `Êtes-vous sûr de vouloir supprimer le feed "${feedTitle}" ?` 
+         });
+
+         new Setting(modal.contentEl)
+            .addButton(btn => btn
+               .setButtonText("Annuler")
+               .onClick(() => {
+                  modal.close();
+                  resolve(false);
+               }))
+            .addButton(btn => btn
+               .setButtonText("Supprimer")
+               .setWarning()
+               .onClick(() => {
+                  modal.close();
+                  resolve(true);
+               }));
+
+         modal.open();
+      });
+   }
+
+   async createNewGroup() {
+      return new Promise((resolve) => {
+         const modal = new Modal(this.app);
+         modal.titleEl.setText("Nouveau groupe");
+         
+         modal.contentEl.empty();
+         const inputContainer = modal.contentEl.createDiv();
+         const input = new Setting(inputContainer)
+            .setName("Nom du groupe")
+            .addText(text => text
+               .setPlaceholder("Entrez le nom du groupe")
+               .setValue("")
+            );
+
+         new Setting(modal.contentEl)
+            .addButton(btn => btn
+               .setButtonText("Annuler")
+               .onClick(() => {
+                  modal.close();
+                  resolve(null);
+               }))
+            .addButton(btn => btn
+               .setButtonText("Créer")
+               .setCta()
+               .onClick(() => {
+                  const value = input.components[0].getValue().trim();
+                  if (value) {
+                     modal.close();
+                     resolve(value);
+                  } else {
+                     new Notice("Le nom du groupe ne peut pas être vide");
+                  }
+               }));
+
+         modal.open();
+      });
    }
 }
 
