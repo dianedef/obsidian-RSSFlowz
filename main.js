@@ -1,6 +1,6 @@
 'use strict';
 
-const { Plugin, PluginSettingTab, Setting } = require('obsidian');
+const { Plugin, PluginSettingTab, Setting, requestUrl } = require('obsidian');
 
 class RSSReaderPlugin extends Plugin {
    async onload() {
@@ -70,25 +70,27 @@ class RSSReaderPlugin extends Plugin {
 
       for (const feed of this.settings.feeds) {
          try {
-               const response = await fetch(feed.url);
-               const text = await response.text();
-               const parser = new DOMParser();
-               const doc = parser.parseFromString(text, 'text/xml');
-               
-               const articles = Array.from(doc.querySelectorAll('item'))
-                  .slice(0, this.settings.maxArticles)
-                  .map(item => ({
-                     title: item.querySelector('title')?.textContent || '',
-                     content: item.querySelector('description')?.textContent || '',
-                     date: item.querySelector('pubDate')?.textContent || '',
-                     link: item.querySelector('link')?.textContent || '',
-                     tags: feed.tags || []
-                  }));
+            const response = await requestUrl({
+               url: feed.url
+            });
+            
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(response.text, 'text/xml');
+            
+            const articles = Array.from(doc.querySelectorAll('item'))
+               .slice(0, this.settings.maxArticles)
+               .map(item => ({
+                  title: item.querySelector('title')?.textContent || '',
+                  content: item.querySelector('description')?.textContent || '',
+                  date: item.querySelector('pubDate')?.textContent || '',
+                  link: item.querySelector('link')?.textContent || '',
+                  tags: feed.tags || []
+               }));
 
-               await this.saveArticles(articles, feed);
-               await this.cleanOldArticles();
+            await this.saveArticles(articles, feed);
+            await this.cleanOldArticles();
          } catch (error) {
-               console.error(`Error fetching feed ${feed.url}:`, error);
+            console.error(`Error fetching feed ${feed.url}:`, error);
          }
       }
    }
@@ -315,10 +317,12 @@ class RSSReaderSettingTab extends PluginSettingTab {
             .onChange(async (value) => {
                if (value) {
                   try {
-                     const response = await fetch(value);
-                     const text = await response.text();
+                     const response = await requestUrl({
+                        url: value
+                     });
+                     
                      const parser = new DOMParser();
-                     const doc = parser.parseFromString(text, 'text/xml');
+                     const doc = parser.parseFromString(response.text, 'text/xml');
                      const title = doc.querySelector('channel > title')?.textContent || 'Nouveau feed';
                      
                      this.plugin.settings.feeds.push({

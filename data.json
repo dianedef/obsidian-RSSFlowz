@@ -1,0 +1,29 @@
+{
+  "feeds": [
+    {
+      "title": "Cointelegraph.com News",
+      "url": "https://cointelegraph.com/rss",
+      "type": "uniqueFile",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Cointelegraph.com News",
+      "url": "https://cointelegraph.com/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    }
+  ],
+  "openaiKey": "",
+  "rssFolder": "RSS",
+  "fetchFrequency": "hourly",
+  "fetchInterval": 3600,
+  "maxArticles": 50,
+  "retentionDays": 30,
+  "lastFetch": 1732391856449
+}
