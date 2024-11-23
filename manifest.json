@@ -1,0 +1,11 @@
+{
+    "id": "obsidian-rss-reader",
+    "name": "RSS Reader",
+    "version": "1.0.0",
+    "minAppVersion": "0.15.0",
+    "description": "Un lecteur RSS qui sauvegarde les articles en markdown avec support OPML, résumés AI et transcription YouTube.",
+    "author": "Votre Nom",
+    "authorUrl": "https://votre-site.com",
+    "isDesktopOnly": false,
+    "js": "main.js"
+} 

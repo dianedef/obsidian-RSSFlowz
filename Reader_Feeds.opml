@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+<head>
+  <title>My feeds</title>
+</head>
+<body>
+<outline text="Feeds" title="Feeds">
+  <outline title="Les Outils Tice" category="Tools" type="rss" xmlUrl="https://outilstice.com/feed/" />
+  <outline title="Créez un tunnel de vente rentable" category="OnlineBiz" type="rss" xmlUrl="https://tunneldevente.com/feed/" />
+  <outline title="La Fabrique du Net - Feed" category="OnlineBiz" type="rss" xmlUrl="https://www.lafabriquedunet.fr/feed/fdnCustomFeed/" />
+  <outline title="Les Zoutils" category="Tools" type="rss" xmlUrl="https://leszoutils.com/blog/feed/" />
+  <outline title="Vie de Dingue" category="Tools" type="rss" xmlUrl="https://viededingue.com/feed" />
+  <outline title="La Webeuse" category="OnlineBiz" type="rss" xmlUrl="https://la-webeuse.com/feed/" />
+  <outline title="Jordan brako" category="OnlineBiz" type="rss" xmlUrl="https://jordanbrako.com/feed/" />
+  <outline title="Blog de Capterra" category="Tools" type="rss" xmlUrl="https://www.capterra.fr/blog/rss" />
+  <outline title="Nichewit" category="OnlineBiz" type="rss" xmlUrl="https://nichewit.com/feed/" />
+  <outline title="Blog de GetApp sur les applications métiers" category="Tools" type="rss" xmlUrl="https://www.getapp.fr/blog/rss" />
+  <outline title="Frase" category="Tools" type="rss" xmlUrl="https://www.frase.io/feed/" />
+  <outline title="WP Rocket" category="Webinde" type="rss" xmlUrl="https://wp-rocket.me/feed" />
+  <outline title="Daniel Doyon" category="Tools" type="rss" xmlUrl="https://readwise-community.ghost.io/2defd8e965b87487102ef0c6db1880/rss/" />
+  <outline title="WebRankInfo" category="OnlineBiz" type="rss" xmlUrl="http://www.webrankinfo.com/dossiers/feed" />
+  <outline title="Consultor SEO Francia ??  Espagne ??" category="OnlineBiz" type="rss" xmlUrl="https://nicoseosem.com/fr/feed/" />
+  <outline title="Le Blog yourtext.guru" category="Tools" type="rss" xmlUrl="https://blog.yourtext.guru/feed/" />
+  <outline title="Christophe VIDAL – Consultant SEO" category="OnlineBiz" type="rss" xmlUrl="https://www.christophevidal.fr/feed/" />
+  <outline title="21douze" category="OnlineBiz" type="rss" xmlUrl="https://21douze.fr/feed" />
+  <outline title="Blog Dokey" category="Webinde" type="rss" xmlUrl="https://dokey.io/blog/rss/" />
+  <outline title="Commentaires sur : Homepage" category="OnlineBiz" type="rss" xmlUrl="https://www.eskimoz.fr/homepage/feed/feed" />
+  <outline title="Python SEO | importSEM" category="OnlineBiz" type="rss" xmlUrl="https://importsem.com/feed/" />
+  <outline title="Salespanel Blog" category="Tools" type="rss" xmlUrl="https://salespanel.io/blog/feed/" />
+  <outline title="Data For Good Blog" category="OnlineBiz" type="rss" xmlUrl="https://dataforgood.fr/blog/rss.xml" />
+  <outline title="Portail de l'IE" category="Actus" type="rss" xmlUrl="https://www.portail-ie.fr/feed/" />
+  <outline title="Blog Principal Lockself" category="OnlineBiz" type="rss" xmlUrl="https://blog.lockself.com/rss.xml" />
+  <outline title="Média E-marketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/media-1093.xml" />
+  <outline title="Influences E-marketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/influences-1293.xml" />
+  <outline title="Ressources Emarketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/ressources-1077.xml" />
+  <outline title="Marketing Green E-marketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/green-1345.xml" />
+  <outline title="Marques E-marketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/marques-1296.xml" />
+  <outline title="Retail E-marketing.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.e-marketing.fr/rss/retail-1095.xml" />
+  <outline title="start-up EcommerceMag.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.ecommercemag.fr/rss/start-up-30401.xml" />
+  <outline title="Marketing EcommerceMag.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.ecommercemag.fr/rss/marketing-1221.xml" />
+  <outline title="Techno & UX EcommerceMag.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.ecommercemag.fr/rss/techno-ux-1226.xml" />
+  <outline title="Paiements EcommerceMag.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.ecommercemag.fr/rss/paiements-1291.xml" />
+  <outline title="Ecommerce Green EcommerceMag.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.ecommercemag.fr/rss/green-1346.xml" />
+  <outline title="Actualités BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/actualites-1056.xml" />
+  <outline title="Start-up BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/start-up-1271.xml" />
+  <outline title="Digital BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/digital-innovation-1074.xml" />
+  <outline title="Marketing - Vente BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/marketing-vente-1027.xml" />
+  <outline title="Impact / RSE BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/impact-rse-1348.xml" />
+  <outline title="Gestion - Finance BeaBoss.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.beaboss.fr/rss/gestion-finance-1025.xml" />
+  <outline title="MyMentor Cofondateur" category="OnlineBiz" type="rss" xmlUrl="https://www.mymentor.cofondateur.fr/feed/" />
+  <outline title="FlyingPress" category="Tools" type="rss" xmlUrl="https://flyingpress.com/feed/" />
+  <outline title="Akiflow" category="Tools" type="rss" xmlUrl="https://akiflow.com/feed/" />
+  <outline title="BetaList - Discover tomorrow's startups, today" category="Tools" type="rss" xmlUrl="http://feeds.feedburner.com/BetaList" />
+  <outline title="" category="OnlineBiz" type="rss" xmlUrl="https://every.to/everything/feed.xml" />
+  <outline title="UTM.io" category="Tools" type="rss" xmlUrl="https://web.utm.io/feed/" />
+  <outline title="Geek Mais Pas Que" category="Actus" type="rss" xmlUrl="https://www.geekmaispasque.com/feed/" />
+  <outline title="Blog Adwords et Webmarketing – SnowGlobe.fr" category="OnlineBiz" type="rss" xmlUrl="https://www.snowglobe.fr/blog/feed/" />
+  <outline title="Smart Marketer" category="OnlineBiz" type="rss" xmlUrl="https://smartmarketer.com/feed/" />
+  <outline title="Business of Apps" category="Tools" type="rss" xmlUrl="https://www.businessofapps.com/feed/" />
+  <outline title="Smartlook Blog" category="OnlineBiz" type="rss" xmlUrl="https://www.smartlook.com/blog/feed/" />
+  <outline title="Apricot Blog" category="OnlineBiz" type="rss" xmlUrl="https://blog.theapricot.io/index.xml" />
+  <outline title="Google Search Status Dashboard Updates" category="OnlineBiz" type="rss" xmlUrl="https://status.search.google.com/en/feed.atom" />
+  <outline title="Statista" category="Actus" type="rss" xmlUrl="http://www.statista.com/rss" />
+  <outline title="Google Search Central Blog" category="OnlineBiz" type="rss" xmlUrl="https://feeds.feedburner.com/blogspot/amDG" />
+  <outline title="Oncrawl" category="Webinde" type="rss" xmlUrl="http://fr.oncrawl.com/feed/" />
+  <outline title="Sergent Web" category="OnlineBiz" type="rss" xmlUrl="https://www.sergentweb.com/feed/" />
+  <outline title="Preste" category="OnlineBiz" type="rss" xmlUrl="https://www.preste.ai/blog-feed.xml" />
+  <outline title="Sidekick" category="Tools" type="rss" xmlUrl="https://www.meetsidekick.com/feed/" />
+  <outline title="Référencement naturel" category="OnlineBiz" type="rss" xmlUrl="https://www.referencement-naturel-white-hat.fr/feed/" />
+  <outline title="InLinks" category="Tools" type="rss" xmlUrl="https://inlinks.com/fr/feed/" />
+  <outline title="Psychology Today: The Latest" category="Santé" type="rss" xmlUrl="https://www.psychologytoday.com/intl/front/feed" />
+  <outline title="Google AI Blog" category="OnlineBiz" type="rss" xmlUrl="https://feeds.feedburner.com/blogspot/gJZg" />
+  <outline title="Inserm" category="Santé" type="rss" xmlUrl="https://www.inserm.fr/feed/" />
+  <outline title="TheWindowsClub News" category="Winflows" type="rss" xmlUrl="https://news.thewindowsclub.com/feed/" />
+  <outline title="Joel on Software" category="Tools" type="rss" xmlUrl="https://www.joelonsoftware.com/feed/" />
+  <outline title="Caspar von Wrede" category="OnlineBiz" type="rss" xmlUrl="https://casparwre.de/feed.xml" />
+  <outline title="Histoires du Monde" category="Actus" type="rss" xmlUrl="https://follow.it/youtube-1087" />
+  <outline title="Inisev Blog" category="Actus" type="rss" xmlUrl="https://follow.it/inisev?action=followPub" />
+  <outline title="WPMarmite" category="OnlineBiz" type="rss" xmlUrl="https://feedpress.me/wpmarmite" />
+  <outline title="SoftwareOK.com - Freeware News and other Windows tools" category="Tools" type="rss" xmlUrl="https://www.softwareok.com/rss/news_en_https.xml" />
+  <outline title="Product Hunt — The best new products, every day" category="Tools" type="rss" xmlUrl="https://www.producthunt.com/feed" />
+  <outline title="Cheqmark Blog" category="Tools" type="rss" xmlUrl="https://cheqmark.io/blog/feed/" />
+  <outline title="L'Optimisme" category="Actus" type="rss" xmlUrl="https://loptimisme.com/feed/" />
+  <outline title="" category="OnlineBiz" type="rss" xmlUrl="https://www.numerique.gouv.fr/feed.xml" />
+  <outline title="Tropy" category="Tools" type="rss" xmlUrl="https://tropy.org/blog/rss/" />
+  <outline title="Ecrire un livre accrocheur" category="OnlineBiz" type="rss" xmlUrl="https://ecrire-un-livre-accrocheur.com/feed/" />
+  <outline title="Thomas Cubel" category="OnlineBiz" type="rss" xmlUrl="https://www.thomascubel.com/feed/" />
+  <outline title="Jean-Charles Kurdali" category="OnlineBiz" type="rss" xmlUrl="https://jeancharleskurdali.com/feed/" />
+  <outline title="thruuu | Content Optimization Solution" category="Webinde" type="rss" xmlUrl="https://thruuu.com/feed/" />
+  <outline title="AFFA Association Francophone de femmes autistes" category="Santé" type="rss" xmlUrl="https://femmesautistesfrancophones.com/feed/" />
+  <outline title="Busy-women" category="OnlineBiz" type="rss" xmlUrl="https://busy-women.fr/feed/" />
+  <outline title="Les Outils Collaboratifs" category="Tools" type="rss" xmlUrl="http://outilscollaboratifs.com/feed/" />
+  <outline title="SaaS-Guru" category="OnlineBiz" type="rss" xmlUrl="http://www.saas-guru.com/feed/" />
+  <outline title="Zsolt's blog" category="OnlineBiz" type="rss" xmlUrl="https://www.zsolt.blog/feeds/posts/default" />
+  <outline title="Chromium Blog" category="Dev" type="rss" xmlUrl="https://blog.chromium.org/feeds/posts/default?alt=rss" />
+  <outline title="Krzysztof Kowalczyk blog" category="OnlineBiz" type="rss" xmlUrl="https://blog.kowalczyk.info/atom.xml" />
+  <outline title="RocketLinks - Blog" category="Webinde" type="rss" xmlUrl="https://www.rocketlinks.com/fr/blog/rss.xml" />
+  <outline title="TextMaster" category="Webinde" type="rss" xmlUrl="https://fr.textmaster.com/feed" />
+  <outline title="Obsidian Resources" category="OnlineBiz" type="rss" xmlUrl="https://forum.obsidian.md/t/obsidian-resources/81835.rss" />
+  <outline title="Presse-citron" category="Actus" type="rss" xmlUrl="https://fullcontentrss.com/feed.php?url=https%3A%2F%2Fwww.presse-citron.net%2Ffeed%2F&key=0&hash=e36517b873866a2ecc9a33279d0c3cfb7170669d&max=5&links=preserve&exc=" />
+  <outline title="Elestio blog"  type="rss" xmlUrl="https://blog.elest.io/rss/" />
+  <outline title="ConseilsMarketing"  type="rss" xmlUrl="https://fullcontentrss.com/feed.php?url=https%3A%2F%2Fwww.conseilsmarketing.com%2Ffeed%2F&key=0&hash=28c561474378a8ccf4f35973a6c5c54d8e0fcb97&max=5&links=preserve&exc=" />
+  <outline title="Lean Productivity" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCPBbCmGKB3LX7SCI70HieXQ" />
+  <outline title="NinjaLinker™😈"  type="rss" xmlUrl="https://www.ninjalinker.com/feed/" />
+  <outline title="ActiveGrowth"  type="rss" xmlUrl="https://activegrowth.com/feed/" />
+  <outline title="CCM - Stratégie Client"  type="rss" xmlUrl="https://ccm.academy/rss.xml" />
+  <outline title="SEO Blog by Ahrefs"  type="rss" xmlUrl="https://ahrefs.com/blog/fr/feed/" />
+  <outline title="Opentracker"  type="rss" xmlUrl="https://www.opentracker.net/feed/" />
+  <outline title="Polymeta"  type="rss" xmlUrl="https://www.polymeta.com/feed/" />
+  <outline title="Marketing Mania" category="OnlineBiz" type="rss" xmlUrl="https://marketingmania.fr/feed/" />
+  <outline title="BDM - Web" category="OnlineBiz" type="rss" xmlUrl="https://www.blogdumoderateur.com/web/feed/" />
+  <outline title="Flux RSS Toutes les actualités" category="Actus" type="rss" xmlUrl="https://www.economie.gouv.fr/rss/toutesactualites" />
+  <outline title="Commission des clauses abusives"  type="rss" xmlUrl="https://www.clauses-abusives.fr/feed/" />
+  <outline title="Cyberdefenseur"  type="rss" xmlUrl="https://cyberdefenseur.com/feed/" />
+  <outline title="Pexiweb"  type="rss" xmlUrl="https://www.pexiweb.be/feed/" />
+  <outline title="Semrush blog"  type="rss" xmlUrl="https://www.semrush.com/blog/feed/" />
+  <outline title="StickyCTA"  type="rss" xmlUrl="https://www.sticky-cta.com/fr/feed/" />
+  <outline title="Wanted Pedo WantedPedo"  type="rss" xmlUrl="https://wantedpedo-officiel.com/feed/" />
+  <outline title="Gaspard G" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCI-8QMy9n3I5Pv6mTmXoAXA" />
+  <outline title="ARTE" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCwI-JbGNsojunnHbFAc0M4Q" />
+  <outline title="Tony Neves" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCi7awF_caktNZQ2W9kHKWQA" />
+  <outline title="Ana Psychology" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCOxhlNofmYH-MRC36TURUGw" />
+  <outline title="Marketing Mania" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCSmUdD2Dd_v5uqBuRwtEZug" />
+  <outline title="Dr Alex Young" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UC1QnKYxNXosv9ykUt_6wCMg" />
+  <outline title="Objets du Futur"  type="rss" xmlUrl="https://www.objetsdufutur.fr/feed/" />
+  <outline title="Objets du Futur" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCSDaNmAHaAEikjzRE9O5_Mw" />
+  <outline title="Festival des Libertés" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCJCS2jMu40d0FHszDShIOqw" />
+  <outline title="BLOG Les Tribulations d'un Petit Zèbre"  type="rss" xmlUrl="http://les-tribulations-dun-petit-zebre.com/feed/" />
+  <outline title="Le blog d'un odieux connard"  type="rss" xmlUrl="https://unodieuxconnard.com/feed/" />
+  <outline title="Autour du Naturel"  type="rss" xmlUrl="https://www.autourdunaturel.com/feed/" />
+  <outline title="Koztoujours"  type="rss" xmlUrl="https://www.koztoujours.fr/feed" />
+  <outline title="gHacks Technology News"  type="rss" xmlUrl="https://www.ghacks.net/feed/" />
+  <outline title="Upmynt newsletter - Faites passer votre marque à la vitesse IA"  type="rss" xmlUrl="https://www.upmynt.com/rss/" />
+  <outline title="Kim Saeed"  type="rss" xmlUrl="https://kimsaeed.com/feed" />
+  <outline title="The Forest"  type="rss" xmlUrl="https://forest.quest/artifacts/rss/" />
+  <outline title="www.denoncetonpedo.com"  type="rss" xmlUrl="https://denoncetonpedo.com/feed/" />
+  <outline title="Vercel News" category="Dev" type="rss" xmlUrl="https://vercel.com/atom" />
+  <outline title="developer.chrome.com: Blog" category="Dev" type="rss" xmlUrl="https://developer.chrome.com/static/blog/feed.xml?hl=fr" />
+  <outline title="Cursor Blog | RSS Feed" category="Dev" type="rss" xmlUrl="https://cursor.com/atom.xml" />
+  <outline title="Codelynx" category="Dev" type="rss" xmlUrl="https://codelynx.dev/rss" />
+  <outline title="The Nuxt Blog" category="Dev" type="rss" xmlUrl="https://nuxt.com/blog/rss.xml" />
+  <outline title="The Astro Blog" category="Dev" type="rss" xmlUrl="https://astro.build/rss.xml" />
+  <outline title="The Vue Point" category="Dev" type="rss" xmlUrl="https://blog.vuejs.org/feed.rss" />
+  <outline title="daisyUI Blog" category="Dev" type="rss" xmlUrl="https://daisyui.com/blog/rss.xml" />
+  <outline title="Tailwind CSS Blog" category="Dev" type="rss" xmlUrl="https://tailwindcss.com/feeds/feed.xml" />
+  <outline title="Elian Van Cutsem" category="Dev" type="rss" xmlUrl="https://www.elian.codes/blog.xml" />
+  <outline title="Death by abstraction"  type="rss" xmlUrl="https://www.deathbyabstraction.com/atom.xml" />
+  <outline title="OWASP"  type="rss" xmlUrl="https://owasp.org/rss.xml" />
+  <outline title="Mozilla Hacks – the Web developer blog"  type="rss" xmlUrl="https://hacks.mozilla.org/feed/" />
+</outline>
+</body>
+</opml>
