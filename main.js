@@ -19,6 +19,9 @@ class RSSReaderPlugin extends Plugin {
       // Créer le dossier RSS principal s'il n'existe pas
       await this.ensureFolder(this.settings.rssFolder);
       
+      // Vérifier et créer le dossier "RSS" si nécessaire
+      await this.ensureFolder('RSS');
+      
       // Créer les dossiers pour les groupes existants
       for (const group of this.settings.groups) {
          await this.ensureFolder(`${this.settings.rssFolder}/${group}`);
@@ -181,20 +184,105 @@ class RSSReaderPlugin extends Plugin {
       const doc = parser.parseFromString(fileContent, 'text/xml');
       const outlines = doc.querySelectorAll('outline[xmlUrl]');
       
-      this.settings.feeds = Array.from(outlines).map(outline => ({
-         title: outline.getAttribute('title'),
-         url: outline.getAttribute('xmlUrl'),
-         category: outline.getAttribute('category') || '',
-         type: outline.getAttribute('saveType') || 'feed',
-         status: outline.getAttribute('status') || 'active',
-         summarize: outline.getAttribute('summarize') === 'true',
-         transcribe: outline.getAttribute('transcribe') === 'true',
-         tags: outline.getAttribute('category') ? [outline.getAttribute('category')] : []
-      }));
+      const importResults = {
+         success: [],
+         failed: []
+      };
 
+      // Traiter chaque feed
+      for (const outline of Array.from(outlines)) {
+         try {
+            // Vérifier si le feed existe déjà
+            const url = outline.getAttribute('xmlUrl');
+            if (this.settings.feeds.some(f => f.url === url)) {
+               importResults.failed.push({
+                  title: outline.getAttribute('title'),
+                  url: url,
+                  reason: 'Feed déjà existant'
+               });
+               continue;
+            }
+
+            // Vérifier si le feed est valide
+            const response = await requestUrl({
+               url: url
+            });
+            
+            const feedDoc = parser.parseFromString(response.text, 'text/xml');
+            if (!feedDoc.querySelector('channel')) {
+               throw new Error('Format RSS invalide');
+            }
+
+            // Ajouter le feed
+            const feed = {
+               title: outline.getAttribute('title'),
+               url: url,
+               category: outline.getAttribute('category') || '',
+               type: outline.getAttribute('saveType') || 'feed',
+               status: outline.getAttribute('status') || 'active',
+               summarize: outline.getAttribute('summarize') === 'true',
+               transcribe: outline.getAttribute('transcribe') === 'true',
+               tags: outline.getAttribute('category') ? [outline.getAttribute('category')] : []
+            };
+
+            this.settings.feeds.push(feed);
+            importResults.success.push({
+               title: feed.title,
+               url: feed.url
+            });
+
+         } catch (error) {
+            importResults.failed.push({
+               title: outline.getAttribute('title'),
+               url: outline.getAttribute('xmlUrl'),
+               reason: error.message
+            });
+         }
+      }
+
+      // Sauvegarder les paramètres
       await this.saveData(this.settings);
-      // Rafraîchir l'interface des paramètres
-      this.app.workspace.trigger('rss-reader:refresh-settings');
+
+      // Créer et afficher le modal de résumé
+      const modal = new Modal(this.app);
+      modal.titleEl.setText("Résumé de l'import OPML");
+      
+      const content = modal.contentEl;
+      content.empty();
+      
+      // Afficher les succès
+      content.createEl('h2', {text: `Feeds importés avec succès (${importResults.success.length})`});
+      if (importResults.success.length > 0) {
+         const successList = content.createEl('ul');
+         importResults.success.forEach(feed => {
+            successList.createEl('li', {text: `${feed.title} (${feed.url})`});
+         });
+      }
+
+      // Afficher les échecs
+      if (importResults.failed.length > 0) {
+         content.createEl('h2', {text: `Feeds non importés (${importResults.failed.length})`});
+         const failedList = content.createEl('ul');
+         importResults.failed.forEach(feed => {
+            failedList.createEl('li', {
+               text: `${feed.title} (${feed.url}) - Raison: ${feed.reason}`
+            });
+         });
+
+         // Bouton pour copier les feeds échoués
+         new Setting(content)
+            .addButton(button => button
+               .setButtonText('Copier les feeds échoués')
+               .onClick(() => {
+                  const failedText = importResults.failed
+                     .map(f => `${f.title} (${f.url}) - ${f.reason}`)
+                     .join('\n');
+                  navigator.clipboard.writeText(failedText);
+                  new Notice('Liste des feeds échoués copiée dans le presse-papiers');
+               }));
+      }
+
+      modal.open();
    }
 
    // Méthode utilitaire pour créer un dossier s'il n'existe pas
@@ -301,6 +389,43 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      await this.plugin.saveData(this.plugin.settings);
                   }
                }));
+
+      containerEl.createEl('hr');
+
+      // Section Import/Export
+      containerEl.createEl('h1', {text: 'Import/Export'});
+      
+      new Setting(containerEl)
+         .setName('Import OPML')
+         .setDesc('Importer des feeds depuis un fichier OPML')
+         .addButton(button => button
+            .setButtonText('Importer OPML')
+            .onClick(() => {
+               const input = document.createElement('input');
+               input.type = 'file';
+               input.accept = '.opml,.xml';
+               input.onchange = async (e) => {
+                  const file = e.target.files[0];
+                  const reader = new FileReader();
+                  reader.onload = async (e) => {
+                     await this.plugin.importOpml(e.target.result);
+                     new Notice('Feeds importés avec succès');
+                     this.display();
+                  };
+                  reader.readAsText(file);
+               };
+               input.click();
+            }));
+
+      new Setting(containerEl)
+         .setName('Export OPML')
+         .setDesc('Exporter vos feeds au format OPML')
+         .addButton(button => button
+            .setButtonText('Exporter OPML')
+            .onClick(() => {
+               this.plugin.exportOpml();
+               new Notice('Feeds exportés avec succès');
+            }));
 
       containerEl.createEl('hr');
 
@@ -609,6 +734,21 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      console.error('Erreur lors de l\'ajout du feed:', error);
                      new Notice('❌ Erreur : Impossible de charger le feed RSS');
                   }
+               }
+            }));
+
+      // Ajouter un bouton pour supprimer tous les feeds
+      new Setting(containerEl)
+         .addButton(button => button
+            .setButtonText('Supprimer tous les feeds')
+            .setWarning()
+            .onClick(async () => {
+               const confirmation = await this.confirmDelete('tous les feeds');
+               if (confirmation) {
+                  this.plugin.settings.feeds = [];
+                  await this.plugin.saveData(this.plugin.settings);
+                  new Notice('Tous les feeds ont été supprimés');
+                  this.display();
                }
             }));
    }

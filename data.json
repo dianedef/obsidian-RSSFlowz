@@ -8,27 +8,7 @@
       "summarize": false,
       "transcribe": false,
       "tags": [],
-      "group": "",
-      "rewrite": false
-    },
-    {
-      "title": "Les Outils Tice",
-      "url": "https://outilstice.com/feed/",
-      "type": "feed",
-      "status": "active",
-      "summarize": false,
-      "transcribe": false,
-      "tags": [],
       "group": "art"
-    },
-    {
-      "title": "Blog de GetApp sur les applications métiers",
-      "url": "https://www.getapp.fr/blog/rss",
-      "type": "feed",
-      "status": "active",
-      "summarize": false,
-      "transcribe": false,
-      "tags": []
     }
   ],
   "groups": [
@@ -38,7 +18,7 @@
   "rssFolder": "RSS",
   "fetchFrequency": "startup",
   "fetchInterval": 3600,
-  "maxArticles": 5,
+  "maxArticles": 1,
   "retentionDays": 30,
-  "lastFetch": 1732396528318
+  "lastFetch": 1732398285688
 }
