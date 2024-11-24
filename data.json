@@ -8,7 +8,11 @@
       "summarize": false,
       "transcribe": false,
       "tags": [],
-      "group": ""
+      "group": "",
+      "lastError": {
+        "message": "Failed to execute 'querySelector' on 'Element': 'description,content:encoded' is not a valid selector.",
+        "timestamp": 1732462525925
+      }
     }
   ],
   "groups": [
@@ -20,7 +24,7 @@
   "fetchInterval": 3600,
   "maxArticles": 1,
   "retentionDays": 30,
-  "lastFetch": 1732461556333,
+  "lastFetch": 1732462525806,
   "readingMode": true,
   "lastReadArticle": null,
   "currentFeed": null,

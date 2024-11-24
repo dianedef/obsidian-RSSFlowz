@@ -210,7 +210,13 @@ class RSSReaderPlugin extends Plugin {
                "moved": "Feed {title} déplacé de \"{source}\" vers \"{destination}\"",
                "fetchError": "Erreur lors de la récupération du feed {title}",
                "fetchSuccess": "{count} articles récupérés pour {title}",
-               "noArticles": "Aucun article trouvé pour {title}"
+               "noArticles": "Aucun article trouvé pour {title}",
+               "error": {
+                  "title": "Erreur du feed",
+                  "lastError": "Dernière erreur : {message}",
+                  "lastUpdate": "Dernière mise à jour : {date}",
+                  "retry": "Réessayer"
+              }
             },
             "group": {
                "added": "Groupe ajouté :",
@@ -450,7 +456,13 @@ class RSSReaderPlugin extends Plugin {
                   "moved": "Feed {title} moved from \"{source}\" to \"{destination}\"",
                   "fetchError": "Error fetching feed {title}",
                   "fetchSuccess": "{count} articles fetched for {title}",
-                  "noArticles": "No articles found for {title}"
+                  "noArticles": "No articles found for {title}",
+                  "error": {
+                     "title": "Feed Error",
+                     "lastError": "Last error: {message}",
+                     "lastUpdate": "Last update: {date}",
+                     "retry": "Retry"
+                  }
             },
             "group": {
                   "added": "Group added: {name}",
@@ -619,39 +631,54 @@ class RSSReaderPlugin extends Plugin {
 
             // Nettoyer la réponse avant le parsing
             const cleanedContent = response.text.replace(/^\s+/, '').replace(/^\uFEFF/, '');
-            
             const parser = new DOMParser();
             const doc = parser.parseFromString(cleanedContent, 'text/xml');
-            
+
             // Vérifier les erreurs de parsing
             const parseError = doc.querySelector('parsererror');
             if (parseError) {
-               console.error(`Erreur de parsing pour ${feed.url}:`, parseError.textContent);
-               new Notice(`Erreur de parsing pour ${feed.title}`);
-               continue;
+                  console.error(`Erreur de parsing pour ${feed.url}:`, parseError.textContent);
+                  feed.lastError = {
+                     message: `Erreur de parsing XML: ${parseError.textContent}`,
+                     timestamp: Date.now()
+                  };
+                  new Notice(this.t('notices.feed.error.title').replace('{title}', feed.title));
+                  continue;
             }
 
             let articles;
             if (doc.querySelector('feed')) {
-               articles = await this.parseAtomFeed(doc, feed);
+                articles = await this.parseAtomFeed(doc, feed);
             } else {
-               articles = await this.parseRssFeed(doc, feed);
+                articles = await this.parseRssFeed(doc, feed);
             }
+
+            // Marquer le feed comme fonctionnel
+            feed.lastError = null;
+            feed.lastSuccessfulFetch = Date.now();
 
             if (articles && articles.length > 0) {
-               await this.saveArticles(articles, feed);
-               new Notice(`${articles.length} articles récupérés pour ${feed.title}`);
+                await this.saveArticles(articles, feed);
+                new Notice(this.t('notices.feed.fetchSuccess')
+                    .replace('{count}', articles.length)
+                    .replace('{title}', feed.title));
             } else {
-               new Notice(`Aucun article trouvé pour ${feed.title}`);
+                new Notice(this.t('notices.feed.noArticles').replace('{title}', feed.title));
             }
-         } catch (error) {
+        } catch (error) {
             console.error(`Erreur lors de la récupération du feed ${feed.url}:`, error);
-            new Notice(`Erreur lors de la récupération du feed ${feed.title}`);
-         }
-      }
+            // Sauvegarder l'erreur dans les paramètres du feed
+            feed.lastError = {
+                message: error.message,
+                timestamp: Date.now()
+            };
+            new Notice(this.t('notices.feed.fetchError').replace('{title}', feed.title));
+        }
+    }
 
-      await this.cleanOldArticles();
-   }
+    await this.saveData(this.settings);
+    await this.cleanOldArticles();
+}
 
    async parseAtomFeed(doc, feed) {
       try {
@@ -1860,9 +1887,29 @@ class RSSReaderSettingTab extends PluginSettingTab {
                const feedContainer = feedsContainer.createDiv('feed-container collapsed');
                const headerContainer = feedContainer.createDiv('feed-header');
                
-               // Ajouter cette ligne pour afficher le titre du feed
-               headerContainer.createEl('span', { text: feed.title });
+               // Ajouter le titre du feed et son statut
+               const titleContainer = headerContainer.createDiv('feed-title-container');
+               titleContainer.createEl('span', { text: feed.title });
                
+               // Ajouter une icône d'erreur si nécessaire
+               if (feed.lastError) {
+                  const errorIcon = titleContainer.createEl('span', { 
+                      cls: 'feed-error-icon',
+                      attr: {
+                          'aria-label': `Dernière erreur: ${feed.lastError.message}\nLe ${new Date(feed.lastError.timestamp).toLocaleString()}`
+                      }
+                  });
+                  errorIcon.innerHTML = '⚠️';
+               }
+
+               // Ajouter la date du dernier fetch réussi
+               if (feed.lastSuccessfulFetch) {
+                  const lastFetchSpan = titleContainer.createEl('span', {
+                      cls: 'feed-last-fetch',
+                      text: `Dernière mise à jour: ${new Date(feed.lastSuccessfulFetch).toLocaleString()}`
+                  });
+               }
+
                const optionsContainer = feedContainer.createDiv('feed-options');
                optionsContainer.style.display = 'none';
 
@@ -2431,6 +2478,24 @@ document.head.appendChild(Object.assign(document.createElement('style'), {
          flex-grow: 1;
          margin-right: 8px;
          font-weight: 500;
+      }
+
+      .feed-error-icon {
+         color: var(--text-error);
+         margin-left: 8px;
+         cursor: help;
+      }
+
+      .feed-last-fetch {
+         font-size: 0.8em;
+         color: var(--text-muted);
+         margin-left: 8px;
+      }
+
+      .feed-title-container {
+         display: flex;
+         align-items: center;
+         gap: 8px;
       }
    `
 }));
