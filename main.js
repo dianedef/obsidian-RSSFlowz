@@ -4,6 +4,9 @@ const { Plugin, PluginSettingTab, Setting, requestUrl, Notice, Modal, sanitizeHT
 
 class RSSReaderPlugin extends Plugin {
    async onload() {
+      const savedData = await this.loadData();
+      console.log('Données chargées:', savedData);
+      
       this.settings = Object.assign({}, {
          feeds: [],
          groups: ['Défaut'],
@@ -19,8 +22,506 @@ class RSSReaderPlugin extends Plugin {
          currentFeed: null,
          currentFolder: null,
          articleStates: {},
-      }, await this.loadData());
+      }, savedData);
       
+      console.log('Settings après fusion:', this.settings);
+      
+      // Obtenir la locale d'Obsidian correctement
+      const locale = window.moment.locale() || 'en';
+      
+      // Définir les traductions
+      const translations = {
+         fr: {
+         "settings": {
+            "title": "Paramètres du lecteur RSS",
+            "openaiKey": {
+               "name": "Clé API OpenAI",
+               "desc": "Votre clé API OpenAI pour les résumés"
+            },
+            "rssFolder": {
+               "name": "Dossier RSS",
+               "desc": "Dossier où seront sauvegardés les articles"
+            },
+            "fetchFrequency": {
+               "name": "Fréquence de mise à jour",
+               "desc": "À quelle fréquence voulez-vous récupérer les nouveaux articles ?",
+               "options": {
+                  "startup": "Au démarrage uniquement",
+                  "daily": "Une fois par jour",
+                  "hourly": "Toutes les heures"
+               }
+            },
+            "maxArticles": {
+               "name": "Nombre maximum d'articles",
+               "desc": "Nombre maximum d'articles à récupérer par feed"
+            },
+            "retentionDays": {
+               "name": "Durée de rétention (jours)",
+               "desc": "Nombre de jours pendant lesquels garder les articles avant suppression"
+            },
+            "importExport": {
+               "title": "Import/Export",
+               "opmlImport": {
+                  "name": "Import d'un fichier OPML",
+                  "desc": "Importer des feeds depuis un fichier OPML",
+                  "button": "Importer OPML"
+               },
+               "opmlExport": {
+                  "name": "Export vers OPML",
+                  "desc": "Exporter vos feeds au format OPML",
+                  "button": "Exporter OPML"
+               },
+               "jsonImport": {
+                  "name": "Importer une configuration JSON",
+                  "desc": "Restaurer une configuration précédemment exportée",
+                  "button": "Importer data.json"
+               },
+               "jsonExport": {
+                  "name": "Exporter la configuration JSON",
+                  "desc": "Sauvegarder tous vos paramètres dans un fichier",
+                  "button": "Exporter data.json"
+               }
+            },
+            "groups": {
+               "title": "Gestion des Groupes",
+               "add": {
+                  "name": "Ajouter un groupe",
+                  "desc": "Créer un nouveau groupe pour organiser vos feeds (appuyez sur Entrée pour ajouter)",
+                  "placeholder": "Nom du nouveau groupe",
+                  "success": "Groupe ajouté :"
+               },
+               "delete": {
+                  "button": "Supprimer",
+                  "confirm": "Êtes-vous sûr de vouloir supprimer ce groupe ?",
+                  "success": "Groupe supprimé :"
+               },
+               "none": "Sans groupe"
+            },
+            "feeds": {
+               "title": "Gestion des feeds",
+               "search": {
+                  "placeholder": "Rechercher un feed..."
+               },
+               "add": {
+                  "name": "Ajouter un feed",
+                  "desc": "Entrez l'URL d'un flux RSS",
+                  "placeholder": "URL du feed RSS",
+                  "success": "Feed ajouté : {title}"
+               },
+               "options": {
+                  "saveType": "Type de sauvegarde",
+                  "saveTypes": {
+                     "multiple": "Un fichier par article",
+                     "single": "Fichier unique"
+                  },
+                  "group": "Groupe",
+                  "noGroup": "Sans groupe",
+                  "aiSummary": {
+                     "name": "Résumé AI",
+                     "desc": "Génère automatiquement un résumé concis de chaque article"
+                  },
+                  "aiRewrite": {
+                     "name": "Réécriture AI",
+                     "desc": "Réécrit l'article dans un style plus clair"
+                  },
+                  "ytTranscript": {
+                     "name": "Transcription YouTube",
+                     "desc": "Transcrit les vidéos YouTube en texte"
+                  }
+               },
+               "delete": {
+                  "button": "Supprimer",
+                  "confirm": "Confirmation de suppression",
+                  "confirmMessage": "Êtes-vous sûr de vouloir supprimer {feedTitle} ?",
+                  "cancel": "Annuler",
+                  "success": "Feed supprimé"
+               },
+               "deleteAll": {
+                  "button": "Supprimer tous les feeds",
+                  "success": "Tous les feeds ont été supprimés"
+               },
+               "add": {
+                  "name": "Ajouter un feed",
+                  "desc": "Entrez l'URL d'un flux RSS",
+                  "placeholder": "URL du feed RSS",
+                  "error": "URL invalide ou feed déjà existant",
+                  "success": "Feed ajouté avec succès :",
+                  "fetching": "Récupération des articles pour",
+                  "noArticles": "Aucun article trouvé pour",
+                  "fetchError": "Erreur lors de la récupération des articles pour",
+                  "sslError": "Erreur de certificat SSL\nLe site a un certificat invalide.\nVérifiez si le site est accessible dans votre navigateur."
+               },
+               "group": {
+                  "add": "Ajouter un groupe",
+                  "name": "Nom du groupe",
+                  "placeholder": "Entrez le nom du groupe",
+                  "cancel": "Annuler",
+                  "create": "Créer",
+                  "error": "Le nom du groupe ne peut pas être vide",
+                  "none": "Sans groupe"
+               },
+               "search": {
+                  "placeholder": "Rechercher un feed..."
+               },
+               "summarize": {
+                  "name": "Résumé AI",
+                  "desc": "Génère automatiquement un résumé concis de chaque article"
+               },
+               "rewrite": {
+                  "name": "Réécriture AI",
+                  "desc": "Réécrit l'article dans un style plus clair"
+               },
+               "transcribe": {
+                  "name": "Transcription YouTube",
+                  "desc": "Transcrire les vidéos YouTube en texte"
+               }
+            }
+         },
+         "notices": {   
+            "import": {
+               "opml": {
+                  "loading": "Import OPML en cours...",
+                  "success": "Import OPML terminé avec succès",
+                  "error": "Erreur lors de l'import OPML"
+               },
+               "json": {
+                  "loading": "Import de la configuration en cours...",
+                  "success": "Configuration importée avec succès",
+                  "error": "Erreur lors de l'import de la configuration"
+               }
+            },
+            "export": {
+               "opml": {
+                  "loading": "Export OPML en cours...",
+                  "success": "Feeds exportés avec succès",
+                  "error": "Erreur lors de l'export OPML"
+               },
+               "json": {
+                  "loading": "Export de la configuration en cours...",
+                  "success": "Configuration exportée avec succès",
+                  "error": "Erreur lors de l'export de la configuration"
+               }
+            },
+            "feed": {
+               "exists": "Ce feed RSS est déjà dans votre liste",
+               "invalid": "URL invalide : Ce n'est pas un feed RSS/Atom valide",
+               "added": "Feed ajouté : {title}",
+               "deleted": "Feed supprimé : {title}",
+               "moved": "Feed {title} déplacé de \"{source}\" vers \"{destination}\"",
+               "fetchError": "Erreur lors de la récupération du feed {title}",
+               "fetchSuccess": "{count} articles récupérés pour {title}",
+               "noArticles": "Aucun article trouvé pour {title}"
+            },
+            "group": {
+               "added": "Groupe ajouté :",
+               "exists": "Ce groupe existe déjà !",
+               "deleted": "Groupe et dossier supprimés :"
+            },
+            "article": {
+               "marked": "Article marqué comme lu",
+               "deleted": "Article supprimé"
+            },
+            "errors": {
+               "ssl": "Erreur de certificat SSL\nLe site a un certificat invalide.\nVérifiez si le site est accessible dans votre navigateur.",
+               "generic": "Erreur : {message}"
+            },
+            "settings": {
+               "feedTypeChanged": "Type de sauvegarde modifié pour {title}",
+               "feedGroupChanged": "Feed {title} déplacé vers {group}",
+               "feedStatusChanged": "Feed {title} {status}",
+               "feedDeleted": "Feed {title} supprimé",
+               "feedAdded": "Feed {title} ajouté",
+               "aiToggled": "{feature} {status} pour {title}"
+            }
+         },
+         "ribbons": {
+            "refresh": {
+               "name": "Rafraîchir les flux RSS",
+               "tooltip": "Rafraîchir les flux RSS"
+            },
+            "reading": {
+               "name": "Mode Lecture RSS",
+               "tooltip": "Activer/Désactiver le mode lecture"
+            }
+         },
+         "commands": {
+            "importOpml": {
+               "name": "Importer un fichier OPML",
+               "desc": "Importer un fichier OPML"
+            },
+            "exportOpml": {
+               "name": "Exporter en OPML",
+               "desc": "Exporter un fichier OPML"
+            },
+            "nextArticle": {
+               "name": "Article suivant",
+               "desc": "Aller à l'article suivant"
+            },
+            "previousArticle": {
+               "name": "Article précédent",
+               "desc": "Aller à l'article précédent"
+            }
+         },
+         "placeholders": {
+            "searchFeeds": "Rechercher dans vos feeds...",
+            "addFeed": "Entrez l'URL d'un flux RSS",
+            "addGroup": "Entrez le nom du groupe",
+            "noFeeds": "Aucun feed trouvé",
+            "noArticles": "Aucun article trouvé",
+            "loading": "Chargement..."
+         }
+         },
+         en: {
+         "settings": {
+            "title": "RSS Flowz eeeeeSettings",
+            "openaiKey": {
+                  "name": "OpenAI API Key",
+                  "desc": "Your OpenAI API key for summaries"
+            },
+            "rssFolder": {
+                  "name": "RSS Folder",
+                  "desc": "Folder where articles will be saved"
+            },
+            "fetchFrequency": {
+                  "name": "Update Frequency",
+                  "desc": "How often do you want to fetch new articles?",
+                  "options": {
+                     "startup": "At startup only",
+                     "daily": "Once a day",
+                     "hourly": "Every hour"
+                  }
+            },
+            "maxArticles": {
+                  "name": "Maximum Number of Articles",
+                  "desc": "Maximum number of articles to fetch per feed"
+            },
+            "retentionDays": {
+                  "name": "Retention Period (days)",
+                  "desc": "Number of days to keep articles before deletion"
+            },
+            "importExport": {
+                  "title": "Import/Export",
+                  "opmlImport": {
+                     "name": "Import OPML File",
+                     "desc": "Import feeds from an OPML file",
+                     "button": "Import OPML"
+                  },
+                  "opmlExport": {
+                     "name": "Export to OPML",
+                     "desc": "Export your feeds in OPML format",
+                     "button": "Export OPML"
+                  },
+                  "jsonImport": {
+                     "name": "Import JSON Configuration",
+                     "desc": "Restore a previously exported configuration",
+                     "button": "Import data.json"
+                  },
+                  "jsonExport": {
+                     "name": "Export JSON Configuration",
+                     "desc": "Backup all your settings into a file",
+                     "button": "Export data.json"
+                  }
+            },
+            "groups": {
+                  "title": "Group Management",
+                  "add": {
+                     "name": "Add a Group",
+                     "desc": "Create a new group to organize your feeds (press Enter to add)",
+                     "placeholder": "Name of the new group",
+                     "success": "Group added:"
+                  },
+                  "delete": {
+                     "button": "Delete",
+                     "confirm": "Are you sure you want to delete this group?",
+                     "success": "Group deleted:"
+                  },
+                  "none": "No group"
+            },
+            "feeds": {
+                  "title": "Feed Management",
+                  "search": {
+                     "placeholder": "Search for a feed..."
+                  },
+                  "add": {
+                     "name": "Add a Feed",
+                     "desc": "Enter the URL of an RSS feed",
+                     "placeholder": "RSS feed URL",
+                     "success": "Feed added:"
+                  },
+                  "options": {
+                     "saveType": "Save Type",
+                     "saveTypes": {
+                        "multiple": "One file per article",
+                        "single": "Single file"
+                     },
+                     "group": "Group",
+                     "noGroup": "No group",
+                     "aiSummary": {
+                        "name": "AI Summary",
+                        "desc": "Automatically generate a concise summary of each article"
+                     },
+                     "aiRewrite": {
+                        "name": "AI Rewrite",
+                        "desc": "Rewrite the article in a clearer style"
+                     },
+                     "ytTranscript": {
+                        "name": "YouTube Transcript",
+                        "desc": "Transcribe YouTube videos into text"
+                     }
+                  },
+                  "deleteAll": {
+                     "button": "Delete all feeds",
+                     "confirm": "Are you sure you want to delete all feeds?"
+                  },
+                  "delete": {
+                     "button": "Delete",
+                     "confirm": "Are you sure you want to delete this feed?",
+                     "confirmMessage": "Are you sure you want to delete {feedTitle}?",
+                     "cancel": "Cancel",
+                     "success": "Feed deleted"
+                  },
+                  "add": {
+                     "name": "Add a Feed",
+                     "desc": "Enter the URL of an RSS feed",
+                     "placeholder": "RSS feed URL",
+                     "error": "Invalid URL or feed already exists",
+                     "success": "Feed added successfully:",
+                     "fetching": "Fetching articles for",
+                     "noArticles": "No articles found for",
+                     "fetchError": "Error fetching articles for",
+                     "sslError": "SSL Certificate Error\nThe site has an invalid certificate.\nCheck if the site is accessible in your browser."
+                  },
+                  "group": {
+                     "add": "Add a Group",
+                     "name": "Group Name",
+                     "placeholder": "Enter the name of the group",
+                     "cancel": "Cancel",
+                     "create": "Create",
+                     "error": "The group name cannot be empty",
+                     "none": "No group"
+                  },
+                  "search": {
+                     "placeholder": "Search for a feed..."
+                  },
+                  "summarize": {
+                     "name": "AI Summary",
+                     "desc": "Automatically generate a concise summary of each article"
+                  },
+                  "rewrite": {
+                     "name": "AI Rewrite",
+                     "desc": "Rewrite the article in a clearer style"
+                  },
+                  "transcribe": {
+                     "name": "YouTube Transcript",
+                     "desc": "Transcribe YouTube videos into text"
+                  }
+            }
+         },
+         "notices": {
+            "import": {
+                  "opml": {
+                     "loading": "Importing OPML...",
+                     "success": "OPML import successful",
+                     "error": "Error importing OPML"
+                  },
+                  "json": {
+                     "loading": "Importing configuration...",
+                     "success": "Configuration imported successfully",
+                     "error": "Error importing configuration"
+                  }
+            },
+            "export": {
+                  "opml": {
+                     "loading": "Exporting OPML...",
+                     "success": "Feeds exported successfully",
+                     "error": "Error exporting OPML"
+                  },
+                  "json": {
+                     "loading": "Exporting configuration...",
+                     "success": "Configuration exported successfully",
+                     "error": "Error exporting configuration"
+                  }
+            },
+            "feed": {
+                  "exists": "This RSS feed is already in your list",
+                  "invalid": "Invalid URL: This is not a valid RSS/Atom feed",
+                  "added": "Feed added: {title}",
+                  "deleted": "Feed deleted: {title}",
+                  "moved": "Feed {title} moved from \"{source}\" to \"{destination}\"",
+                  "fetchError": "Error fetching feed {title}",
+                  "fetchSuccess": "{count} articles fetched for {title}",
+                  "noArticles": "No articles found for {title}"
+            },
+            "group": {
+                  "added": "Group added: {name}",
+                  "exists": "This group already exists!",
+                  "deleted": "Group and folder deleted: {name}"
+            },
+            "article": {
+                  "marked": "Article marked as read",
+                  "deleted": "Article deleted"
+            },
+            "errors": {
+                  "ssl": "SSL Certificate Error\nThe site has an invalid certificate.\nCheck if the site is accessible in your browser.",
+                  "generic": "Error: {message}"
+            },
+            "settings": {
+               "feedTypeChanged": "Save type changed for {title}",
+               "feedGroupChanged": "Feed {title} moved to {group}",
+               "feedStatusChanged": "Feed {title} {status}",
+               "feedDeleted": "Feed {title} deleted",
+               "feedAdded": "Feed {title} added",
+               "aiToggled": "{feature} {status} for {title}"
+            }
+         },
+         "ribbons": {
+            "refresh": {
+                  "name": "Refresh RSS Feeds",
+                  "tooltip": "Refresh RSS feeds"
+            },
+            "reading": {
+                  "name": "RSS Reading Mode",
+                  "tooltip": "Enable/Disable reading mode"
+            }
+         },
+         "commands": {
+            "importOpml": {
+                  "name": "Import OPML file",
+                  "desc": "Import an OPML file"
+            },
+            "exportOpml": {
+                  "name": "Export OPML file",
+                  "desc": "Export an OPML file"
+            },
+            "nextArticle": {
+                  "name": "Next Article",
+                  "desc": "Go to next article"
+            },
+            "previousArticle": {
+                  "name": "Previous Article",
+                  "desc": "Go to previous article"
+            }
+         },
+         placeholders: {
+            searchFeeds: "Search your feeds...",
+            addFeed: "Enter RSS feed URL",
+            addGroup: "Enter group name",
+            noFeeds: "No feeds found",
+            noArticles: "No articles found",
+            loading: "Loading..."
+        }
+         
+      }
+      };
+
+      // Sélectionner les traductions selon la langue
+      this.i18n = translations[locale] || translations.en;
+      
+      // Définir la méthode de traduction
+      this.t = (key) => {
+         return key.split('.').reduce((o, i) => o?.[i], this.i18n) || key;
+      };
+
       // Vérifier et créer le dossier RSS principal
       await this.ensureFolder(this.settings.rssFolder);
       
@@ -29,15 +530,15 @@ class RSSReaderPlugin extends Plugin {
          await this.ensureFolder(`${this.settings.rssFolder}/${group}`);
       }
 
-      this.addRibbonIcon('refresh-cw', 'Refresh RSS Feeds', () => {
-         this.fetchAllFeeds();
-      });
-
-      this.addRibbonIcon('book-open', 'Mode Lecture RSS', async () => {
-         await this.toggleReadingMode();
-      });
-
-      if (this.settings.fetchFrequency === 'startup') {
+   this.addRibbonIcon('refresh-cw', this.t('ribbons.refresh.tooltip'), () => {
+      this.fetchAllFeeds();
+   });
+   
+   this.addRibbonIcon('book-open', this.t('ribbons.reading.tooltip'), async () => {
+      await this.toggleReadingMode();
+   });
+   
+   if (this.settings.fetchFrequency === 'startup') {
          this.fetchAllFeeds();
       }
 
@@ -56,7 +557,8 @@ class RSSReaderPlugin extends Plugin {
 
       this.addCommand({
          id: 'import-opml',
-         name: 'Import OPML file',
+         name: this.t('commands.importOpml.name'),
+         desc: this.t('commands.importOpml.desc'),
          callback: async () => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -75,7 +577,8 @@ class RSSReaderPlugin extends Plugin {
 
       this.addCommand({
          id: 'export-opml',
-         name: 'Export OPML file',
+         name: this.t('commands.exportOpml.name'),
+         desc: this.t('commands.exportOpml.desc'),
          callback: () => this.exportOpml()
       });
 
@@ -108,17 +611,23 @@ class RSSReaderPlugin extends Plugin {
                url: feed.url,
                headers: {
                   'User-Agent': 'Mozilla/5.0',
-                  'Accept': 'application/atom+xml,application/xml,text/xml,*/*'
+                  'Accept': 'application/atom+xml,application/xml,text/xml,application/rss+xml,*/*',
+                  'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8',
+                  'Cache-Control': 'no-cache'
                }
             });
+
+            // Nettoyer la réponse avant le parsing
+            const cleanedContent = response.text.replace(/^\s+/, '').replace(/^\uFEFF/, '');
             
             const parser = new DOMParser();
-            const doc = parser.parseFromString(response.text, 'text/xml');
+            const doc = parser.parseFromString(cleanedContent, 'text/xml');
             
             // Vérifier les erreurs de parsing
             const parseError = doc.querySelector('parsererror');
             if (parseError) {
                console.error(`Erreur de parsing pour ${feed.url}:`, parseError.textContent);
+               new Notice(`Erreur de parsing pour ${feed.title}`);
                continue;
             }
 
@@ -131,6 +640,9 @@ class RSSReaderPlugin extends Plugin {
 
             if (articles && articles.length > 0) {
                await this.saveArticles(articles, feed);
+               new Notice(`${articles.length} articles récupérés pour ${feed.title}`);
+            } else {
+               new Notice(`Aucun article trouvé pour ${feed.title}`);
             }
          } catch (error) {
             console.error(`Erreur lors de la récupération du feed ${feed.url}:`, error);
@@ -180,15 +692,35 @@ class RSSReaderPlugin extends Plugin {
 
    async parseRssFeed(doc, feed) {
       try {
-         const items = Array.from(doc.querySelectorAll('item'));
+         // Nettoyer le contenu XML avant le parsing
+         const cleanXML = (xml) => {
+            // Supprimer BOM et espaces avant <?xml
+            return xml.replace(/^\s+/, '').replace(/^\uFEFF/, '');
+         };
+
+         // Vérifier si le document est déjà parsé ou s'il faut le parser
+         let parsedDoc = doc;
+         if (typeof doc === 'string') {
+            const parser = new DOMParser();
+            parsedDoc = parser.parseFromString(cleanXML(doc), 'text/xml');
+         }
+
+         // Vérifier les erreurs de parsing
+         const parseError = parsedDoc.querySelector('parsererror');
+         if (parseError) {
+            console.error(`Erreur de parsing pour ${feed.url}:`, parseError.textContent);
+            throw new Error('Invalid XML format');
+         }
+
+         const items = Array.from(parsedDoc.querySelectorAll('item'));
          return items
             .slice(0, this.settings.maxArticles)
             .map(item => {
                return {
-                  title: item.querySelector('title')?.textContent || 'Sans titre',
-                  content: item.querySelector('description')?.textContent || '',
-                  date: item.querySelector('pubDate')?.textContent || '',
-                  link: item.querySelector('link')?.textContent || '',
+                  title: item.querySelector('title')?.textContent?.trim() || 'Sans titre',
+                  content: item.querySelector('description,content:encoded')?.textContent?.trim() || item.querySelector('content\\:encoded')?.textContent?.trim() || '',
+                  date: item.querySelector('pubDate')?.textContent || new Date().toISOString(),
+                  link: item.querySelector('link')?.textContent?.trim() || '',
                   tags: feed.tags || [],
                   feedTitle: feed.title
                };
@@ -291,7 +823,7 @@ class RSSReaderPlugin extends Plugin {
       try {
          // 1. D'abord échapper les & dans les titres et catégories
          const cleanedContent = fileContent.replace(
-               /(<outline[^>]*)(title="[^"]*&[^"]*"|category="[^"]*&[^"]*")([^>]*>)/g,
+               /(<outline[^>]*)(title="[^"]*&[^"]*\"|category="[^"]*&[^"]*")([^>]*>)/g,
                (match, before, attribute, after) => {
                   return before + attribute.replace(/&(?!(amp|lt|gt|apos|quot);)/g, '&amp;') + after;
                }
@@ -963,16 +1495,15 @@ class RSSReaderSettingTab extends PluginSettingTab {
       super(app, plugin);
       this.plugin = plugin;
    }
-
    display() {
       const {containerEl} = this;
       containerEl.empty();
 
-      containerEl.createEl('h1', {text: 'dddètaaaaaares'});
+      containerEl.createEl('h1', {text: this.plugin.t('settings.title')});
 
       new Setting(containerEl)
-         .setName('Clé API OpenAI')
-         .setDesc('Votre clé API OpenAI pour la génération de sommaires')
+            .setName(this.plugin.t('settings.openaiKey.name'))
+            .setDesc(this.plugin.t('settings.openaiKey.desc'))
          .addText(text => text
                .setPlaceholder('sk-...')
                .setValue(this.plugin.settings.openaiKey)
@@ -982,8 +1513,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
                }));
 
       new Setting(containerEl)
-         .setName('Dossier RSS')
-         .setDesc('Dossier où seront sauvegardés les articles')
+         .setName(this.plugin.t('settings.rssFolder.name'))
+         .setDesc(this.plugin.t('settings.rssFolder.desc'))
          .addText(text => text
                .setValue(this.plugin.settings.rssFolder)
                .onChange(async (value) => {
@@ -992,21 +1523,22 @@ class RSSReaderSettingTab extends PluginSettingTab {
                }));
 
       new Setting(containerEl)
-         .setName('Fréquence de mise à jour')
-         .setDesc('À quelle fréquence voulez-vous récupérer les nouveaux articles ?')
-         .addDropdown(dropdown => dropdown
-               .addOption('startup', 'Au démarrage uniquement')
-               .addOption('daily', 'Une fois par jour')
-               .addOption('hourly', 'Toutes les heures')
-               .setValue(this.plugin.settings.fetchFrequency)
+         .setName(this.plugin.t('settings.fetchFrequency.name'))
+         .setDesc(this.plugin.t('settings.fetchFrequency.desc'))
+         .addDropdown(dropdown => {
+            dropdown.addOption('startup', this.plugin.t('settings.fetchFrequency.options.startup'));
+            dropdown.addOption('daily', this.plugin.t('settings.fetchFrequency.options.daily'));
+            dropdown.addOption('hourly', this.plugin.t('settings.fetchFrequency.options.hourly'));
+            dropdown.setValue(this.plugin.settings.fetchFrequency)
                .onChange(async (value) => {
                   this.plugin.settings.fetchFrequency = value;
                   await this.plugin.saveData(this.plugin.settings);
-               }));
+               });
+         })
 
       new Setting(containerEl)
-         .setName('Nombre maximum d\'articles')
-         .setDesc('Nombre maximum d\'articles à récupérer par feed')
+         .setName(this.plugin.t('settings.maxArticles.name'))
+         .setDesc(this.plugin.t('settings.maxArticles.desc'))
          .addText(text => text
                .setValue(String(this.plugin.settings.maxArticles))
                .onChange(async (value) => {
@@ -1018,8 +1550,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
                }));
 
       new Setting(containerEl)
-         .setName('Durée de rétention (jours)')
-         .setDesc('Nombre de jours pendant lesquels garder les articles avant suppression')
+         .setName(this.plugin.t('settings.retentionDays.name'))
+         .setDesc(this.plugin.t('settings.retentionDays.desc'))
          .addText(text => text
                .setValue(String(this.plugin.settings.retentionDays))
                .onChange(async (value) => {
@@ -1031,168 +1563,169 @@ class RSSReaderSettingTab extends PluginSettingTab {
                }));
 
       // Section Import/Export
-      containerEl.createEl('h1', {text: 'Import/Export'});
+      containerEl.createEl('h1', {text: this.plugin.t('settings.importExport.title')});
       
       new Setting(containerEl)
-         .setName('Import d\'un fichier OPML')
-         .setDesc('Importer des feeds depuis un fichier OPML')
-         .addButton(button => {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.opml,.xml';
-            input.style.display = 'none';
-            containerEl.appendChild(input);
-
-            input.onchange = async (e) => {
-               if (!e.target.files.length) return;
-               
-               const file = e.target.files[0];
-               const reader = new FileReader();
-               
-               // Notification de début de chargement
-               const loadingNotice = new Notice('Import OPML en cours...', 0);
-               
-               reader.onload = async (e) => {
-                  try {
-                     await this.plugin.importOpml(e.target.result);
-                     loadingNotice.hide(); // Cacher la notification de chargement
-                     new Notice('✅ Import OPML terminé avec succès');
-                  } catch (error) {
-                     loadingNotice.hide();
-                     new Notice('❌ Erreur lors de l\'import OPML');
-                     console.error(error);
-                  } finally {
-                     input.value = '';
-                  }
-               };
-               reader.readAsText(file);
-            };
-
-            button
-               .setButtonText('Importer OPML')
-               .onClick(() => {
-                  input.click();
-               });
-            
-            return button;
-         });
-
-      new Setting(containerEl)
-         .setName('Export vers OPML')
-         .setDesc('Exporter vos feeds au format OPML')
+         .setName(this.plugin.t('settings.importExport.opmlImport.name'))
+         .setDesc(this.plugin.t('settings.importExport.opmlImport.desc'))
          .addButton(button => button
-            .setButtonText('Exporter OPML')
+            .setButtonText(this.plugin.t('settings.importExport.opmlImport.button'))
             .onClick(async () => {
-               const loadingNotice = new Notice('Export OPML en cours...', 0);
-               try {
-                  await this.plugin.exportOpml();
-                  loadingNotice.hide();
-                  new Notice('✅ Feeds exportés avec succès');
-               } catch (error) {
-                  loadingNotice.hide();
-                  new Notice('❌ Erreur lors de l\'export OPML');
-                  console.error(error);
-               }
-            }));
-
-            new Setting(containerEl)
-            .setName('Importer une configuration JSON')
-            .setDesc('Restaurer une configuration précédemment exportée')
-            .addButton(button => {
                const input = document.createElement('input');
                input.type = 'file';
-               input.accept = '.json';
+               input.accept = '.opml,.xml';
                input.style.display = 'none';
                containerEl.appendChild(input);
 
                input.onchange = async (e) => {
                   if (!e.target.files.length) return;
                   
-                  const loadingNotice = new Notice('Import de la configuration en cours...', 0);
+                  const file = e.target.files[0];
+                  const reader = new FileReader();
                   
-                  try {
-                     const file = e.target.files[0];
-                     const reader = new FileReader();
-                     
-                     reader.onload = async (event) => {
-                        try {
-                           const config = JSON.parse(event.target.result);
-                           
-                           // Vérifier que le fichier contient les champs essentiels
-                           if (!config.feeds || !Array.isArray(config.groups)) {
-                              new Notice('Format de fichier invalide : structure incorrecte');
-                              return;
-                           }
-   
-                           // Créer une sauvegarde de la configuration actuelle
-                           const backup = await this.plugin.loadData();
-                           const backupJson = JSON.stringify(backup, null, 2);
-                           const backupBlob = new Blob([backupJson], { type: 'application/json' });
-                           const backupUrl = window.URL.createObjectURL(backupBlob);
-                           const backupA = document.createElement('a');
-                           backupA.href = backupUrl;
-                           backupA.download = 'rss-reader-config-backup.json';
-                           backupA.click();
-                           window.URL.revokeObjectURL(backupUrl);
-   
-                           // Appliquer la nouvelle configuration
-                           this.plugin.settings = Object.assign({}, this.plugin.settings, config);
-                           await this.plugin.saveData(this.plugin.settings);
-                           
-                           // Recréer les dossiers nécessaires
-                           await this.plugin.ensureFolder(this.plugin.settings.rssFolder);
-                           for (const group of this.plugin.settings.groups) {
-                              if (group !== 'Sans groupe') {
-                                 await this.plugin.ensureFolder(`${this.plugin.settings.rssFolder}/${group}`);
-                              }
-                           }
-   
-                           // Recréer les dossiers pour chaque feed non-unique
-                           for (const feed of this.plugin.settings.feeds) {
-                              if (feed.type !== 'uniqueFile') {
-                                 const feedPath = `${this.plugin.settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/');
-                                 await this.plugin.ensureFolder(feedPath);
-                              }
-                           }
-   
-                           new Notice('Configuration importée avec succès\nUne sauvegarde a été créée');
-                           
-                           // Recharger l'interface des paramètres
-                           this.plugin.settings = await this.plugin.loadData();
-                           this.display();
-                           
-                        } catch (error) {
-                           console.error('Erreur lors du parsing:', error);
-                           new Notice('Erreur: Format de fichier invalide');
-                        }
-                     };
-                     
-                     reader.readAsText(file);
-                  } catch (error) {
-                     loadingNotice.hide();
-                     new Notice('❌ Erreur lors de la lecture du fichier');
-                     console.error(error);
-                  } finally {
-                     input.value = '';
-                  }
+                  // Notification de début de chargement
+                  const loadingNotice = new Notice(this.plugin.t('settings.importExport.opmlImport.loading'), 0);
+                  
+                  reader.onload = async (e) => {
+                     try {
+                        await this.plugin.importOpml(e.target.result);
+                        loadingNotice.hide(); // Cacher la notification de chargement
+                        new Notice(this.plugin.t('settings.importExport.opmlImport.success'));
+                     } catch (error) {
+                        loadingNotice.hide();
+                        new Notice(this.plugin.t('settings.importExport.opmlImport.error'));
+                        console.error(error);
+                     } finally {
+                        input.value = '';
+                     }
+                  };
+                  reader.readAsText(file);
                };
 
                button
-                  .setButtonText('Importer data.json')
+                  .setButtonText(this.plugin.t('settings.importExport.opmlImport.button'))
                   .onClick(() => {
                      input.click();
                   });
                
                return button;
+            }));
+
+      new Setting(containerEl)
+         .setName(this.plugin.t('settings.importExport.opmlExport.name'))
+         .setDesc(this.plugin.t('settings.importExport.opmlExport.desc'))
+         .addButton(button => button
+            .setButtonText(this.plugin.t('settings.importExport.opmlExport.button'))
+            .onClick(async () => {
+               const loadingNotice = new Notice(this.plugin.t('settings.importExport.opmlExport.loading'), 0);
+               try {
+                  await this.plugin.exportOpml();
+                  loadingNotice.hide();
+                  new Notice(this.plugin.t('settings.importExport.opmlExport.success'));
+               } catch (error) {
+                  loadingNotice.hide();
+                  new Notice(this.plugin.t('settings.importExport.opmlExport.error'));
+                  console.error(error);
+               }
+            }));
+
+            new Setting(containerEl)
+            .setName(this.plugin.t('settings.importExport.jsonImport.name'))
+            .setDesc(this.plugin.t('settings.importExport.jsonImport.desc'))
+            .addButton(button => {
+                button
+                    .setButtonText(this.plugin.t('settings.importExport.jsonImport.button'))
+                    .onClick(() => {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = '.json';
+                        input.style.display = 'none';
+                        containerEl.appendChild(input);
+
+                        input.onchange = async (e) => {
+                            if (!e.target.files.length) return;
+                            
+                            const loadingNotice = new Notice(this.plugin.t('settings.importExport.jsonImport.loading'), 0);
+                            
+                            try {
+                                const file = e.target.files[0];
+                                const reader = new FileReader();
+                                
+                                reader.onload = async (event) => {
+                                    try {
+                                        const config = JSON.parse(event.target.result);
+                                        
+                                        // Vérifier que le fichier contient les champs essentiels
+                                        if (!config.feeds || !Array.isArray(config.groups)) {
+                                            new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                                            return;
+                                        }
+
+                                        // Créer une sauvegarde de la configuration actuelle
+                                        const backup = await this.plugin.loadData();
+                                        const backupJson = JSON.stringify(backup, null, 2);
+                                        const backupBlob = new Blob([backupJson], { type: 'application/json' });
+                                        const backupUrl = window.URL.createObjectURL(backupBlob);
+                                        const backupA = document.createElement('a');
+                                        backupA.href = backupUrl;
+                                        backupA.download = 'rss-reader-config-backup.json';
+                                        backupA.click();
+                                        window.URL.revokeObjectURL(backupUrl);
+
+                                        // Appliquer la nouvelle configuration
+                                        this.plugin.settings = Object.assign({}, this.plugin.settings, config);
+                                        await this.plugin.saveData(this.plugin.settings);
+                                        
+                                        // Recréer les dossiers nécessaires
+                                        await this.plugin.ensureFolder(this.plugin.settings.rssFolder);
+                                        for (const group of this.plugin.settings.groups) {
+                                            if (group !== this.plugin.t('settings.groups.none')) {
+                                                await this.plugin.ensureFolder(`${this.plugin.settings.rssFolder}/${group}`);
+                                            }
+                                        }
+
+                                        // Recréer les dossiers pour chaque feed non-unique
+                                        for (const feed of this.plugin.settings.feeds) {
+                                            if (feed.type !== 'uniqueFile') {
+                                                const feedPath = `${this.plugin.settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/');
+                                                await this.plugin.ensureFolder(feedPath);
+                                            }
+                                        }
+
+                                        new Notice(this.plugin.t('settings.importExport.jsonImport.success') + '\nUne sauvegarde a été créée');
+                                        
+                                        // Recharger l'interface des paramètres
+                                        this.plugin.settings = await this.plugin.loadData();
+                                        this.display();
+                                        
+                                    } catch (error) {
+                                        console.error('Erreur lors du parsing:', error);
+                                        new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                                    }
+                                };
+                                
+                                reader.readAsText(file);
+                            } catch (error) {
+                                loadingNotice.hide();
+                                new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                                console.error(error);
+                            } finally {
+                                input.value = '';
+                            }
+                        };
+
+                        input.click();
+                    });
+                return button;
             });
 
       new Setting(containerEl)
-         .setName('Exporter la configuration JSON')
-         .setDesc('Sauvegarder tous vos paramètres dans un fichier')
+         .setName(this.plugin.t('settings.importExport.jsonExport.name'))
+         .setDesc(this.plugin.t('settings.importExport.jsonExport.desc'))
          .addButton(button => button
-            .setButtonText('Exporter data.json')
+            .setButtonText(this.plugin.t('settings.importExport.jsonExport.button'))
             .onClick(async () => {
-               const loadingNotice = new Notice('Export de la configuration en cours...', 0);
+               const loadingNotice = new Notice(this.plugin.t('settings.importExport.jsonExport.loading'), 0);
                try {
                   const data = await this.plugin.loadData();
                   const jsonString = JSON.stringify(data, null, 2);
@@ -1206,10 +1739,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
                   window.URL.revokeObjectURL(url);
                   
                   loadingNotice.hide();
-                  new Notice('✅ Configuration exportée avec succès');
+                  new Notice(this.plugin.t('settings.importExport.jsonExport.success'));
                } catch (error) {
                   loadingNotice.hide();
-                  new Notice('❌ Erreur lors de l\'export de la configuration');
+                  new Notice(this.plugin.t('settings.importExport.jsonExport.error'));
                   console.error(error);
                }
             }));
@@ -1217,7 +1750,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
       containerEl.createEl('hr');
 
       // Section de gestion des groupes
-      containerEl.createEl('h1', {text: 'Gestion des Groupes'});
+      containerEl.createEl('h1', {text: this.plugin.t('settings.groups.title')});
       
       // Afficher les groupes existants
       this.plugin.settings.groups.forEach((group, index) => {
@@ -1225,7 +1758,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
             new Setting(containerEl)
                .setName(group)
                .addButton(button => button
-                  .setButtonText('Supprimer')
+                  .setButtonText(this.plugin.t('settings.groups.delete.button'))
                   .setWarning()
                   .onClick(async () => {
                      try {
@@ -1245,11 +1778,11 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         this.plugin.settings.groups.splice(index, 1);
                         await this.plugin.saveData(this.plugin.settings);
                         
-                        new Notice(`Groupe et dossier supprimés : ${group}`);
+                        new Notice(this.plugin.t('settings.groups.delete.success') + ` : ${group}`);
                         this.display();
                      } catch (error) {
                         console.error(`Erreur lors de la suppression du groupe ${group}:`, error);
-                        new Notice('Erreur lors de la suppression du groupe et du dossier');
+                        new Notice(this.plugin.t('settings.groups.delete.error'));
                      }
                   }));
          }
@@ -1258,10 +1791,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
       // Ajouter un nouveau groupe
       let inputText = '';
       new Setting(containerEl)
-         .setName('Ajouter un groupe')
-         .setDesc('Créer un nouveau groupe pour organiser vos feeds (appuyez sur Entrée pour ajouter)')
+         .setName(this.plugin.t('settings.groups.add.name'))
+         .setDesc(this.plugin.t('settings.groups.add.desc'))
          .addText(text => text
-            .setPlaceholder('Nom du nouveau groupe')
+            .setPlaceholder(this.plugin.t('settings.groups.add.placeholder'))
             .setValue('')
             .onChange(value => {
                inputText = value;
@@ -1276,23 +1809,23 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      // Ajouter le groupe aux paramètres
                      this.plugin.settings.groups.push(groupName);
                      await this.plugin.saveData(this.plugin.settings);
-                     new Notice(`Groupe ajouté : ${groupName}`);
+                     new Notice(this.plugin.t('settings.groups.add.success') + ` : ${groupName}`);
                      this.display();
                   } else {
-                     new Notice('Ce groupe existe djà !');
+                     new Notice(this.plugin.t('settings.groups.add.error'));
                   }
                }
             }));
 
 
       containerEl.createEl('hr');
-      containerEl.createEl('h1', {text: 'Gestion des feeds'});
+      containerEl.createEl('h1', {text: this.plugin.t('settings.feeds.title')});
 
       // Barre de recherche pour les feeds
       const searchContainer = containerEl.createDiv('search-container');
       const searchInput = searchContainer.createEl('input', {
          type: 'text',
-         placeholder: 'Rechercher un feed...',
+         placeholder: this.plugin.t('settings.feeds.search.placeholder'),
          cls: 'feed-search-input'
       });
 
@@ -1377,17 +1910,21 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
                // Options du feed
                new Setting(optionsContainer)
-                  .setName('Type de sauvegarde')
-                  .addDropdown(d => d
-                     .addOption('feed', 'Un fichier par article')
-                     .addOption('uniqueFile', 'Fichier unique')
-                     .setValue(feed.type)
-                     .onChange(async (value) => {
+                  .setName(this.plugin.t('settings.feeds.options.saveType'))
+                  .addDropdown(dropdown => {
+                     // Ajouter d'abord une valeur par défaut
+                     dropdown.addOption('multiple', this.plugin.t('settings.feeds.options.saveTypes.multiple'));
+                     dropdown.addOption('single', this.plugin.t('settings.feeds.options.saveTypes.single'));
+                     
+                     // Définir la valeur actuelle (comme pour le groupe)
+                     dropdown.setValue(feed.type || 'multiple');
+                     
+                     dropdown.onChange(async (value) => {
                         this.plugin.settings.feeds[index].type = value;
                         await this.plugin.saveData(this.plugin.settings);
-                        new Notice(`Type de sauvegarde modifié pour ${feed.title}`);
-                     })
-                  );
+                        new Notice(this.plugin.t('notices.settings.feedTypeChanged').replace('{title}', feed.title));
+                     });
+                  });
 
                // Ajouter un identifiant unique au container pour le retrouver après refresh
                feedContainer.setAttribute('data-feed-id', feed.url);
@@ -1396,7 +1933,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                new Setting(optionsContainer)
                   .setName('Groupe')
                   .addDropdown(dropdown => {
-                     dropdown.addOption('', 'Sans groupe');
+                     dropdown.addOption('', this.plugin.t('settings.feeds.group.none'));
                      this.plugin.settings.groups.forEach(g => 
                         dropdown.addOption(g, g)
                      );
@@ -1454,79 +1991,97 @@ class RSSReaderSettingTab extends PluginSettingTab {
                            
                            this.display();
                            
-                           const sourceFolder = oldGroup || 'dossier principal RSS';
-                           const destinationFolder = newGroup || 'dossier principal RSS';
+                           const sourceFolder = oldGroup || this.plugin.t('settings.feeds.group.none');
+                           const destinationFolder = newGroup || this.plugin.t('settings.feeds.group.none');
                            new Notice(`Feed ${feed.title} déplacé de "${sourceFolder}" vers "${destinationFolder}"`);
                         } catch (error) {
                            console.error('Erreur lors du déplacement des fichiers:', error);
-                           new Notice('Erreur lors du déplacement des fichiers du feed');
+                           new Notice(this.plugin.t('settings.feeds.group.error'));
                         }
                      });
                   });
 
                // Options avancées avec notifications
                new Setting(optionsContainer)
-                  .setName('Résumé AI')
-                  .setDesc('Génère automatiquement un résumé concis de chaque article')
+                  .setName(this.plugin.t('settings.feeds.summarize.name'))
+                  .setDesc(this.plugin.t('settings.feeds.summarize.desc'))
                   .addToggle(toggle => toggle
                      .setValue(feed.summarize || false)
                      .onChange(async (value) => {
                         if (value && !this.plugin.settings.openaiKey) {
-                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           new Notice(this.plugin.t('settings.feeds.summarize.error'));
                            toggle.setValue(false);
                            return;
                         }
                         this.plugin.settings.feeds[index].summarize = value;
                         await this.plugin.saveData(this.plugin.settings);
-                        new Notice(`Résumé AI ${value ? 'activé' : 'désactivé'} pour ${feed.title}`);
-                     }));
+                        new Notice(this.plugin.t('notices.settings.aiToggled')
+                           .replace('{feature}', this.plugin.t('settings.feeds.summarize.name'))
+                           .replace('{status}', value ? '✅' : '❌')
+                           .replace('{title}', feed.title)
+                        );
+                     })
+                  );
 
                new Setting(optionsContainer)
-                  .setName('Réécriture AI')
-                  .setDesc('Réécrit l\'article dans un style plus clair')
+                  .setName(this.plugin.t('settings.feeds.rewrite.name'))
+                  .setDesc(this.plugin.t('settings.feeds.rewrite.desc'))
                   .addToggle(toggle => toggle
                      .setValue(feed.rewrite || false)
                      .onChange(async (value) => {
                         if (value && !this.plugin.settings.openaiKey) {
-                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           new Notice(this.plugin.t('settings.feeds.rewrite.error'));
                            toggle.setValue(false);
                            return;
                         }
                         this.plugin.settings.feeds[index].rewrite = value;
                         await this.plugin.saveData(this.plugin.settings);
-                        new Notice(`Réécriture AI ${value ? 'activée' : 'désactivée'} pour ${feed.title}`);
-                     }));
+                        new Notice(this.plugin.t('notices.settings.aiToggled')
+                           .replace('{feature}', this.plugin.t('settings.feeds.rewrite.name'))
+                           .replace('{status}', value ? '✅' : '❌')
+                           .replace('{title}', feed.title)
+                        );
+                     })
+                  );
 
                new Setting(optionsContainer)
-                  .setName('Transcription YouTube')
-                  .setDesc('Transcrit les vidéos YouTube en texte')
+                  .setName(this.plugin.t('settings.feeds.transcribe.name'))
+                  .setDesc(this.plugin.t('settings.feeds.transcribe.desc'))
                   .addToggle(toggle => toggle
                      .setValue(feed.transcribe || false)
                      .onChange(async (value) => {
                         if (value && !this.plugin.settings.openaiKey) {
-                           new Notice('⚠️ Clé API OpenAI manquante dans les paramètres');
+                           new Notice(this.plugin.t('settings.feeds.transcribe.error'));
                            toggle.setValue(false);
                            return;
                         }
                         this.plugin.settings.feeds[index].transcribe = value;
                         await this.plugin.saveData(this.plugin.settings);
-                        new Notice(`Transcription YouTube ${value ? 'activée' : 'désactivée'} pour ${feed.title}`);
-                     }));
+                        new Notice(this.plugin.t('notices.settings.aiToggled')
+                           .replace('{feature}', this.plugin.t('settings.feeds.transcribe.name'))
+                           .replace('{status}', value ? '✅' : '❌')
+                           .replace('{title}', feed.title)
+                        );
+                     })
+                  );
 
                new Setting(optionsContainer)
                   .addButton(button => button
-                     .setButtonText('Supprimer ce feed')
+                     .setButtonText(this.plugin.t('settings.feeds.delete.button'))
                      .setWarning()
                      .onClick(async () => {
                         this.plugin.settings.feeds.splice(index, 1);
                         await this.plugin.saveData(this.plugin.settings);
-                        new Notice(`Feed supprimé : ${feed.title}`);
+                        new Notice(this.t('notices.settings.feedDeleted')
+                        .replace('{title}', feed.title)
+                        );
                         filterAndDisplayFeeds(searchInput.value);
                   }));
 
             });
          });
       };
+
       // Initialiser l'affichage et configurer la recherche
       searchInput.addEventListener('input', () => {
          filterAndDisplayFeeds(searchInput.value);
@@ -1535,10 +2090,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
       // Bouton d'ajout de feed
       new Setting(containerEl)
-         .setName('Ajouter un feed')
-         .setDesc('Entrez l\'URL d\'un flux RSS')
+         .setName(this.plugin.t('settings.feeds.add.name'))
+         .setDesc(this.plugin.t('settings.feeds.add.desc'))
          .addText(text => text
-            .setPlaceholder('URL du feed RSS')
+            .setPlaceholder(this.plugin.t('settings.feeds.add.placeholder'))
             .onChange(async (value) => {
                if (value) {
                   try {
@@ -1548,7 +2103,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      );
 
                      if (feedExists) {
-                        new Notice('⚠️ Ce feed RSS est déjà dans votre liste');
+                        new Notice(this.plugin.t('settings.feeds.add.error'));
                         return;
                      }
 
@@ -1568,7 +2123,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      const isRss = !!doc.querySelector('rss, channel');
                      
                      if (!isAtom && !isRss) {
-                        new Notice('❌ URL invalide : Ce n\'est pas un feed RSS/Atom valide');
+                        new Notice(this.plugin.t('settings.feeds.add.error'));
                         return;
                      }
 
@@ -1578,7 +2133,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      const newFeed = {
                         title: title,
                         url: value,
-                        type: 'feed',
+                        type: 'multiple',
                         status: 'active',
                         summarize: false,
                         transcribe: false,
@@ -1591,7 +2146,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
                      // Fetch immédiatement les articles
                      try {
-                        new Notice(`📥 Récupération des articles de ${title}...`);
+                        new Notice(this.plugin.t('settings.feeds.add.fetching') + ` ${title}...`);
                         
                         let articles;
                         if (isAtom) {
@@ -1602,28 +2157,26 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
                         if (articles && articles.length > 0) {
                            await this.plugin.saveArticles(articles, newFeed);
-                           new Notice(`✅ ${articles.length} articles récupérés pour ${title}`);
+                           new Notice(this.plugin.t('settings.feeds.add.success') + ` ${articles.length} articles récupérés pour ${title}`);
                         } else {
-                           new Notice(`ℹ️ Aucun article trouvé pour ${title}`);
+                           new Notice(this.plugin.t('settings.feeds.add.noArticles') + ` ${title}`);
                         }
                      } catch (fetchError) {
-                        console.error('Erreur lors de la récupération des articles:', fetchError);
-                        new Notice(`⚠️ Erreur lors de la récupération des articles de ${title}`);
+                        console.error('Erreur lors de la r��cupération des articles:', fetchError);
+                        new Notice(this.plugin.t('settings.feeds.add.fetchError') + ` ${title}`);
                      }
 
                      // Rafraîchir l'interface
                      this.display();
-                     new Notice(`✅ Feed ajouté : ${title}`);
+                     new Notice(this.plugin.t('settings.feeds.add.success') + ` ${title}`);
                   } catch (error) {
                      console.error('Erreur lors de l\'ajout du feed:', error);
                      if (error.message.includes('CERT_')) {
                         new Notice(
-                           '❌ Erreur de certificat SSL\n' +
-                           'Le site a un certificat invalide.\n' +
-                           'Vérifiez si le site est accessible dans votre navigateur.'
+                           this.plugin.t('settings.feeds.add.sslError')
                         );
                      } else {
-                        new Notice(`❌ Erreur : ${error.message}`);
+                        new Notice(this.plugin.t('settings.feeds.add.error') + ` ${error.message}`);
                      }
                   }
                }
@@ -1633,37 +2186,38 @@ class RSSReaderSettingTab extends PluginSettingTab {
       // Ajouter un bouton pour supprimer tous les feeds
       new Setting(containerEl)
          .addButton(button => button
-            .setButtonText('Supprimer tous les feeds')
+            .setButtonText(this.plugin.t('settings.feeds.deleteAll.button'))
             .setWarning()
             .onClick(async () => {
                const confirmation = await this.confirmDelete('tous les feeds');
                if (confirmation) {
                   this.plugin.settings.feeds = [];
                   await this.plugin.saveData(this.plugin.settings);
-                  new Notice('Tous les feeds ont été supprimés');
+                  new Notice(this.plugin.t('settings.feeds.deleteAll.success'));
                   this.display();
                }
             }));
       };
+
    async confirmDelete(feedTitle) {
       return new Promise((resolve) => {
          const modal = new Modal(this.app);
-         modal.titleEl.setText("Confirmer la suppression");
+         modal.titleEl.setText(this.plugin.t('settings.feeds.delete.confirm'));
          
          modal.contentEl.empty();
          modal.contentEl.createEl("p", { 
-            text: `Êtes-vous sûr de vouloir supprimer le feed "${feedTitle}" ?` 
+            text: this.plugin.t('settings.feeds.delete.confirmMessage', { feedTitle }) 
          });
 
          new Setting(modal.contentEl)
             .addButton(btn => btn
-               .setButtonText("Annuler")
+               .setButtonText(this.plugin.t('settings.feeds.delete.cancel'))
                .onClick(() => {
                   modal.close();
                   resolve(false);
                }))
             .addButton(btn => btn
-               .setButtonText("Supprimer")
+               .setButtonText(this.plugin.t('settings.feeds.delete.confirm'))
                .setWarning()
                .onClick(() => {
                   modal.close();
@@ -1677,26 +2231,26 @@ class RSSReaderSettingTab extends PluginSettingTab {
    async createNewGroup() {
       return new Promise((resolve) => {
          const modal = new Modal(this.app);
-         modal.titleEl.setText("Nouveau groupe");
+         modal.titleEl.setText(this.plugin.t('settings.feeds.group.add'));
          
          modal.contentEl.empty();
          const inputContainer = modal.contentEl.createDiv();
          const input = new Setting(inputContainer)
-            .setName("Nom du groupe")
+            .setName(this.plugin.t('settings.feeds.group.name'))
             .addText(text => text
-               .setPlaceholder("Entrez le nom du groupe")
+               .setPlaceholder(this.plugin.t('settings.feeds.group.placeholder'))
                .setValue("")
             );
 
          new Setting(modal.contentEl)
             .addButton(btn => btn
-               .setButtonText("Annuler")
+               .setButtonText(this.plugin.t('settings.feeds.group.cancel'))
                .onClick(() => {
                   modal.close();
                   resolve(null);
                }))
             .addButton(btn => btn
-               .setButtonText("Créer")
+               .setButtonText(this.plugin.t('settings.feeds.group.create'))
                .setCta()
                .onClick(() => {
                   const value = input.components[0].getValue().trim();
@@ -1704,14 +2258,14 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      modal.close();
                      resolve(value);
                   } else {
-                     new Notice("Le nom du groupe ne peut pas être vide");
+                     new Notice(this.plugin.t('settings.feeds.group.error'));
                   }
                }));
 
          modal.open();
       });
    }
-}
+};
 
 // Ajouter ces styles CSS
 document.head.appendChild(Object.assign(document.createElement('style'), {
