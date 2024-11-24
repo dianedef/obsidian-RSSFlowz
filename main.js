@@ -195,22 +195,33 @@ class RSSReaderPlugin extends Plugin {
 
    async saveArticles(articles, feed) {
       const baseFolder = this.settings.rssFolder;
-      const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
+      const groupFolder = feed.group 
+         ? `${baseFolder}/${feed.group}` 
+         : baseFolder;
+      
+      // S'assurer que les dossiers nécessaires existent
+      await this.ensureFolder(baseFolder);
+      if (feed.group) {
+         await this.ensureFolder(groupFolder);
+      }
       
       if (feed.type === 'uniqueFile') {
+         // Pour les fichiers uniques, on les met dans le dossier du groupe (ou RSS si pas de groupe)
          const content = articles.map(article => 
-               `# ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`
+            `# ${feed.title} - ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`
          ).join('\n---\n');
          
-         await this.app.vault.adapter.write(
-               `${groupFolder}/${feed.title}.md`,
-               content
-         );
+         const filePath = `${groupFolder}/${feed.title}.md`;
+         await this.app.vault.adapter.write(filePath, content);
       } else {
+         // Pour les feeds multi-fichiers, créer un sous-dossier pour le feed dans le groupe
+         const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
+         await this.ensureFolder(feedFolder);
+         
          for (const article of articles) {
-               const fileName = `${groupFolder}/${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
-               const content = `# ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
-               await this.app.vault.adapter.write(fileName, content);
+            const fileName = `${feedFolder}/${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
+            const content = `# ${feed.title} - ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
+            await this.app.vault.adapter.write(fileName, content);
          }
       }
    }
@@ -695,7 +706,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      new Notice(`Groupe ajouté : ${groupName}`);
                      this.display();
                   } else {
-                     new Notice('Ce groupe existe déjà !');
+                     new Notice('Ce groupe existe djà !');
                   }
                }
             }));
@@ -822,42 +833,45 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         const newGroup = value || '';
                         
                         try {
-                           // Chemins source et destination
+                           // Tous les chemins doivent partir du dossier RSS principal
                            const oldPath = oldGroup 
-                              ? `${this.plugin.settings.rssFolder}/${oldGroup}`.replace(/\/+/g, '/')
+                              ? `${this.plugin.settings.rssFolder}/${oldGroup}` 
                               : this.plugin.settings.rssFolder;
                            const newPath = newGroup 
-                              ? `${this.plugin.settings.rssFolder}/${newGroup}`.replace(/\/+/g, '/')
+                              ? `${this.plugin.settings.rssFolder}/${newGroup}` 
                               : this.plugin.settings.rssFolder;
                            
-                           // S'assurer que le nouveau dossier existe
-                           await this.plugin.ensureFolder(newPath);
+                           // S'assurer que les dossiers nécessaires existent
+                           await this.plugin.ensureFolder(this.plugin.settings.rssFolder);
+                           if (newGroup) {
+                              await this.plugin.ensureFolder(newPath);
+                           }
                            
-                           // Si le feed est en mode fichier unique
                            if (feed.type === 'uniqueFile') {
-                              const oldFilePath = `${oldPath}/${feed.title}.md`.replace(/\/+/g, '/');
-                              const newFilePath = `${newPath}/${feed.title}.md`.replace(/\/+/g, '/');
+                              // Pour les fichiers uniques
+                              const oldFilePath = `${oldPath}/${feed.title}.md`;
+                              const newFilePath = `${newPath}/${feed.title}.md`;
                               
                               if (await this.app.vault.adapter.exists(oldFilePath)) {
                                  await this.app.vault.adapter.rename(oldFilePath, newFilePath);
                               }
                            } else {
-                              // Pour les feeds avec un fichier par article
-                              if (await this.app.vault.adapter.exists(oldPath)) {
-                                 const files = await this.app.vault.adapter.list(oldPath);
+                              // Pour les feeds multi-fichiers
+                              const oldFeedFolder = `${oldPath}/${feed.title}`;
+                              const newFeedFolder = `${newPath}/${feed.title}`;
+                              
+                              if (await this.app.vault.adapter.exists(oldFeedFolder)) {
+                                 await this.plugin.ensureFolder(newFeedFolder);
+                                 
+                                 const files = await this.app.vault.adapter.list(oldFeedFolder);
                                  for (const file of files.files) {
-                                    try {
-                                       const content = await this.app.vault.adapter.read(file);
-                                       // Vérifier si le fichier appartient à ce feed
-                                       if (content.includes(`Link: ${feed.url}`) || content.includes(`# ${feed.title}`)) {
-                                          const fileName = file.split('/').pop();
-                                          const newFilePath = `${newPath}/${fileName}`.replace(/\/+/g, '/');
-                                          await this.app.vault.adapter.rename(file, newFilePath);
-                                       }
-                                    } catch (err) {
-                                       console.error(`Erreur lors du déplacement du fichier ${file}:`, err);
-                                    }
+                                    const fileName = file.split('/').pop();
+                                    const newFilePath = `${newFeedFolder}/${fileName}`;
+                                    await this.app.vault.adapter.rename(file, newFilePath);
                                  }
+                                 
+                                 // Supprimer l'ancien dossier
+                                 await this.plugin.removeFolder(oldFeedFolder);
                               }
                            }
                            
@@ -865,11 +879,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
                            this.plugin.settings.feeds[index].group = value;
                            await this.plugin.saveData(this.plugin.settings);
                            
-                           // Forcer un rafraîchissement de l'interface
                            this.display();
                            
-                           const sourceFolder = oldGroup || 'dossier principal';
-                           const destinationFolder = newGroup || 'dossier principal';
+                           const sourceFolder = oldGroup || 'dossier principal RSS';
+                           const destinationFolder = newGroup || 'dossier principal RSS';
                            new Notice(`Feed ${feed.title} déplacé de "${sourceFolder}" vers "${destinationFolder}"`);
                         } catch (error) {
                            console.error('Erreur lors du déplacement des fichiers:', error);
@@ -988,7 +1001,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
                      const title = doc.querySelector('channel > title, feed > title')?.textContent || 'Nouveau feed';
                      
-                     this.plugin.settings.feeds.push({
+                     // Créer le nouveau feed
+                     const newFeed = {
                         title: title,
                         url: value,
                         type: 'feed',
@@ -996,18 +1010,44 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         summarize: false,
                         transcribe: false,
                         tags: []
-                     });
-                     
+                     };
+
+                     // Ajouter le feed aux settings
+                     this.plugin.settings.feeds.push(newFeed);
                      await this.plugin.saveData(this.plugin.settings);
-                     new Notice(`✅ Feed ajouté : ${title}`);
+
+                     // Fetch immédiatement les articles
+                     try {
+                        new Notice(`📥 Récupération des articles de ${title}...`);
+                        
+                        let articles;
+                        if (isAtom) {
+                           articles = await this.plugin.parseAtomFeed(doc, newFeed);
+                        } else {
+                           articles = await this.plugin.parseRssFeed(doc, newFeed);
+                        }
+
+                        if (articles && articles.length > 0) {
+                           await this.plugin.saveArticles(articles, newFeed);
+                           new Notice(`✅ ${articles.length} articles récupérés pour ${title}`);
+                        } else {
+                           new Notice(`ℹ️ Aucun article trouvé pour ${title}`);
+                        }
+                     } catch (fetchError) {
+                        console.error('Erreur lors de la récupération des articles:', fetchError);
+                        new Notice(`⚠️ Erreur lors de la récupération des articles de ${title}`);
+                     }
+
+                     // Rafraîchir l'interface
                      this.display();
+                     new Notice(`✅ Feed ajouté : ${title}`);
                   } catch (error) {
                      console.error('Erreur lors de l\'ajout du feed:', error);
                      if (error.message.includes('CERT_')) {
                         new Notice(
-                            '❌ Erreur de certificat SSL\n' +
-                            'Le site a un certificat invalide.\n' +
-                            'Vérifiez si le site est accessible dans votre navigateur.'
+                           '❌ Erreur de certificat SSL\n' +
+                           'Le site a un certificat invalide.\n' +
+                           'Vérifiez si le site est accessible dans votre navigateur.'
                         );
                      } else {
                         new Notice(`❌ Erreur : ${error.message}`);
