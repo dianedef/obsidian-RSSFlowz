@@ -16,8 +16,11 @@ class RSSReaderPlugin extends Plugin {
          lastFetch: Date.now()
       }, await this.loadData());
       
-      // Vérifier et créer le dossier RSS principal
+      // Créer le dossier RSS principal s'il n'existe pas
       await this.ensureFolder(this.settings.rssFolder);
+      
+      // Vérifier et créer le dossier "RSS" si nécessaire
+      await this.ensureFolder('RSS');
       
       // Créer les dossiers pour les groupes existants
       for (const group of this.settings.groups) {
@@ -56,7 +59,11 @@ class RSSReaderPlugin extends Plugin {
                const file = e.target.files[0];
                const reader = new FileReader();
                reader.onload = async (e) => {
-                  await this.importOpml(e.target.result);
+                  const result = await this.plugin.importOpml(e.target.result);
+                  if (result.success) {
+                     new Notice('Feeds importés avec succès');
+                  }
+                  this.display();
                };
                reader.readAsText(file);
             };
@@ -84,10 +91,21 @@ class RSSReaderPlugin extends Plugin {
             const response = await requestUrl({
                url: feed.url,
                headers: {
-                  'User-Agent': 'Mozilla/5.0',
-                  'Accept': 'application/atom+xml,application/xml,text/xml,*/*'
-               }
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                  'Accept': 'application/atom+xml,application/xml,text/xml,application/rss+xml,*/*',
+                  'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6',
+                  'Cache-Control': 'no-cache',
+                  'Pragma': 'no-cache',
+                  'Referer': 'https://kimsaeed.com'
+               },
+               throw: false // Ne pas throw en cas d'erreur HTTP
             });
+
+            if (response.status === 403) {
+               throw new Error('Accès refusé par le serveur. Le site bloque peut-être les lecteurs RSS externes.');
+            } else if (!response.ok) {
+               throw new Error(`Erreur HTTP ${response.status}`);
+            }
             
             const parser = new DOMParser();
             const doc = parser.parseFromString(response.text, 'text/xml');
@@ -216,27 +234,27 @@ class RSSReaderPlugin extends Plugin {
    }
 
    async exportOpml() {
-      const opml = `<?xml version="1.0" encoding="UTF-8"?>
-      <opml version="1.0">
-      <head>
-         <title>RSS Feeds Export</title>
-      </head>
-      <body>
-      <outline text="Feeds" title="Feeds">
-         ${this.settings.feeds.map(feed => `
-         <outline 
-            title="${feed.title}"
-            type="rss"
-            xmlUrl="${feed.url}"
-            category="${feed.category || ''}"
-            status="${feed.status}"
-            saveType="${feed.type}"
-            summarize="${feed.summarize || false}"
-            transcribe="${feed.transcribe || false}"
-         />`).join('\n')}
-      </outline>
-      </body>
-      </opml>`;
+         const opml = `<?xml version="1.0" encoding="UTF-8"?>
+   <opml version="1.0">
+   <head>
+      <title>RSS Feeds Export</title>
+   </head>
+   <body>
+   <outline text="Feeds" title="Feeds">
+      ${this.settings.feeds.map(feed => `
+      <outline 
+         title="${feed.title}"
+         type="rss"
+         xmlUrl="${feed.url}"
+         category="${feed.category || ''}"
+         status="${feed.status}"
+         saveType="${feed.type}"
+         summarize="${feed.summarize || false}"
+         transcribe="${feed.transcribe || false}"
+      />`).join('\n')}
+   </outline>
+   </body>
+   </opml>`;
 
       // Créer un blob et le télécharger
       const blob = new Blob([opml], { type: 'text/xml' });
@@ -518,8 +536,8 @@ class RSSReaderPlugin extends Plugin {
          }
          throw error;
       }
-      }
    }
+}
 
 class RSSReaderSettingTab extends PluginSettingTab {
    constructor(app, plugin) {
@@ -531,7 +549,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
       const {containerEl} = this;
       containerEl.empty();
 
-      containerEl.createEl('h1', {text: 'Paramètres'});
+      containerEl.createEl('h1', {text: 'dddètres'});
 
       new Setting(containerEl)
          .setName('Clé API OpenAI')
@@ -611,8 +629,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
                   const file = e.target.files[0];
                   const reader = new FileReader();
                   reader.onload = async (e) => {
-                     await this.plugin.importOpml(e.target.result);
-                     new Notice('Feeds importés avec succès');
+                     const result = await this.plugin.importOpml(e.target.result);
+                     if (result.success) {
+                        new Notice('Feeds importés avec succès');
+                     }
                      this.display();
                   };
                   reader.readAsText(file);
@@ -818,63 +838,9 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      );
                      dropdown.setValue(feed.group || '');
                      dropdown.onChange(async (value) => {
-                        const oldGroup = feed.group || '';
-                        const newGroup = value || '';
-                        
-                        try {
-                           // Chemins source et destination
-                           const oldPath = oldGroup 
-                              ? `${this.plugin.settings.rssFolder}/${oldGroup}`.replace(/\/+/g, '/')
-                              : this.plugin.settings.rssFolder;
-                           const newPath = newGroup 
-                              ? `${this.plugin.settings.rssFolder}/${newGroup}`.replace(/\/+/g, '/')
-                              : this.plugin.settings.rssFolder;
-                           
-                           // S'assurer que le nouveau dossier existe
-                           await this.plugin.ensureFolder(newPath);
-                           
-                           // Si le feed est en mode fichier unique
-                           if (feed.type === 'uniqueFile') {
-                              const oldFilePath = `${oldPath}/${feed.title}.md`.replace(/\/+/g, '/');
-                              const newFilePath = `${newPath}/${feed.title}.md`.replace(/\/+/g, '/');
-                              
-                              if (await this.app.vault.adapter.exists(oldFilePath)) {
-                                 await this.app.vault.adapter.rename(oldFilePath, newFilePath);
-                              }
-                           } else {
-                              // Pour les feeds avec un fichier par article
-                              if (await this.app.vault.adapter.exists(oldPath)) {
-                                 const files = await this.app.vault.adapter.list(oldPath);
-                                 for (const file of files.files) {
-                                    try {
-                                       const content = await this.app.vault.adapter.read(file);
-                                       // Vérifier si le fichier appartient à ce feed
-                                       if (content.includes(`Link: ${feed.url}`) || content.includes(`# ${feed.title}`)) {
-                                          const fileName = file.split('/').pop();
-                                          const newFilePath = `${newPath}/${fileName}`.replace(/\/+/g, '/');
-                                          await this.app.vault.adapter.rename(file, newFilePath);
-                                       }
-                                    } catch (err) {
-                                       console.error(`Erreur lors du déplacement du fichier ${file}:`, err);
-                                    }
-                                 }
-                              }
-                           }
-                           
-                           // Mettre à jour les paramètres
-                           this.plugin.settings.feeds[index].group = value;
-                           await this.plugin.saveData(this.plugin.settings);
-                           
-                           // Forcer un rafraîchissement de l'interface
-                           this.display();
-                           
-                           const sourceFolder = oldGroup || 'dossier principal';
-                           const destinationFolder = newGroup || 'dossier principal';
-                           new Notice(`Feed ${feed.title} déplacé de "${sourceFolder}" vers "${destinationFolder}"`);
-                        } catch (error) {
-                           console.error('Erreur lors du déplacement des fichiers:', error);
-                           new Notice('Erreur lors du déplacement des fichiers du feed');
-                        }
+                        this.plugin.settings.feeds[index].group = value;
+                        await this.plugin.saveData(this.plugin.settings);
+                        new Notice(`Feed ${feed.title} déplacé vers ${value || 'Sans groupe'}`);
                      });
                   });
 

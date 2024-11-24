@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="1.0">
+<head>
+  <title>My feeds</title>
+</head>
+<body>
+<outline text="Feeds" title="Feeds">
+
+  <outline title="Kim Saeed"  type="rss" xmlUrl="https://kimsaeed.com/feed" />
+  <outline title="The Forest"  type="rss" xmlUrl="https://forest.quest/artifacts/rss/" />
+    <outline title="Mozilla Hacks – the Web developer blog"  type="rss" xmlUrl="https://hacks.mozilla.org/feed/" />
+  <outline title="Lean Productivity" category="YouTube" type="rss" xmlUrl="https://www.youtube.com/feeds/videos.xml?channel_id=UCPBbCmGKB3LX7SCI70HieXQ" />
+  <outline title="Elestio blog"  type="rss" xmlUrl="https://blog.elest.io/rss/" />
+
+  <outline title="Vercel News" category="Dev" type="rss" xmlUrl="https://vercel.com/atom" />
+  <outline title="developer.chrome.com: Blog" category="Dev" type="rss" xmlUrl="https://developer.chrome.com/static/blog/feed.xml?hl=fr" />
+  <outline title="Cursor Blog | RSS Feed" category="Dev" type="rss" xmlUrl="https://cursor.com/atom.xml" />
+  <outline title="Codelynx" category="Dev" type="rss" xmlUrl="https://codelynx.dev/rss" />
+  <outline title="The Nuxt Blog" category="Dev" type="rss" xmlUrl="https://nuxt.com/blog/rss.xml" />
+  <outline title="The Astro Blog" category="Dev" type="rss" xmlUrl="https://astro.build/rss.xml" />
+  <outline title="The Vue Point" category="Dev" type="rss" xmlUrl="https://blog.vuejs.org/feed.rss" />
+
+</outline>
+</body>
+</opml>
