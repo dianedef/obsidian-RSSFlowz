@@ -716,8 +716,28 @@ class RSSReaderPlugin extends Plugin {
          throw error;
       }
    }
-
    async parseRssFeed(doc, feed) {
+      try {
+         const items = Array.from(doc.querySelectorAll('item'));
+         return items
+            .slice(0, this.settings.maxArticles)
+            .map(item => {
+               return {
+                  title: item.querySelector('title')?.textContent || 'Sans titre',
+                  content: item.querySelector('description')?.textContent || '',
+                  date: item.querySelector('pubDate')?.textContent || '',
+                  link: item.querySelector('link')?.textContent || '',
+                  tags: feed.tags || [],
+                  feedTitle: feed.title
+               };
+            });
+      } catch (error) {
+         console.error('Erreur lors du parsing du feed RSS:', error);
+         throw error;
+      }
+   }
+
+/*    async parseRssFeed(doc, feed) {
       try {
          // Nettoyer le contenu XML avant le parsing
          const cleanXML = (xml) => {
@@ -756,8 +776,7 @@ class RSSReaderPlugin extends Plugin {
          console.error('Erreur lors du parsing du feed RSS:', error);
          throw error;
       }
-   }
-
+   } */
    async cleanOldArticles() {
       await this.cleanArticleStates();
       
@@ -783,6 +802,31 @@ class RSSReaderPlugin extends Plugin {
          ? `${baseFolder}/${feed.group}` 
          : baseFolder;
       
+      // Fonction utilitaire pour nettoyer le texte et convertir les images
+      const cleanText = (text) => {
+         // Utiliser DOMParser pour parser correctement le HTML
+         const parser = new DOMParser();
+         const doc = parser.parseFromString(text, 'text/html');
+         
+         // Convertir les images en Markdown
+         doc.querySelectorAll('img').forEach(img => {
+            const markdown = `![](${img.src})`;
+            img.replaceWith(parser.parseFromString(markdown, 'text/html').body.textContent);
+         });
+         
+         // Supprimer les styles des balises p
+         doc.querySelectorAll('p').forEach(p => {
+            p.removeAttribute('style');
+         });
+         
+         // Récupérer le texte nettoyé
+         return doc.body.textContent
+            .replace(/\r?\n|\r/g, ' ')  // Remplace les sauts de ligne par des espaces
+            .replace(/\s+/g, ' ')       // Normalise les espaces multiples
+            .replace(/<img.*?src="(.*?)".*?>/g, '![]($1)') // Convertit les images HTML en Markdown
+            .trim();                    // Supprime les espaces en début et fin
+      };
+
       // Filtrer les articles déjà supprimés
       const filteredArticles = articles.filter(article => {
          const articleId = this.getArticleId(feed.url, article.link);
@@ -794,10 +838,10 @@ class RSSReaderPlugin extends Plugin {
          const content = filteredArticles.map(article => {
             const articleId = this.getArticleId(feed.url, article.link);
             const isRead = this.settings.articleStates[articleId]?.read || false;
-            return `# ${feed.title} - ${article.title}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
-         }).join('\n---\n');
+            return `# ${cleanText(article.title)}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLien: ${article.link}\n\n${cleanText(article.content)}`;
+         }).join('\n\n---\n\n');
          
-         const filePath = `${groupFolder}/${feed.title}.md`;
+         const filePath = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
          await this.app.vault.adapter.write(filePath, content);
       } else {
          const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
@@ -806,8 +850,8 @@ class RSSReaderPlugin extends Plugin {
          for (const article of filteredArticles) {
             const articleId = this.getArticleId(feed.url, article.link);
             const isRead = this.settings.articleStates[articleId]?.read || false;
-            const fileName = `${feedFolder}/${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
-            const content = `# ${feed.title} - ${article.title}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
+            const fileName = `${feedFolder}/${cleanText(article.title).replace(/[\\/:*?"<>|]/g, '_')}.md`;
+            const content = `# ${cleanText(article.title)}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLien: ${article.link}\n\n${cleanText(article.content)}`;
             await this.app.vault.adapter.write(fileName, content);
          }
       }

@@ -8,11 +8,9 @@
       "summarize": false,
       "transcribe": false,
       "tags": [],
-      "group": "",
-      "lastError": {
-        "message": "Failed to execute 'querySelector' on 'Element': 'description,content:encoded' is not a valid selector.",
-        "timestamp": 1732462525925
-      }
+      "group": "xzxzx",
+      "lastError": null,
+      "lastSuccessfulFetch": 1732465281790
     }
   ],
   "groups": [
@@ -22,10 +20,10 @@
   "rssFolder": "RSS",
   "fetchFrequency": "startup",
   "fetchInterval": 3600,
-  "maxArticles": 1,
-  "retentionDays": 30,
-  "lastFetch": 1732462525806,
-  "readingMode": true,
+  "maxArticles": 2,
+  "retentionDays": 2,
+  "lastFetch": 1732465281731,
+  "readingMode": false,
   "lastReadArticle": null,
   "currentFeed": null,
   "currentFolder": null,
