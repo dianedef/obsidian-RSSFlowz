@@ -8,12 +8,21 @@
       "summarize": false,
       "transcribe": false,
       "tags": [],
-      "group": "Outils"
+      "group": ""
+    },
+    {
+      "title": "LifeHacker",
+      "url": "https://lifehacker.com/feed/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [],
+      "group": "Tech"
     }
   ],
   "groups": [
-    "Tech",
-    "Outils"
+    "Tech"
   ],
   "openaiKey": "",
   "rssFolder": "RSS",
@@ -21,5 +30,9 @@
   "fetchInterval": 3600,
   "maxArticles": 1,
   "retentionDays": 30,
-  "lastFetch": 1732415316609
+  "lastFetch": 1732417810231,
+  "readingMode": true,
+  "lastReadArticle": null,
+  "currentFeed": null,
+  "currentFolder": null
 }

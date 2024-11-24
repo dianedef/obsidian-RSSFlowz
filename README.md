@@ -1,44 +1,103 @@
-## enregistrer un feed ans un .md
+# RSS Reader pour Obsidian
 
+## 🇫🇷 Français
 
-Ajouter une option pour chaque feed : 
-- enregistrer en tant que .md
-- unique merged .md file 
+Un puissant lecteur RSS pour Obsidian qui transforme vos flux RSS en notes Markdown avec des fonctionnalités avancées d'IA.
 
+### ✨ Fonctionnalités principales
 
-simple-rss créé bien les fichiers et le fetch des feed
-rss-copyist ne marche pas
-## Importer et exporter OPML
+- **Organisation intelligente**
+  - Créez des groupes pour organiser vos flux RSS
+  - Choisissez entre un fichier par article ou un fichier unique par flux
+  - Recherchez facilement dans vos flux
+  - Interface utilisateur intuitive et responsive
 
+- **Gestion avancée des contenus**
+  - Importation/exportation OPML pour migrer facilement vos flux
+  - Sauvegarde/restauration de la configuration complète
+  - Nettoyage automatique des anciens articles
+  - Support des flux RSS et Atom
 
+- **Fonctionnalités IA (avec OpenAI)**
+  - Génération automatique de résumés d'articles
+  - Réécriture d'articles dans un style plus clair
+  - Transcription automatique des vidéos YouTube
 
+### 🚀 Installation
 
-## Regrouper par dossier
+1. Dans Obsidian, allez dans Paramètres > Extensions tierces
+2. Désactivez le mode restreint
+3. Cliquez sur "Parcourir" et recherchez "RSS Reader"
+4. Installez l'extension
 
+### ⚙️ Configuration
 
+- Définissez le dossier de destination des articles
+- Choisissez la fréquence de mise à jour (horaire/quotidienne)
+- Configurez le nombre maximum d'articles à conserver
+- Ajoutez votre clé API OpenAI pour les fonctionnalités d'IA
+- Créez des groupes pour organiser vos flux
 
+### 📝 Utilisation
 
+1. Ajoutez des flux RSS via l'URL ou importez un fichier OPML
+2. Organisez vos flux en groupes
+3. Les articles sont automatiquement téléchargés selon la fréquence choisie
+4. Retrouvez vos articles dans le dossier RSS de votre coffre-fort
 
-## Funding URL
+---
 
-You can include funding URLs where people who use your plugin can financially support it.
+# RSS Reader for Obsidian
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+## 🇬🇧 English
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+A powerful RSS reader for Obsidian that transforms your RSS feeds into Markdown notes with advanced AI features.
 
-If you have multiple URLs, you can also do:
+### ✨ Key Features
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+- **Smart Organization**
+  - Create groups to organize your RSS feeds
+  - Choose between one file per article or one file per feed
+  - Easy feed search
+  - Intuitive and responsive user interface
+
+- **Advanced Content Management**
+  - OPML import/export for easy feed migration
+  - Complete configuration backup/restore
+  - Automatic cleanup of old articles
+  - RSS and Atom feeds support
+
+- **AI Features (with OpenAI)**
+  - Automatic article summary generation
+  - Article rewriting in a clearer style
+  - Automatic YouTube video transcription
+
+### 🚀 Installation
+
+1. In Obsidian, go to Settings > Third-party plugins
+2. Disable restricted mode
+3. Click "Browse" and search for "RSS Reader"
+4. Install the plugin
+
+### ⚙️ Configuration
+
+- Set the article destination folder
+- Choose update frequency (hourly/daily)
+- Configure maximum number of articles to keep
+- Add your OpenAI API key for AI features
+- Create groups to organize your feeds
+
+### 📝 Usage
+
+1. Add RSS feeds via URL or import an OPML file
+2. Organize your feeds into groups
+3. Articles are automatically downloaded based on chosen frequency
+4. Find your articles in the RSS folder of your vault
+
+## 🔧 Technical Details
+
+- Built for Obsidian 0.15.0+
+- Uses modern web standards
+- Efficient XML parsing
+- Robust error handling
+- Secure API communication
