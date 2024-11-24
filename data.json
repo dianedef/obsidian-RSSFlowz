@@ -8,7 +8,7 @@
       "summarize": false,
       "transcribe": false,
       "tags": [],
-      "group": ""
+      "group": "Outils"
     },
     {
       "title": "LifeHacker",
@@ -19,10 +19,1430 @@
       "transcribe": false,
       "tags": [],
       "group": "Tech"
+    },
+    {
+      "title": "Kim Saeed",
+      "url": "https://kimsaeed.com/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "The Forest",
+      "url": "https://forest.quest/artifacts/rss/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Mozilla Hacks – the Web developer blog",
+      "url": "https://hacks.mozilla.org/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Lean Productivity",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCPBbCmGKB3LX7SCI70HieXQ",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Elestio blog",
+      "url": "https://blog.elest.io/rss/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Vercel News",
+      "url": "https://vercel.com/atom",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "developer.chrome.com: Blog",
+      "url": "https://developer.chrome.com/static/blog/feed.xml?hl=fr",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Cursor Blog | RSS Feed",
+      "url": "https://cursor.com/atom.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Codelynx",
+      "url": "https://codelynx.dev/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "The Nuxt Blog",
+      "url": "https://nuxt.com/blog/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "The Astro Blog",
+      "url": "https://astro.build/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "The Vue Point",
+      "url": "https://blog.vuejs.org/feed.rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Les Outils Tice",
+      "url": "https://outilstice.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Créez un tunnel de vente rentable",
+      "url": "https://tunneldevente.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "La Fabrique du Net - Feed",
+      "url": "https://www.lafabriquedunet.fr/feed/fdnCustomFeed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Les Zoutils",
+      "url": "https://leszoutils.com/blog/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Vie de Dingue",
+      "url": "https://viededingue.com/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "La Webeuse",
+      "url": "https://la-webeuse.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Jordan brako",
+      "url": "https://jordanbrako.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Blog de Capterra",
+      "url": "https://www.capterra.fr/blog/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Blog de GetApp sur les applications métiers",
+      "url": "https://www.getapp.fr/blog/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Frase",
+      "url": "https://www.frase.io/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "WP Rocket",
+      "url": "https://wp-rocket.me/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "Daniel Doyon",
+      "url": "https://readwise-community.ghost.io/2defd8e965b87487102ef0c6db1880/rss/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "WebRankInfo",
+      "url": "http://www.webrankinfo.com/dossiers/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Consultor SEO Francia ??  Espagne ??",
+      "url": "https://nicoseosem.com/fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Le Blog yourtext.guru",
+      "url": "https://blog.yourtext.guru/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Christophe VIDAL – Consultant SEO",
+      "url": "https://www.christophevidal.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "21douze",
+      "url": "https://21douze.fr/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Blog Dokey",
+      "url": "https://dokey.io/blog/rss/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "Commentaires sur : Homepage",
+      "url": "https://www.eskimoz.fr/homepage/feed/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Python SEO | importSEM",
+      "url": "https://importsem.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Salespanel Blog",
+      "url": "https://salespanel.io/blog/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Data For Good Blog",
+      "url": "https://dataforgood.fr/blog/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Portail de l'IE",
+      "url": "https://www.portail-ie.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "Blog Principal Lockself",
+      "url": "https://blog.lockself.com/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Média E-marketing.fr",
+      "url": "https://www.e-marketing.fr/rss/media-1093.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Influences E-marketing.fr",
+      "url": "https://www.e-marketing.fr/rss/influences-1293.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Ressources Emarketing.fr",
+      "url": "https://www.e-marketing.fr/rss/ressources-1077.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Marketing Green E-marketing.fr",
+      "url": "https://www.e-marketing.fr/rss/green-1345.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Marques E-marketing.fr",
+      "url": "https://www.e-marketing.fr/rss/marques-1296.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Retail E-marketing.fr",
+      "url": "https://www.e-marketing.fr/rss/retail-1095.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "start-up EcommerceMag.fr",
+      "url": "https://www.ecommercemag.fr/rss/start-up-30401.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Marketing EcommerceMag.fr",
+      "url": "https://www.ecommercemag.fr/rss/marketing-1221.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Techno & UX EcommerceMag.fr",
+      "url": "https://www.ecommercemag.fr/rss/techno-ux-1226.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Paiements EcommerceMag.fr",
+      "url": "https://www.ecommercemag.fr/rss/paiements-1291.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Ecommerce Green EcommerceMag.fr",
+      "url": "https://www.ecommercemag.fr/rss/green-1346.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Actualités BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/actualites-1056.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Start-up BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/start-up-1271.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Digital BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/digital-innovation-1074.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Marketing - Vente BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/marketing-vente-1027.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Impact / RSE BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/impact-rse-1348.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Gestion - Finance BeaBoss.fr",
+      "url": "https://www.beaboss.fr/rss/gestion-finance-1025.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "FlyingPress",
+      "url": "https://flyingpress.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Akiflow",
+      "url": "https://akiflow.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "BetaList - Discover tomorrow's startups, today",
+      "url": "http://feeds.feedburner.com/BetaList",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "https://every.to/everything/feed.xml",
+      "url": "https://every.to/everything/feed.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "UTM.io",
+      "url": "https://web.utm.io/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Geek Mais Pas Que",
+      "url": "https://www.geekmaispasque.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "Blog Adwords et Webmarketing – SnowGlobe.fr",
+      "url": "https://www.snowglobe.fr/blog/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Smart Marketer",
+      "url": "https://smartmarketer.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Business of Apps",
+      "url": "https://www.businessofapps.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Smartlook Blog",
+      "url": "https://www.smartlook.com/blog/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Apricot Blog",
+      "url": "https://blog.theapricot.io/index.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Google Search Status Dashboard Updates",
+      "url": "https://status.search.google.com/en/feed.atom",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Statista",
+      "url": "http://www.statista.com/rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "Google Search Central Blog",
+      "url": "https://feeds.feedburner.com/blogspot/amDG",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Oncrawl",
+      "url": "http://fr.oncrawl.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "Sergent Web",
+      "url": "https://www.sergentweb.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Preste",
+      "url": "https://www.preste.ai/blog-feed.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Sidekick",
+      "url": "https://www.meetsidekick.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "InLinks",
+      "url": "https://inlinks.com/fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Psychology Today: The Latest",
+      "url": "https://www.psychologytoday.com/intl/front/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Santé"
+      ]
+    },
+    {
+      "title": "Google AI Blog",
+      "url": "https://feeds.feedburner.com/blogspot/gJZg",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Inserm",
+      "url": "https://www.inserm.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Santé"
+      ]
+    },
+    {
+      "title": "TheWindowsClub News",
+      "url": "https://news.thewindowsclub.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Winflows"
+      ]
+    },
+    {
+      "title": "Joel on Software",
+      "url": "https://www.joelonsoftware.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Caspar von Wrede",
+      "url": "https://casparwre.de/feed.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Histoires du Monde",
+      "url": "https://follow.it/youtube-1087",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "Inisev Blog",
+      "url": "https://follow.it/inisev?action=followPub",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "WPMarmite",
+      "url": "https://feedpress.me/wpmarmite",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "SoftwareOK.com - Freeware News and other Windows tools",
+      "url": "https://www.softwareok.com/rss/news_en_https.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Product Hunt — The best new products, every day",
+      "url": "https://www.producthunt.com/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Cheqmark Blog",
+      "url": "https://cheqmark.io/blog/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "L'Optimisme",
+      "url": "https://loptimisme.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "https://www.numerique.gouv.fr/feed.xml",
+      "url": "https://www.numerique.gouv.fr/feed.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Tropy",
+      "url": "https://tropy.org/blog/rss/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "Ecrire un livre accrocheur",
+      "url": "https://ecrire-un-livre-accrocheur.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Thomas Cubel",
+      "url": "https://www.thomascubel.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "thruuu | Content Optimization Solution",
+      "url": "https://thruuu.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "AFFA Association Francophone de femmes autistes",
+      "url": "https://femmesautistesfrancophones.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Santé"
+      ]
+    },
+    {
+      "title": "Busy-women",
+      "url": "https://busy-women.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Les Outils Collaboratifs",
+      "url": "http://outilscollaboratifs.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Tools"
+      ]
+    },
+    {
+      "title": "SaaS-Guru",
+      "url": "http://www.saas-guru.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Zsolt's blog",
+      "url": "https://www.zsolt.blog/feeds/posts/default",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Chromium Blog",
+      "url": "https://blog.chromium.org/feeds/posts/default?alt=rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Dev"
+      ]
+    },
+    {
+      "title": "Krzysztof Kowalczyk blog",
+      "url": "https://blog.kowalczyk.info/atom.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "RocketLinks - Blog",
+      "url": "https://www.rocketlinks.com/fr/blog/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "TextMaster",
+      "url": "https://fr.textmaster.com/feed",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Webinde"
+      ]
+    },
+    {
+      "title": "Obsidian Resources",
+      "url": "https://forum.obsidian.md/t/obsidian-resources/81835.rss",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "NinjaLinker™😈",
+      "url": "https://www.ninjalinker.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "ActiveGrowth",
+      "url": "https://activegrowth.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "CCM - Stratégie Client",
+      "url": "https://ccm.academy/rss.xml",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "SEO Blog by Ahrefs",
+      "url": "https://ahrefs.com/blog/fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Opentracker",
+      "url": "https://www.opentracker.net/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Polymeta",
+      "url": "https://www.polymeta.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Marketing Mania",
+      "url": "https://marketingmania.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "BDM - Web",
+      "url": "https://www.blogdumoderateur.com/web/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "OnlineBiz"
+      ]
+    },
+    {
+      "title": "Flux RSS Toutes les actualités",
+      "url": "https://www.economie.gouv.fr/rss/toutesactualites",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Actus"
+      ]
+    },
+    {
+      "title": "Commission des clauses abusives",
+      "url": "https://www.clauses-abusives.fr/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Cyberdefenseur",
+      "url": "https://cyberdefenseur.com/feed/",
+      "type": "feed",
+      "status": "active",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Pexiweb",
+      "url": "https://www.pexiweb.be/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Semrush blog",
+      "url": "https://www.semrush.com/blog/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "StickyCTA",
+      "url": "https://www.sticky-cta.com/fr/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Wanted Pedo WantedPedo",
+      "url": "https://wantedpedo-officiel.com/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Gaspard G",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCI-8QMy9n3I5Pv6mTmXoAXA",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "ARTE",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCwI-JbGNsojunnHbFAc0M4Q",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Tony Neves",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCi7awF_caktNZQ2W9kHKWQA",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Ana Psychology",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCOxhlNofmYH-MRC36TURUGw",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Marketing Mania",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCSmUdD2Dd_v5uqBuRwtEZug",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Dr Alex Young",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UC1QnKYxNXosv9ykUt_6wCMg",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Objets du Futur",
+      "url": "https://www.objetsdufutur.fr/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Objets du Futur",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCSDaNmAHaAEikjzRE9O5_Mw",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "Festival des Libertés",
+      "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJCS2jMu40d0FHszDShIOqw",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "YouTube"
+      ]
+    },
+    {
+      "title": "BLOG Les Tribulations d'un Petit Zèbre",
+      "url": "http://les-tribulations-dun-petit-zebre.com/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Le blog d'un odieux connard",
+      "url": "https://unodieuxconnard.com/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Autour du Naturel",
+      "url": "https://www.autourdunaturel.com/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Koztoujours",
+      "url": "https://www.koztoujours.fr/feed",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "gHacks Technology News",
+      "url": "https://www.ghacks.net/feed/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "Upmynt newsletter - Faites passer votre marque à la vitesse IA",
+      "url": "https://www.upmynt.com/rss/",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "daisyUI Blog",
+      "url": "https://daisyui.com/blog/rss.xml",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Dev"
+      ]
+    },
+    {
+      "title": "Tailwind CSS Blog",
+      "url": "https://tailwindcss.com/feeds/feed.xml",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Dev"
+      ]
+    },
+    {
+      "title": "Elian Van Cutsem",
+      "url": "https://www.elian.codes/blog.xml",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": [
+        "Dev"
+      ]
+    },
+    {
+      "title": "Death by abstraction",
+      "url": "https://www.deathbyabstraction.com/atom.xml",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
+    },
+    {
+      "title": "OWASP",
+      "url": "https://owasp.org/rss.xml",
+      "type": "feed",
+      "status": "paused",
+      "summarize": false,
+      "transcribe": false,
+      "tags": []
     }
   ],
   "groups": [
-    "Tech"
+    "Tech",
+    "Outils"
   ],
   "openaiKey": "",
   "rssFolder": "RSS",
@@ -30,9 +1450,10 @@
   "fetchInterval": 3600,
   "maxArticles": 1,
   "retentionDays": 30,
-  "lastFetch": 1732417810231,
+  "lastFetch": 1732445283994,
   "readingMode": true,
   "lastReadArticle": null,
   "currentFeed": null,
-  "currentFolder": null
+  "currentFolder": null,
+  "articleStates": {}
 }

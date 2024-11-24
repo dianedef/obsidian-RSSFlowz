@@ -17,7 +17,8 @@ class RSSReaderPlugin extends Plugin {
          readingMode: false,
          lastReadArticle: null,
          currentFeed: null,
-         currentFolder: null
+         currentFolder: null,
+         articleStates: {},
       }, await this.loadData());
       
       // Vérifier et créer le dossier RSS principal
@@ -32,8 +33,8 @@ class RSSReaderPlugin extends Plugin {
          this.fetchAllFeeds();
       });
 
-      this.addRibbonIcon('book-open', 'Mode Lecture RSS', () => {
-         this.toggleReadingMode();
+      this.addRibbonIcon('book-open', 'Mode Lecture RSS', async () => {
+         await this.toggleReadingMode();
       });
 
       if (this.settings.fetchFrequency === 'startup') {
@@ -199,6 +200,8 @@ class RSSReaderPlugin extends Plugin {
    }
 
    async cleanOldArticles() {
+      await this.cleanArticleStates();
+      
       const folder = this.settings.rssFolder;
       const files = await this.app.vault.adapter.list(folder);
       const cutoffDate = Date.now() - (this.settings.retentionDays * 86400000);
@@ -221,28 +224,31 @@ class RSSReaderPlugin extends Plugin {
          ? `${baseFolder}/${feed.group}` 
          : baseFolder;
       
-      // S'assurer que les dossiers nécessaires existent
-      await this.ensureFolder(baseFolder);
-      if (feed.group) {
-         await this.ensureFolder(groupFolder);
-      }
+      // Filtrer les articles déjà supprimés
+      const filteredArticles = articles.filter(article => {
+         const articleId = this.getArticleId(feed.url, article.link);
+         const state = this.settings.articleStates[articleId];
+         return !state?.deleted;
+      });
       
       if (feed.type === 'uniqueFile') {
-         // Pour les fichiers uniques, on les met dans le dossier du groupe (ou RSS si pas de groupe)
-         const content = articles.map(article => 
-            `# ${feed.title} - ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`
-         ).join('\n---\n');
+         const content = filteredArticles.map(article => {
+            const articleId = this.getArticleId(feed.url, article.link);
+            const isRead = this.settings.articleStates[articleId]?.read || false;
+            return `# ${feed.title} - ${article.title}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
+         }).join('\n---\n');
          
          const filePath = `${groupFolder}/${feed.title}.md`;
          await this.app.vault.adapter.write(filePath, content);
       } else {
-         // Pour les feeds multi-fichiers, créer un sous-dossier pour le feed dans le groupe
          const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
          await this.ensureFolder(feedFolder);
          
-         for (const article of articles) {
+         for (const article of filteredArticles) {
+            const articleId = this.getArticleId(feed.url, article.link);
+            const isRead = this.settings.articleStates[articleId]?.read || false;
             const fileName = `${feedFolder}/${article.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
-            const content = `# ${feed.title} - ${article.title}\n\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
+            const content = `# ${feed.title} - ${article.title}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLink: ${article.link}\n\n${article.content}`;
             await this.app.vault.adapter.write(fileName, content);
          }
       }
@@ -562,76 +568,120 @@ class RSSReaderPlugin extends Plugin {
       }
 
    async toggleReadingMode() {
-      this.settings.readingMode = !this.settings.readingMode;
-      await this.saveData(this.settings);
+      try {
+         this.settings.readingMode = !this.settings.readingMode;
+         await this.saveData(this.settings);
 
-      if (this.settings.readingMode) {
-         this.enterReadingMode();
-      } else {
-         this.exitReadingMode();
+         if (this.settings.readingMode) {
+            await this.enterReadingMode();
+         } else {
+            await this.exitReadingMode();
+         }
+      } catch (error) {
+         console.error('Erreur lors du toggle du mode lecture:', error);
+         new Notice('Erreur lors du changement de mode lecture');
       }
    }
 
    async enterReadingMode() {
-      // Créer l'interface du mode lecture
-      this.readingModeContainer = document.createElement('div');
-      this.readingModeContainer.classList.add('reading-mode-container');
-
-      // Créer la barre de contrôle
-      const controlBar = document.createElement('div');
-      controlBar.classList.add('reading-mode-controls');
-
-      // Boutons de navigation
-      const folderSelect = document.createElement('select');
-      folderSelect.classList.add('reading-mode-select');
-      this.settings.groups.forEach(group => {
-         const option = document.createElement('option');
-         option.value = group;
-         option.text = group;
-         folderSelect.appendChild(option);
-      });
-      folderSelect.addEventListener('change', (e) => this.selectFolder(e.target.value));
-
-      const feedSelect = document.createElement('select');
-      feedSelect.classList.add('reading-mode-select');
-      this.updateFeedSelect(feedSelect, this.settings.currentFolder);
-
-      const prevButton = document.createElement('button');
-      prevButton.innerHTML = '⬅️ Précédent';
-      prevButton.onclick = () => this.navigateArticles('previous');
-
-      const nextButton = document.createElement('button');
-      nextButton.innerHTML = 'Suivant ➡️';
-      nextButton.onclick = () => this.navigateArticles('next');
-
-      const markReadButton = document.createElement('button');
-      markReadButton.innerHTML = '✓ Lu';
-      markReadButton.onclick = () => this.markCurrentArticleAsRead();
-
-      const deleteButton = document.createElement('button');
-      deleteButton.innerHTML = '🗑️ Supprimer';
-      deleteButton.onclick = () => this.deleteCurrentArticle();
-
-      const exitButton = document.createElement('button');
-      exitButton.innerHTML = '❌ Quitter';
-      exitButton.onclick = () => this.toggleReadingMode();
-
-      // Ajouter les éléments à la barre de contrôle
-      controlBar.appendChild(folderSelect);
-      controlBar.appendChild(feedSelect);
-      controlBar.appendChild(prevButton);
-      controlBar.appendChild(nextButton);
-      controlBar.appendChild(markReadButton);
-      controlBar.appendChild(deleteButton);
-      controlBar.appendChild(exitButton);
-
-      this.readingModeContainer.appendChild(controlBar);
-      document.body.appendChild(this.readingModeContainer);
-      document.body.classList.add('reading-mode-active');
+      try {
+         const workspace = this.app.workspace;
+         const leaf = workspace.activeLeaf;
+         
+         // Activer le mode lecture et plein écran
+         leaf.view.setEphemeralState({ mode: 'preview' });
+         workspace.setFullscreen(leaf);
+         
+         // Créer l'interface du mode lecture
+         this.readingModeContainer = document.createElement('div');
+         this.readingModeContainer.classList.add('reading-mode-container');
+         
+         // Créer la barre de contrôle
+         const controlBar = document.createElement('div');
+         controlBar.classList.add('reading-mode-controls');
+         
+         // Boutons de navigation
+         const folderSelect = document.createElement('select');
+         folderSelect.classList.add('reading-mode-select');
+         this.settings.groups.forEach(group => {
+            const option = document.createElement('option');
+            option.value = group;
+            option.text = group;
+            folderSelect.appendChild(option);
+         });
+         folderSelect.addEventListener('change', (e) => this.selectFolder(e.target.value));
+         
+         const feedSelect = document.createElement('select');
+         feedSelect.classList.add('reading-mode-select');
+         this.updateFeedSelect(feedSelect, this.settings.currentFolder);
+         
+         const prevButton = document.createElement('button');
+         prevButton.innerHTML = '⬅️ Précédent';
+         prevButton.onclick = () => this.navigateArticles('previous');
+         
+         const nextButton = document.createElement('button');
+         nextButton.innerHTML = 'Suivant ➡️';
+         nextButton.onclick = () => this.navigateArticles('next');
+         
+         const markReadButton = document.createElement('button');
+         markReadButton.innerHTML = '✓ Lu';
+         markReadButton.onclick = () => this.markCurrentArticleAsRead();
+         
+         const deleteButton = document.createElement('button');
+         deleteButton.innerHTML = '🗑️ Supprimer';
+         deleteButton.onclick = () => this.deleteCurrentArticle();
+         
+         const exitButton = document.createElement('button');
+         exitButton.innerHTML = '❌ Quitter';
+         exitButton.onclick = () => this.toggleReadingMode();
+         
+         // Ajouter les éléments à la barre de contrôle
+         controlBar.appendChild(folderSelect);
+         controlBar.appendChild(feedSelect);
+         controlBar.appendChild(prevButton);
+         controlBar.appendChild(nextButton);
+         controlBar.appendChild(markReadButton);
+         controlBar.appendChild(deleteButton);
+         controlBar.appendChild(exitButton);
+         
+         this.readingModeContainer.appendChild(controlBar);
+         document.body.appendChild(this.readingModeContainer);
+         document.body.classList.add('reading-mode-active');
+         
+         // Sélectionner automatiquement le dernier article lu ou le plus récent
+         if (this.settings.currentFeed) {
+            const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
+            if (feed) {
+               // Mettre à jour les sélecteurs
+               const folderSelect = this.readingModeContainer.querySelector('.reading-mode-select:nth-child(1)');
+               const feedSelect = this.readingModeContainer.querySelector('.reading-mode-select:nth-child(2)');
+               
+               folderSelect.value = feed.group || 'Défaut';
+               this.updateFeedSelect(feedSelect, feed.group || 'Défaut');
+               feedSelect.value = feed.url;
+               
+               // Ouvrir le dernier article lu ou le plus récent
+               if (this.settings.lastReadArticle) {
+                  await this.navigateToArticle(this.settings.lastReadArticle);
+               } else {
+                  await this.navigateArticles('next');
+               }
+            }
+         }
+      } catch (error) {
+         console.error('Erreur lors de l\'entrée en mode lecture:', error);
+         new Notice('Erreur lors de l\'activation du mode lecture');
+      }
    }
 
-   exitReadingMode() {
+   async exitReadingMode() {
       if (this.readingModeContainer) {
+         // Désactiver le mode plein écran si actif
+         const leaf = this.app.workspace.activeLeaf;
+         if (leaf.isFullScreen) {
+            this.app.workspace.toggleLeafFullScreen(leaf);
+         }
+         
          this.readingModeContainer.remove();
          document.body.classList.remove('reading-mode-active');
       }
@@ -682,8 +732,232 @@ class RSSReaderPlugin extends Plugin {
          this.updateFeedSelect(feedSelect, folderName);
       }
    }
-}
 
+   getArticleId(feedUrl, articleLink) {
+      return `${feedUrl}::${articleLink}`;
+   }
+
+   async markArticleAsRead(feedUrl, articleLink) {
+      const articleId = this.getArticleId(feedUrl, articleLink);
+      this.settings.articleStates[articleId] = {
+         ...this.settings.articleStates[articleId],
+         read: true,
+         lastUpdate: Date.now()
+      };
+      await this.saveData(this.settings);
+   }
+
+   async markArticleAsDeleted(feedUrl, articleLink) {
+      const articleId = this.getArticleId(feedUrl, articleLink);
+      this.settings.articleStates[articleId] = {
+         ...this.settings.articleStates[articleId],
+         deleted: true,
+         lastUpdate: Date.now()
+      };
+      await this.saveData(this.settings);
+   }
+
+   async markCurrentArticleAsRead() {
+      if (!this.settings.currentFeed || !this.settings.lastReadArticle) return;
+      
+      await this.markArticleAsRead(this.settings.currentFeed, this.settings.lastReadArticle);
+      // Rafraîchir l'affichage de l'article
+      await this.refreshCurrentArticle();
+      new Notice('Article marqué comme lu');
+   }
+
+   async deleteCurrentArticle() {
+      if (!this.settings.currentFeed || !this.settings.lastReadArticle) return;
+      
+      await this.markArticleAsDeleted(this.settings.currentFeed, this.settings.lastReadArticle);
+      // Supprimer le fichier physiquement
+      const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
+      if (feed) {
+         const baseFolder = this.settings.rssFolder;
+         const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
+         const articlePath = feed.type === 'uniqueFile'
+            ? `${groupFolder}/${feed.title}.md`
+            : `${groupFolder}/${feed.title}/${this.settings.lastReadArticle}.md`;
+         
+         try {
+            await this.app.vault.adapter.remove(articlePath);
+            new Notice('Article supprimé');
+            // Passer à l'article suivant
+            await this.navigateArticles('next');
+         } catch (error) {
+            console.error('Erreur lors de la suppression:', error);
+            new Notice('Erreur lors de la suppression de l\'article');
+         }
+      }
+   }
+
+   async cleanArticleStates() {
+      const now = Date.now();
+      const retentionPeriod = this.settings.retentionDays * 86400000; // conversion en millisecondes
+      
+      const newStates = {};
+      for (const [articleId, state] of Object.entries(this.settings.articleStates)) {
+         if (now - state.lastUpdate < retentionPeriod) {
+            newStates[articleId] = state;
+         }
+      }
+      
+      this.settings.articleStates = newStates;
+      await this.saveData(this.settings);
+   }
+
+   async navigateArticles(direction) {
+      if (!this.settings.currentFeed) {
+         new Notice('Veuillez sélectionner un feed');
+         return;
+      }
+
+      const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
+      if (!feed) return;
+
+      const baseFolder = this.settings.rssFolder;
+      const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
+      let articles = [];
+
+      try {
+         if (feed.type === 'uniqueFile') {
+            // Pour les feeds en fichier unique, on parse le contenu pour extraire les articles
+            const filePath = `${groupFolder}/${feed.title}.md`;
+            const content = await this.app.vault.adapter.read(filePath);
+            articles = content.split('\n---\n').map(article => {
+               const titleMatch = article.match(/# .* - (.*)/);
+               const linkMatch = article.match(/Link: (.*)/);
+               return {
+                  title: titleMatch?.[1] || 'Sans titre',
+                  link: linkMatch?.[1] || '',
+                  content: article
+               };
+            });
+         } else {
+            // Pour les feeds multi-fichiers, on liste les fichiers du dossier
+            const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
+            const files = await this.app.vault.adapter.list(feedFolder);
+            articles = await Promise.all(files.files.map(async file => {
+               const content = await this.app.vault.adapter.read(file);
+               const titleMatch = content.match(/# .* - (.*)/);
+               const linkMatch = content.match(/Link: (.*)/);
+               return {
+                  title: titleMatch?.[1] || 'Sans titre',
+                  link: linkMatch?.[1] || '',
+                  content: content,
+                  path: file
+               };
+            }));
+         }
+
+         // Filtrer les articles supprimés
+         articles = articles.filter(article => {
+            const articleId = this.getArticleId(feed.url, article.link);
+            return !this.settings.articleStates[articleId]?.deleted;
+         });
+
+         // Trier les articles par date (du plus récent au plus ancien)
+         articles.sort((a, b) => {
+            const dateA = a.content.match(/Date: (.*)/)?.[1] || '';
+            const dateB = b.content.match(/Date: (.*)/)?.[1] || '';
+            return new Date(dateB) - new Date(dateA);
+         });
+
+         // Trouver l'index de l'article actuel
+         let currentIndex = articles.findIndex(article => article.link === this.settings.lastReadArticle);
+         if (currentIndex === -1) currentIndex = direction === 'next' ? -1 : articles.length;
+
+         // Calculer le nouvel index
+         let newIndex;
+         if (direction === 'next') {
+            newIndex = currentIndex + 1;
+            if (newIndex >= articles.length) {
+               new Notice('Fin des articles');
+               return;
+            }
+         } else if (direction === 'previous') {
+            newIndex = currentIndex - 1;
+            if (newIndex < 0) {
+               new Notice('Début des articles');
+               return;
+            }
+         } else if (direction === 'current') {
+            newIndex = currentIndex;
+            if (newIndex < 0 || newIndex >= articles.length) {
+               newIndex = 0; // Si l'article n'est pas trouvé, aller au premier
+            }
+         }
+
+         // Ouvrir le nouvel article
+         const article = articles[newIndex];
+         this.settings.lastReadArticle = article.link;
+         await this.saveData(this.settings);
+
+         if (feed.type === 'uniqueFile') {
+            // Pour les fichiers uniques, on ouvre le fichier et on scroll à la bonne section
+            const file = await this.app.vault.getAbstractFileByPath(`${groupFolder}/${feed.title}.md`);
+            const leaf = this.app.workspace.getLeaf();
+            await leaf.openFile(file);
+            
+            // Attendre que le contenu soit chargé
+            setTimeout(() => {
+               const contentEl = leaf.view.contentEl;
+               const sections = contentEl.querySelectorAll('h1');
+               for (const section of sections) {
+                  if (section.textContent.includes(article.title)) {
+                     section.scrollIntoView({ behavior: 'smooth' });
+                     break;
+                  }
+               }
+            }, 100);
+         } else {
+            // Pour les fichiers multiples, on ouvre simplement le fichier
+            const file = await this.app.vault.getAbstractFileByPath(article.path);
+            await this.app.workspace.getLeaf().openFile(file);
+         }
+
+         // Mettre à jour l'interface
+         this.updateNavigationButtons(newIndex, articles.length);
+
+      } catch (error) {
+         console.error('Erreur lors de la navigation:', error);
+         new Notice('Erreur lors de la navigation entre les articles');
+      }
+   }
+
+   // Méthode pour mettre à jour l'état des boutons de navigation
+   updateNavigationButtons(currentIndex, totalArticles) {
+      const prevButton = this.readingModeContainer.querySelector('button:nth-child(3)');
+      const nextButton = this.readingModeContainer.querySelector('button:nth-child(4)');
+      
+      if (prevButton) {
+         prevButton.disabled = currentIndex <= 0;
+      }
+      if (nextButton) {
+         nextButton.disabled = currentIndex >= totalArticles - 1;
+      }
+   }
+
+   // Méthode pour rafraîchir l'affichage de l'article courant
+   async refreshCurrentArticle() {
+      const leaf = this.app.workspace.activeLeaf;
+      if (leaf && leaf.view) {
+         await leaf.view.load();
+      }
+   }
+
+   // Ajouter cette nouvelle méthode pour la navigation directe vers un article
+   async navigateToArticle(articleLink) {
+      if (!this.settings.currentFeed) return;
+      
+      const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
+      if (!feed) return;
+
+      this.settings.lastReadArticle = articleLink;
+      await this.saveData(this.settings);
+      await this.navigateArticles('current'); // Ajouter 'current' comme nouvelle option
+   }
+}
 class RSSReaderSettingTab extends PluginSettingTab {
    constructor(app, plugin) {
       super(app, plugin);
@@ -694,7 +968,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
       const {containerEl} = this;
       containerEl.empty();
 
-      containerEl.createEl('h1', {text: 'Paramètres'});
+      containerEl.createEl('h1', {text: 'dddètaaaaaares'});
 
       new Setting(containerEl)
          .setName('Clé API OpenAI')
@@ -762,40 +1036,69 @@ class RSSReaderSettingTab extends PluginSettingTab {
       new Setting(containerEl)
          .setName('Import d\'un fichier OPML')
          .setDesc('Importer des feeds depuis un fichier OPML')
-         .addButton(button => button
-            .setButtonText('Importer OPML')
-            .onClick(() => {
-               const input = document.createElement('input');
-               input.type = 'file';
-               input.accept = '.opml,.xml';
-               input.onchange = async (e) => {
-                  const file = e.target.files[0];
-                  const reader = new FileReader();
-                  reader.onload = async (e) => {
+         .addButton(button => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.opml,.xml';
+            input.style.display = 'none';
+            containerEl.appendChild(input);
+
+            input.onchange = async (e) => {
+               if (!e.target.files.length) return;
+               
+               const file = e.target.files[0];
+               const reader = new FileReader();
+               
+               // Notification de début de chargement
+               const loadingNotice = new Notice('Import OPML en cours...', 0);
+               
+               reader.onload = async (e) => {
+                  try {
                      await this.plugin.importOpml(e.target.result);
-                     new Notice('Feeds importés avec succès');
-                     this.display();
-                  };
-                  reader.readAsText(file);
+                     loadingNotice.hide(); // Cacher la notification de chargement
+                     new Notice('✅ Import OPML terminé avec succès');
+                  } catch (error) {
+                     loadingNotice.hide();
+                     new Notice('❌ Erreur lors de l\'import OPML');
+                     console.error(error);
+                  } finally {
+                     input.value = '';
+                  }
                };
-               input.click();
-            }));
+               reader.readAsText(file);
+            };
+
+            button
+               .setButtonText('Importer OPML')
+               .onClick(() => {
+                  input.click();
+               });
+            
+            return button;
+         });
 
       new Setting(containerEl)
          .setName('Export vers OPML')
          .setDesc('Exporter vos feeds au format OPML')
          .addButton(button => button
             .setButtonText('Exporter OPML')
-            .onClick(() => {
-               this.plugin.exportOpml();
-               new Notice('Feeds exportés avec succès');
+            .onClick(async () => {
+               const loadingNotice = new Notice('Export OPML en cours...', 0);
+               try {
+                  await this.plugin.exportOpml();
+                  loadingNotice.hide();
+                  new Notice('✅ Feeds exportés avec succès');
+               } catch (error) {
+                  loadingNotice.hide();
+                  new Notice('❌ Erreur lors de l\'export OPML');
+                  console.error(error);
+               }
             }));
 
             new Setting(containerEl)
             .setName('Importer une configuration JSON')
-            .setDesc('Restaurer une configuration précédemment exportée (remplacera la configuration actuelle)')
+            .setDesc('Restaurer une configuration précédemment exportée')
             .addButton(button => {
-               // Créer l'input une seule fois
                const input = document.createElement('input');
                input.type = 'file';
                input.accept = '.json';
@@ -804,6 +1107,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
                input.onchange = async (e) => {
                   if (!e.target.files.length) return;
+                  
+                  const loadingNotice = new Notice('Import de la configuration en cours...', 0);
                   
                   try {
                      const file = e.target.files[0];
@@ -864,10 +1169,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      
                      reader.readAsText(file);
                   } catch (error) {
-                     console.error('Erreur lors de l\'import:', error);
-                     new Notice('Erreur lors de l\'import de la configuration');
+                     loadingNotice.hide();
+                     new Notice('❌ Erreur lors de la lecture du fichier');
+                     console.error(error);
                   } finally {
-                     // Réinitialiser la valeur après l'import
                      input.value = '';
                   }
                };
@@ -883,15 +1188,15 @@ class RSSReaderSettingTab extends PluginSettingTab {
 
       new Setting(containerEl)
          .setName('Exporter la configuration JSON')
-         .setDesc('Sauvegarder tous vos paramètres (feeds, groupes, options) dans un fichier data.json')
+         .setDesc('Sauvegarder tous vos paramètres dans un fichier')
          .addButton(button => button
             .setButtonText('Exporter data.json')
             .onClick(async () => {
+               const loadingNotice = new Notice('Export de la configuration en cours...', 0);
                try {
                   const data = await this.plugin.loadData();
                   const jsonString = JSON.stringify(data, null, 2);
                   
-                  // Créer un blob et le télécharger
                   const blob = new Blob([jsonString], { type: 'application/json' });
                   const url = window.URL.createObjectURL(blob);
                   const a = document.createElement('a');
@@ -900,10 +1205,12 @@ class RSSReaderSettingTab extends PluginSettingTab {
                   a.click();
                   window.URL.revokeObjectURL(url);
                   
-                  new Notice('Configuration exportée avec succès');
+                  loadingNotice.hide();
+                  new Notice('✅ Configuration exportée avec succès');
                } catch (error) {
-                  console.error('Erreur lors de l\'export:', error);
-                  new Notice('Erreur lors de l\'export de la configuration');
+                  loadingNotice.hide();
+                  new Notice('❌ Erreur lors de l\'export de la configuration');
+                  console.error(error);
                }
             }));
 
@@ -1019,6 +1326,10 @@ class RSSReaderSettingTab extends PluginSettingTab {
             feeds.forEach(({feed, index}) => {
                const feedContainer = feedsContainer.createDiv('feed-container collapsed');
                const headerContainer = feedContainer.createDiv('feed-header');
+               
+               // Ajouter cette ligne pour afficher le titre du feed
+               headerContainer.createEl('span', { text: feed.title });
+               
                const optionsContainer = feedContainer.createDiv('feed-options');
                optionsContainer.style.display = 'none';
 
@@ -1036,11 +1347,6 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      toggleButton.setIcon(isCollapsed ? 'chevron-up' : 'chevron-down');
                   }
                };
-
-               // En-tête du feed
-               const headerSetting = new Setting(headerContainer)
-                  .setName(feed.title)
-                  .setDesc(feed.url);
 
                // Ajouter les boutons dans leur conteneur
                new Setting(buttonContainer)
@@ -1080,7 +1386,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         this.plugin.settings.feeds[index].type = value;
                         await this.plugin.saveData(this.plugin.settings);
                         new Notice(`Type de sauvegarde modifié pour ${feed.title}`);
-                     }));
+                     })
+                  );
 
                // Ajouter un identifiant unique au container pour le retrouver après refresh
                feedContainer.setAttribute('data-feed-id', feed.url);
@@ -1215,11 +1522,11 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         await this.plugin.saveData(this.plugin.settings);
                         new Notice(`Feed supprimé : ${feed.title}`);
                         filterAndDisplayFeeds(searchInput.value);
-                     }));
+                  }));
+
             });
          });
       };
-
       // Initialiser l'affichage et configurer la recherche
       searchInput.addEventListener('input', () => {
          filterAndDisplayFeeds(searchInput.value);
@@ -1320,7 +1627,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
                      }
                   }
                }
-            }));
+            })
+         );
 
       // Ajouter un bouton pour supprimer tous les feeds
       new Setting(containerEl)
@@ -1336,8 +1644,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
                   this.display();
                }
             }));
-   }
-
+      };
    async confirmDelete(feedTitle) {
       return new Promise((resolve) => {
          const modal = new Modal(this.app);
@@ -1471,23 +1778,20 @@ document.head.appendChild(Object.assign(document.createElement('style'), {
          padding: 0;
       }
 
-      .reading-mode-active .workspace-leaf:not(.mod-active) {
-         display: none;
-      }
-
-      .reading-mode-active .workspace {
-         padding: 0;
+      .reading-mode-active .workspace-leaf.mod-active {
+         --file-line-width: 70rem; // Pour une meilleure largeur de lecture
       }
 
       .reading-mode-container {
+         background: var(--background-primary);
+         border-top: 1px solid var(--background-modifier-border);
+         padding: 10px;
          position: fixed;
          bottom: 0;
          left: 0;
          right: 0;
-         background: var(--background-primary);
          z-index: 1000;
-         padding: 10px;
-         border-top: 1px solid var(--background-modifier-border);
+         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
       }
 
       .reading-mode-controls {
@@ -1518,6 +1822,61 @@ document.head.appendChild(Object.assign(document.createElement('style'), {
          background: var(--background-primary);
          color: var(--text-normal);
          min-width: 150px;
+      }
+
+      .reading-mode-controls button:disabled {
+         opacity: 0.5;
+         cursor: not-allowed;
+         background: var(--background-modifier-border);
+      }
+
+      .reading-mode-active {
+         --header-height: 0px !important;
+         --file-explorer-width: 0px !important;
+      }
+
+      .reading-mode-active .workspace-ribbon {
+         display: none !important;
+      }
+
+      .reading-mode-active .workspace-split.mod-left-split,
+      .reading-mode-active .workspace-split.mod-right-split,
+      .reading-mode-active .status-bar {
+         display: none !important;
+      }
+
+      .reading-mode-active .workspace-tabs {
+         padding: 0 !important;
+      }
+
+      .reading-mode-active .workspace {
+         padding: 0 !important;
+      }
+
+      .reading-mode-active .workspace-leaf {
+         width: 100% !important;
+      }
+
+      .reading-mode-active .markdown-preview-view {
+         padding: 2em 20% !important;
+      }
+
+      .reading-mode-container {
+         background: var(--background-primary);
+         border-top: 1px solid var(--background-modifier-border);
+         padding: 10px;
+         position: fixed;
+         bottom: 0;
+         left: 0;
+         right: 0;
+         z-index: 1000;
+         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .feed-header span {
+         flex-grow: 1;
+         margin-right: 8px;
+         font-weight: 500;
       }
    `
 }));
