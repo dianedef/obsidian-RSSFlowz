@@ -546,8 +546,18 @@ class RSSReaderPlugin extends Plugin {
       this.fetchAllFeeds();
    });
    
-   this.addRibbonIcon('book-open', this.t('ribbons.reading.tooltip'), async () => {
-      await this.toggleReadingMode();
+   this.addRibbonIcon('book-open', this.t('ribbons.reading.tooltip'), () => {
+      // Mettre à jour l'état immédiatement
+      this.settings.readingMode = !this.settings.readingMode;
+      
+      if (this.settings.readingMode) {
+         this.enterReadingMode();
+      } else {
+         this.exitReadingMode();
+      }
+      
+      // Sauvegarder l'état après le changement
+      this.saveData(this.settings);
    });
    
    if (this.settings.fetchFrequency === 'startup') {
@@ -737,7 +747,7 @@ class RSSReaderPlugin extends Plugin {
       }
    }
 
-/*    async parseRssFeed(doc, feed) {
+   /*    async parseRssFeed(doc, feed) {
       try {
          // Nettoyer le contenu XML avant le parsing
          const cleanXML = (xml) => {
@@ -1188,105 +1198,143 @@ class RSSReaderPlugin extends Plugin {
 
    async enterReadingMode() {
       try {
-         const workspace = this.app.workspace;
-         const leaf = workspace.activeLeaf;
-         
-         // Activer le mode lecture et plein écran
-         leaf.view.setEphemeralState({ mode: 'preview' });
-         workspace.setFullscreen(leaf);
-         
-         // Créer l'interface du mode lecture
-         this.readingModeContainer = document.createElement('div');
-         this.readingModeContainer.classList.add('reading-mode-container');
-         
-         // Créer la barre de contrôle
-         const controlBar = document.createElement('div');
-         controlBar.classList.add('reading-mode-controls');
-         
-         // Boutons de navigation
-         const folderSelect = document.createElement('select');
-         folderSelect.classList.add('reading-mode-select');
-         this.settings.groups.forEach(group => {
-            const option = document.createElement('option');
-            option.value = group;
-            option.text = group;
-            folderSelect.appendChild(option);
-         });
-         folderSelect.addEventListener('change', (e) => this.selectFolder(e.target.value));
-         
-         const feedSelect = document.createElement('select');
-         feedSelect.classList.add('reading-mode-select');
-         this.updateFeedSelect(feedSelect, this.settings.currentFolder);
-         
-         const prevButton = document.createElement('button');
-         prevButton.innerHTML = '⬅️ Précédent';
-         prevButton.onclick = () => this.navigateArticles('previous');
-         
-         const nextButton = document.createElement('button');
-         nextButton.innerHTML = 'Suivant ➡️';
-         nextButton.onclick = () => this.navigateArticles('next');
-         
-         const markReadButton = document.createElement('button');
-         markReadButton.innerHTML = '✓ Lu';
-         markReadButton.onclick = () => this.markCurrentArticleAsRead();
-         
-         const deleteButton = document.createElement('button');
-         deleteButton.innerHTML = '🗑️ Supprimer';
-         deleteButton.onclick = () => this.deleteCurrentArticle();
-         
-         const exitButton = document.createElement('button');
-         exitButton.innerHTML = '❌ Quitter';
-         exitButton.onclick = () => this.toggleReadingMode();
-         
-         // Ajouter les éléments à la barre de contrôle
-         controlBar.appendChild(folderSelect);
-         controlBar.appendChild(feedSelect);
-         controlBar.appendChild(prevButton);
-         controlBar.appendChild(nextButton);
-         controlBar.appendChild(markReadButton);
-         controlBar.appendChild(deleteButton);
-         controlBar.appendChild(exitButton);
-         
-         this.readingModeContainer.appendChild(controlBar);
-         document.body.appendChild(this.readingModeContainer);
-         document.body.classList.add('reading-mode-active');
-         
-         // Sélectionner automatiquement le dernier article lu ou le plus récent
-         if (this.settings.currentFeed) {
-            const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
-            if (feed) {
-               // Mettre à jour les sélecteurs
-               const folderSelect = this.readingModeContainer.querySelector('.reading-mode-select:nth-child(1)');
-               const feedSelect = this.readingModeContainer.querySelector('.reading-mode-select:nth-child(2)');
-               
-               folderSelect.value = feed.group || 'Défaut';
-               this.updateFeedSelect(feedSelect, feed.group || 'Défaut');
-               feedSelect.value = feed.url;
-               
-               // Ouvrir le dernier article lu ou le plus récent
-               if (this.settings.lastReadArticle) {
-                  await this.navigateToArticle(this.settings.lastReadArticle);
-               } else {
-                  await this.navigateArticles('next');
-               }
+         const styleEl = document.createElement('style');
+         styleEl.id = 'rss-reading-mode-styles';
+         styleEl.textContent = `
+            /* Limiter la portée du CSS à notre modal uniquement */
+            .modal.rss-reading-modal {
+               --header-height: 0px !important;
+               --file-explorer-width: 0px !important;
+               width: 90vw !important;
+               height: 90vh !important;
+               max-width: none !important;
+               max-height: none !important;
+               position: fixed !important;
+               border-radius: 0 !important;
+               border: 1px solid var(--background-modifier-border) !important;
+               top: 5vh !important;
+               left: 5vw !important;
+               z-index: 9999;
+               background-color: var(--background-primary);
             }
+
+            .rss-reading-modal .modal-content {
+               padding: 0;
+               height: 100%;
+               display: flex;
+               flex-direction: column;
+               overflow: hidden;
+            }
+
+            .rss-reading-modal .reading-mode-controls {
+               display: flex;
+               gap: 10px;
+               justify-content: center;
+               align-items: center;
+               padding: 10px;
+               border-top: 1px solid var(--background-modifier-border);
+               background: var(--background-primary);
+               position: sticky;
+               bottom: 0;
+            }
+
+            .rss-reading-modal .reading-mode-select {
+               padding: 8px;
+               border-radius: 4px;
+               border: 1px solid var(--background-modifier-border);
+               background: var(--background-primary);
+               color: var(--text-normal);
+               min-width: 150px;
+            }
+
+            .rss-reading-modal button {
+               padding: 8px 16px;
+               border-radius: 4px;
+               background: var(--interactive-accent);
+               color: var(--text-on-accent);
+               border: none;
+               cursor: pointer;
+            }
+
+            .rss-reading-modal button:disabled {
+               opacity: 0.5;
+               cursor: not-allowed;
+            }
+         `;
+         document.head.appendChild(styleEl);
+         
+         // Ajouter la classe spécifique à notre modal
+         const modalEl = document.querySelector('.modal');
+         if (modalEl) {
+            modalEl.classList.add('rss-reading-modal');
          }
       } catch (error) {
          console.error('Erreur lors de l\'entrée en mode lecture:', error);
-         new Notice('Erreur lors de l\'activation du mode lecture');
+         new Notice('Erreur lors du changement de mode lecture');
       }
    }
 
+   async getCurrentArticle() {
+      // Vérifier si un fichier est actuellement ouvert et s'il se trouve dans le dossier RSS
+      const activeFile = this.app.workspace.getActiveFile();
+      if (activeFile && activeFile.path.startsWith(this.settings.rssFolder)) {
+          // Lire le contenu du fichier actuellement ouvert s'il est dans le dossier RSS
+          const content = await this.app.vault.adapter.read(activeFile.path);
+          const articles = content.split('\n---\n');
+          const article = articles[0]; // ou sélectionner l'article actif basé sur une certaine logique
+          const titleMatch = article.match(/# (.*)/);
+          const linkMatch = article.match(/Lien: (.*)/);
+          const dateMatch = article.match(/Date: (.*)/);
+
+          return {
+              title: titleMatch ? titleMatch[1] : 'Sans titre',
+              link: linkMatch ? linkMatch[1] : '',
+              date: dateMatch ? dateMatch[1] : '',
+              content: article,
+              feedUrl: activeFile.path,
+              feedTitle: titleMatch ? titleMatch[1] : 'Sans titre',
+              path: activeFile.path
+          };
+      }
+
+      // Si aucun fichier n'est ouvert ou s'il n'est pas dans le dossier RSS, trouver le dernier article lu ou le premier non lu
+      const feeds = await this.app.vault.getFiles().filter(file => file.path.startsWith(this.settings.rssFolder));
+      if (feeds.length > 0) {
+          // Implémenter la logique pour trouver le dernier article lu ou le premier non lu
+          // Exemple simplifié : retourner le premier fichier trouvé
+          const content = await this.app.vault.adapter.read(feeds[0].path);
+          const articles = content.split('\n---\n');
+          const article = articles[0]; // ou une logique pour trouver le dernier lu ou le premier non lu
+          const titleMatch = article.match(/# (.*)/);
+          const linkMatch = article.match(/Lien: (.*)/);
+          const dateMatch = article.match(/Date: (.*)/);
+
+          return {
+              title: titleMatch ? titleMatch[1] : 'Sans titre',
+              link: linkMatch ? linkMatch[1] : '',
+              date: dateMatch ? dateMatch[1] : '',
+              content: article,
+              feedUrl: feeds[0].path,
+              feedTitle: titleMatch ? titleMatch[1] : 'Sans titre',
+              path: feeds[0].path
+          };
+      }
+
+      // Si aucun feed n'est trouvé
+      console.error("Aucun article de feed trouvé.");
+      throw new Error('Aucun article de feed trouvé');
+   }
+
    async exitReadingMode() {
-      if (this.readingModeContainer) {
-         // Désactiver le mode plein écran si actif
-         const leaf = this.app.workspace.activeLeaf;
-         if (leaf.isFullScreen) {
-            this.app.workspace.toggleLeafFullScreen(leaf);
+      try {
+         const styleEl = document.getElementById('rss-reading-mode-styles');
+         if (styleEl) {
+            styleEl.remove();
          }
-         
-         this.readingModeContainer.remove();
          document.body.classList.remove('reading-mode-active');
+      } catch (error) {
+         console.error('Erreur lors de la sortie du mode lecture:', error);
+         new Notice('Erreur lors du changement de mode lecture');
       }
    }
 
@@ -1410,121 +1458,138 @@ class RSSReaderPlugin extends Plugin {
    }
 
    async navigateArticles(direction) {
-      if (!this.settings.currentFeed) {
-         new Notice('Veuillez sélectionner un feed');
-         return;
-      }
-
-      const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
-      if (!feed) return;
-
-      const baseFolder = this.settings.rssFolder;
-      const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
-      let articles = [];
-
       try {
-         if (feed.type === 'uniqueFile') {
-            // Pour les feeds en fichier unique, on parse le contenu pour extraire les articles
-            const filePath = `${groupFolder}/${feed.title}.md`;
-            const content = await this.app.vault.adapter.read(filePath);
-            articles = content.split('\n---\n').map(article => {
-               const titleMatch = article.match(/# .* - (.*)/);
-               const linkMatch = article.match(/Link: (.*)/);
-               return {
-                  title: titleMatch?.[1] || 'Sans titre',
-                  link: linkMatch?.[1] || '',
-                  content: article
-               };
-            });
-         } else {
-            // Pour les feeds multi-fichiers, on liste les fichiers du dossier
-            const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
-            const files = await this.app.vault.adapter.list(feedFolder);
-            articles = await Promise.all(files.files.map(async file => {
-               const content = await this.app.vault.adapter.read(file);
-               const titleMatch = content.match(/# .* - (.*)/);
-               const linkMatch = content.match(/Link: (.*)/);
-               return {
-                  title: titleMatch?.[1] || 'Sans titre',
-                  link: linkMatch?.[1] || '',
-                  content: content,
-                  path: file
-               };
-            }));
-         }
+          // Récupérer tous les feeds du groupe actuel
+          const currentGroup = this.settings.currentFolder || 'Défaut';
+          const groupFeeds = this.settings.feeds.filter(feed => 
+              (currentGroup === 'Défaut' && !feed.group) || 
+              feed.group === currentGroup
+          );
 
-         // Filtrer les articles supprimés
-         articles = articles.filter(article => {
-            const articleId = this.getArticleId(feed.url, article.link);
-            return !this.settings.articleStates[articleId]?.deleted;
-         });
+          // Si un feed spécifique est sélectionné, filtrer uniquement ses articles
+          if (this.settings.currentFeed) {
+              groupFeeds = groupFeeds.filter(f => f.url === this.settings.currentFeed);
+          }
 
-         // Trier les articles par date (du plus récent au plus ancien)
-         articles.sort((a, b) => {
-            const dateA = a.content.match(/Date: (.*)/)?.[1] || '';
-            const dateB = b.content.match(/Date: (.*)/)?.[1] || '';
-            return new Date(dateB) - new Date(dateA);
-         });
+          if (!groupFeeds.length) {
+              new Notice('Aucun feed disponible dans ce groupe');
+              return;
+          }
 
-         // Trouver l'index de l'article actuel
-         let currentIndex = articles.findIndex(article => article.link === this.settings.lastReadArticle);
-         if (currentIndex === -1) currentIndex = direction === 'next' ? -1 : articles.length;
+          // Récupérer tous les articles des feeds sélectionnés
+          let allArticles = [];
+          for (const feed of groupFeeds) {
+              const baseFolder = this.settings.rssFolder;
+              const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
 
-         // Calculer le nouvel index
-         let newIndex;
-         if (direction === 'next') {
-            newIndex = currentIndex + 1;
-            if (newIndex >= articles.length) {
-               new Notice('Fin des articles');
-               return;
-            }
-         } else if (direction === 'previous') {
-            newIndex = currentIndex - 1;
-            if (newIndex < 0) {
-               new Notice('Début des articles');
-               return;
-            }
-         } else if (direction === 'current') {
-            newIndex = currentIndex;
-            if (newIndex < 0 || newIndex >= articles.length) {
-               newIndex = 0; // Si l'article n'est pas trouvé, aller au premier
-            }
-         }
-
-         // Ouvrir le nouvel article
-         const article = articles[newIndex];
-         this.settings.lastReadArticle = article.link;
-         await this.saveData(this.settings);
-
-         if (feed.type === 'uniqueFile') {
-            // Pour les fichiers uniques, on ouvre le fichier et on scroll à la bonne section
-            const file = await this.app.vault.getAbstractFileByPath(`${groupFolder}/${feed.title}.md`);
-            const leaf = this.app.workspace.getLeaf();
-            await leaf.openFile(file);
-            
-            // Attendre que le contenu soit chargé
-            setTimeout(() => {
-               const contentEl = leaf.view.contentEl;
-               const sections = contentEl.querySelectorAll('h1');
-               for (const section of sections) {
-                  if (section.textContent.includes(article.title)) {
-                     section.scrollIntoView({ behavior: 'smooth' });
-                     break;
+              try {
+                  if (feed.type === 'uniqueFile') {
+                      // Pour les feeds en fichier unique
+                      const filePath = `${groupFolder}/${feed.title}.md`;
+                      const content = await this.app.vault.adapter.read(filePath);
+                      const articles = content.split('\n---\n').map(article => {
+                          const titleMatch = article.match(/# (.*)/);
+                          const linkMatch = article.match(/Lien: (.*)/);
+                          const dateMatch = article.match(/Date: (.*)/);
+                          return {
+                              title: titleMatch?.[1] || 'Sans titre',
+                              link: linkMatch?.[1] || '',
+                              date: dateMatch?.[1] || '',
+                              content: article,
+                              feedUrl: feed.url,
+                              feedTitle: feed.title,
+                              path: filePath
+                          };
+                      });
+                      allArticles.push(...articles);
+                  } else {
+                      // Pour les feeds multi-fichiers
+                      const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
+                      const files = await this.app.vault.adapter.list(feedFolder);
+                      const articles = await Promise.all(files.files.map(async file => {
+                          const content = await this.app.vault.adapter.read(file);
+                          const titleMatch = content.match(/# (.*)/);
+                          const linkMatch = content.match(/Lien: (.*)/);
+                          const dateMatch = content.match(/Date: (.*)/);
+                          return {
+                              title: titleMatch?.[1] || 'Sans titre',
+                              link: linkMatch?.[1] || '',
+                              date: dateMatch?.[1] || '',
+                              content: content,
+                              feedUrl: feed.url,
+                              feedTitle: feed.title,
+                              path: file
+                          };
+                      }));
+                      allArticles.push(...articles);
                   }
-               }
-            }, 100);
-         } else {
-            // Pour les fichiers multiples, on ouvre simplement le fichier
-            const file = await this.app.vault.getAbstractFileByPath(article.path);
-            await this.app.workspace.getLeaf().openFile(file);
-         }
+              } catch (error) {
+                  console.error(`Erreur lors de la lecture du feed ${feed.title}:`, error);
+              }
+          }
 
-         // Mettre à jour l'interface
-         this.updateNavigationButtons(newIndex, articles.length);
+          // Filtrer les articles supprimés
+          allArticles = allArticles.filter(article => {
+              const articleId = this.getArticleId(article.feedUrl, article.link);
+              return !this.settings.articleStates[articleId]?.deleted;
+          });
+
+          // Trier par date (du plus récent au plus ancien)
+          allArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+          // Trouver l'index de l'article actuel
+          let currentIndex = allArticles.findIndex(article => 
+              article.link === this.settings.lastReadArticle
+          );
+          if (currentIndex === -1) currentIndex = direction === 'next' ? -1 : allArticles.length;
+
+          // Calculer le nouvel index
+          let newIndex;
+          if (direction === 'next') {
+              newIndex = currentIndex + 1;
+              if (newIndex >= allArticles.length) {
+                  new Notice('Fin des articles');
+                  return;
+              }
+          } else if (direction === 'previous') {
+              newIndex = currentIndex - 1;
+              if (newIndex < 0) {
+                  new Notice('Début des articles');
+                  return;
+              }
+          }
+
+          // Ouvrir le nouvel article
+          const article = allArticles[newIndex];
+          this.settings.lastReadArticle = article.link;
+          await this.saveData(this.settings);
+
+          // Ouvrir le fichier
+          const file = await this.app.vault.getAbstractFileByPath(article.path);
+          if (file) {
+              await this.app.workspace.getLeaf().openFile(file);
+              
+              // Si c'est un fichier unique, scroller jusqu'à l'article
+              if (article.feedUrl && this.settings.feeds.find(f => f.url === article.feedUrl)?.type === 'uniqueFile') {
+                  setTimeout(() => {
+                      const contentEl = this.app.workspace.activeLeaf.view.contentEl;
+                      const sections = contentEl.querySelectorAll('h1');
+                      for (const section of sections) {
+                          if (section.textContent.includes(article.title)) {
+                              section.scrollIntoView({ behavior: 'smooth' });
+                              break;
+                          }
+                      }
+                  }, 100);
+              }
+          }
+
+          // Mettre à jour l'interface
+          this.updateNavigationButtons(newIndex, allArticles.length);
 
       } catch (error) {
-         console.error('Erreur lors de la navigation:', error);
-         new Notice('Erreur lors de la navigation entre les articles');
+          console.error('Erreur lors de la navigation:', error);
+          new Notice('Erreur lors de la navigation entre les articles');
       }
    }
 
@@ -1575,7 +1640,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
       new Setting(containerEl)
             .setName(this.plugin.t('settings.openaiKey.name'))
             .setDesc(this.plugin.t('settings.openaiKey.desc'))
-         .addText(text => text
+            .addText(text => text
                .setPlaceholder('sk-...')
                .setValue(this.plugin.settings.openaiKey)
                .onChange(async (value) => {
@@ -1617,8 +1682,9 @@ class RSSReaderSettingTab extends PluginSettingTab {
                   if (!isNaN(numValue) && numValue > 0) {
                      this.plugin.settings.maxArticles = numValue;
                      await this.plugin.saveData(this.plugin.settings);
+                     }
                   }
-               }));
+               ));
 
       new Setting(containerEl)
          .setName(this.plugin.t('settings.retentionDays.name'))
@@ -1704,9 +1770,9 @@ class RSSReaderSettingTab extends PluginSettingTab {
             .setName(this.plugin.t('settings.importExport.jsonImport.name'))
             .setDesc(this.plugin.t('settings.importExport.jsonImport.desc'))
             .addButton(button => {
-                button
-                    .setButtonText(this.plugin.t('settings.importExport.jsonImport.button'))
-                    .onClick(() => {
+               button
+                  .setButtonText(this.plugin.t('settings.importExport.jsonImport.button'))
+                  .onClick(() => {
                         const input = document.createElement('input');
                         input.type = 'file';
                         input.accept = '.json';
@@ -1714,80 +1780,80 @@ class RSSReaderSettingTab extends PluginSettingTab {
                         containerEl.appendChild(input);
 
                         input.onchange = async (e) => {
-                            if (!e.target.files.length) return;
-                            
-                            const loadingNotice = new Notice(this.plugin.t('settings.importExport.jsonImport.loading'), 0);
-                            
-                            try {
-                                const file = e.target.files[0];
-                                const reader = new FileReader();
-                                
-                                reader.onload = async (event) => {
+                           if (!e.target.files.length) return;
+                           
+                           const loadingNotice = new Notice(this.plugin.t('settings.importExport.jsonImport.loading'), 0);
+                           
+                           try {
+                              const file = e.target.files[0];
+                              const reader = new FileReader();
+                              
+                              reader.onload = async (event) => {
                                     try {
-                                        const config = JSON.parse(event.target.result);
-                                        
-                                        // Vérifier que le fichier contient les champs essentiels
-                                        if (!config.feeds || !Array.isArray(config.groups)) {
-                                            new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
-                                            return;
-                                        }
+                                       const config = JSON.parse(event.target.result);
+                                       
+                                       // Vérifier que le fichier contient les champs essentiels
+                                       if (!config.feeds || !Array.isArray(config.groups)) {
+                                          new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                                          return;
+                                       }
 
-                                        // Créer une sauvegarde de la configuration actuelle
-                                        const backup = await this.plugin.loadData();
-                                        const backupJson = JSON.stringify(backup, null, 2);
-                                        const backupBlob = new Blob([backupJson], { type: 'application/json' });
-                                        const backupUrl = window.URL.createObjectURL(backupBlob);
-                                        const backupA = document.createElement('a');
-                                        backupA.href = backupUrl;
-                                        backupA.download = 'rss-reader-config-backup.json';
-                                        backupA.click();
-                                        window.URL.revokeObjectURL(backupUrl);
+                                       // Créer une sauvegarde de la configuration actuelle
+                                       const backup = await this.plugin.loadData();
+                                       const backupJson = JSON.stringify(backup, null, 2);
+                                       const backupBlob = new Blob([backupJson], { type: 'application/json' });
+                                       const backupUrl = window.URL.createObjectURL(backupBlob);
+                                       const backupA = document.createElement('a');
+                                       backupA.href = backupUrl;
+                                       backupA.download = 'rss-reader-config-backup.json';
+                                       backupA.click();
+                                       window.URL.revokeObjectURL(backupUrl);
 
-                                        // Appliquer la nouvelle configuration
-                                        this.plugin.settings = Object.assign({}, this.plugin.settings, config);
-                                        await this.plugin.saveData(this.plugin.settings);
-                                        
-                                        // Recréer les dossiers nécessaires
-                                        await this.plugin.ensureFolder(this.plugin.settings.rssFolder);
-                                        for (const group of this.plugin.settings.groups) {
-                                            if (group !== this.plugin.t('settings.groups.none')) {
+                                       // Appliquer la nouvelle configuration
+                                       this.plugin.settings = Object.assign({}, this.plugin.settings, config);
+                                       await this.plugin.saveData(this.plugin.settings);
+                                       
+                                       // Recréer les dossiers nécessaires
+                                       await this.plugin.ensureFolder(this.plugin.settings.rssFolder);
+                                       for (const group of this.plugin.settings.groups) {
+                                          if (group !== this.plugin.t('settings.groups.none')) {
                                                 await this.plugin.ensureFolder(`${this.plugin.settings.rssFolder}/${group}`);
-                                            }
-                                        }
+                                          }
+                                       }
 
-                                        // Recréer les dossiers pour chaque feed non-unique
-                                        for (const feed of this.plugin.settings.feeds) {
-                                            if (feed.type !== 'uniqueFile') {
+                                       // Recréer les dossiers pour chaque feed non-unique
+                                       for (const feed of this.plugin.settings.feeds) {
+                                          if (feed.type !== 'uniqueFile') {
                                                 const feedPath = `${this.plugin.settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/');
                                                 await this.plugin.ensureFolder(feedPath);
-                                            }
-                                        }
+                                          }
+                                       }
 
-                                        new Notice(this.plugin.t('settings.importExport.jsonImport.success') + '\nUne sauvegarde a été créée');
-                                        
-                                        // Recharger l'interface des paramètres
-                                        this.plugin.settings = await this.plugin.loadData();
-                                        this.display();
-                                        
+                                       new Notice(this.plugin.t('settings.importExport.jsonImport.success') + '\nUne sauvegarde a été créée');
+                                       
+                                       // Recharger l'interface des paramètres
+                                       this.plugin.settings = await this.plugin.loadData();
+                                       this.display();
+                                       
                                     } catch (error) {
-                                        console.error('Erreur lors du parsing:', error);
-                                        new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                                       console.error('Erreur lors du parsing:', error);
+                                       new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
                                     }
-                                };
-                                
-                                reader.readAsText(file);
-                            } catch (error) {
-                                loadingNotice.hide();
-                                new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
-                                console.error(error);
-                            } finally {
-                                input.value = '';
-                            }
+                              };
+                              
+                              reader.readAsText(file);
+                           } catch (error) {
+                              loadingNotice.hide();
+                              new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                              console.error(error);
+                           } finally {
+                              input.value = '';
+                           }
                         };
 
                         input.click();
-                    });
-                return button;
+                  });
+               return button;
             });
 
       new Setting(containerEl)
@@ -2297,7 +2363,7 @@ class RSSReaderSettingTab extends PluginSettingTab {
          
          modal.contentEl.empty();
          modal.contentEl.createEl("p", { 
-            text: this.plugin.t('settings.feeds.delete.confirmMessage', { feedTitle }) 
+            text: this.plugin.t('settings.feeds.delete.confirmMessage').replace('{feedTitle}', feedTitle) 
          });
 
          new Setting(modal.contentEl)
@@ -2313,7 +2379,8 @@ class RSSReaderSettingTab extends PluginSettingTab {
                .onClick(() => {
                   modal.close();
                   resolve(true);
-               }));
+               })
+            );
 
          modal.open();
       });
@@ -2356,192 +2423,177 @@ class RSSReaderSettingTab extends PluginSettingTab {
          modal.open();
       });
    }
-};
+}
 
 // Ajouter ces styles CSS
 document.head.appendChild(Object.assign(document.createElement('style'), {
    textContent: `
-      .feed-search-input {
-         width: 100%;
-         padding: 8px;
-         margin-bottom: 16px;
-         border-radius: 4px;
-         border: 1px solid var(--background-modifier-border);
-      }
-      
-      .feed-header {
-         cursor: pointer;
-         transition: background-color 0.2s ease;
-         display: flex;
-         justify-content: space-between;
-         align-items: center;
-         padding: 8px;
-      }
-      
-      .feed-header:hover {
-         background-color: var(--background-modifier-hover);
-      }
-      
-      .feed-container {
-         margin-bottom: 8px;
-         border: 1px solid var(--background-modifier-border);
-         border-radius: 4px;
-         overflow: hidden;
-      }
-      
-      .feed-options {
-         padding: 8px;
-         border-top: 1px solid var(--background-modifier-border);
-      }
-      
-      .feed-container.collapsed {
-         background-color: var(--background-primary);
-      }
 
-      .feed-buttons {
-         display: flex;
-         align-items: center;
-         gap: 8px;
-         margin-left: auto;
-      }
+         .feed-header span {
+            flex-grow: 1;
+            margin-right: 8px;
+            font-weight: 500;
+         }
 
-      .feed-buttons .setting-item {
-         border: none;
-         padding: 0;
-         margin: 0;
-      }
+         .feed-error-icon {
+            color: var(--text-error);
+            margin-left: 8px;
+            cursor: help;
+         }
 
-      .feed-buttons .setting-item-control {
-         padding: 0;
-         margin: 0;
-      }
+         .feed-last-fetch {
+            font-size: 0.8em;
+            color: var(--text-muted);
+            margin-left: 8px;
+         }
 
-      .feed-header .setting-item {
-         border: none;
-         flex-grow: 1;
-         margin: 0;
-         padding: 0;
-      }
+         .feed-title-container { 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+         }
 
-      .reading-mode-active .workspace-leaf.mod-active {
-         --file-line-width: 70rem; // Pour une meilleure largeur de lecture
-      }
+         .feed-search-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            border: 1px solid var(--background-modifier-border);
+         }
+         
+         .feed-header {
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+         }
+         
+         .feed-header:hover {
+            background-color: var(--background-modifier-hover);
+         }
+         
+         .feed-container {
+            margin-bottom: 8px;
+            border: 1px solid var(--background-modifier-border);
+            border-radius: 4px;
+            overflow: hidden;
+         }
+         
+         .feed-options {
+            padding: 8px;
+            border-top: 1px solid var(--background-modifier-border);
+         }
+         
+         .feed-container.collapsed {
+            background-color: var(--background-primary);
+         }
 
-      .reading-mode-container {
-         background: var(--background-primary);
-         border-top: 1px solid var(--background-modifier-border);
-         padding: 10px;
-         position: fixed;
-         bottom: 0;
-         left: 0;
-         right: 0;
-         z-index: 1000;
-         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-      }
+         .feed-buttons {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+         }
 
-      .reading-mode-controls {
-         display: flex;
-         gap: 10px;
-         justify-content: center;
-         align-items: center;
-      }
+         .feed-buttons .setting-item {
+            border: none;
+            padding: 0;
+            margin: 0;
+         }
 
-      .reading-mode-controls button {
-         padding: 8px 16px;
-         border-radius: 4px;
-         background: var(--interactive-accent);
-         color: var(--text-on-accent);
-         border: none;
-         cursor: pointer;
-         font-size: 14px;
-      }
+         .feed-buttons .setting-item-control {
+            padding: 0;
+            margin: 0;
+         }
 
-      .reading-mode-controls button:hover {
-         background: var(--interactive-accent-hover);
-      }
+         .feed-header .setting-item {
+            border: none;
+            flex-grow: 1;
+            margin: 0;
+            padding: 0;
+         }
 
-      .reading-mode-select {
-         padding: 8px;
-         border-radius: 4px;
-         border: 1px solid var(--background-modifier-border);
-         background: var(--background-primary);
-         color: var(--text-normal);
-         min-width: 150px;
-      }
-
-      .reading-mode-controls button:disabled {
-         opacity: 0.5;
-         cursor: not-allowed;
-         background: var(--background-modifier-border);
-      }
-
-      .reading-mode-active {
-         --header-height: 0px !important;
-         --file-explorer-width: 0px !important;
-      }
-
-      .reading-mode-active .workspace-ribbon {
-         display: none !important;
-      }
-
-      .reading-mode-active .workspace-split.mod-left-split,
-      .reading-mode-active .workspace-split.mod-right-split,
-      .reading-mode-active .status-bar {
-         display: none !important;
-      }
-
-      .reading-mode-active .workspace-tabs {
-         padding: 0 !important;
-      }
-
-      .reading-mode-active .workspace {
-         padding: 0 !important;
-      }
-
-      .reading-mode-active .workspace-leaf {
-         width: 100% !important;
-      }
-
-      .reading-mode-active .markdown-preview-view {
-         padding: 2em 20% !important;
-      }
-
-      .reading-mode-container {
-         background: var(--background-primary);
-         border-top: 1px solid var(--background-modifier-border);
-         padding: 10px;
-         position: fixed;
-         bottom: 0;
-         left: 0;
-         right: 0;
-         z-index: 1000;
-         box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
-      }
-
-      .feed-header span {
-         flex-grow: 1;
-         margin-right: 8px;
-         font-weight: 500;
-      }
-
-      .feed-error-icon {
-         color: var(--text-error);
-         margin-left: 8px;
-         cursor: help;
-      }
-
-      .feed-last-fetch {
-         font-size: 0.8em;
-         color: var(--text-muted);
-         margin-left: 8px;
-      }
-
-      .feed-title-container {
-         display: flex;
-         align-items: center;
-         gap: 8px;
-      }
    `
 }));
+
+class ReadingModeModal extends Modal {
+    constructor(app, article, groups, currentFolder, updateFeeds) {
+        super(app);
+        this.article = article;
+        this.groups = groups;
+        this.currentFolder = currentFolder;
+        this.updateFeeds = updateFeeds;
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+        contentEl.empty();
+
+        contentEl.classList.add('reading-mode-active');
+
+        // Ajouter le contenu de l'article
+        const titleElement = document.createElement('h1');
+        titleElement.textContent = this.article.title;
+        contentEl.appendChild(titleElement);
+
+        const contentElement = document.createElement('div');
+        contentElement.innerHTML = this.article.content; // Assurez-vous que le contenu est sécurisé
+        contentEl.appendChild(contentElement);
+
+        // Créer la barre de contrôle
+        const controlBar = document.createElement('div');
+        controlBar.classList.add('reading-mode-controls');
+
+        // Sélecteur de groupe
+        const folderSelect = document.createElement('select');
+        folderSelect.classList.add('reading-mode-select');
+        this.groups.forEach(group => {
+            const option = document.createElement('option');
+            option.value = group;
+            option.text = group;
+            if (this.currentFolder === group) {
+                option.selected = true;
+            }
+            folderSelect.appendChild(option);
+        });
+        folderSelect.addEventListener('change', (e) => {
+            this.currentFolder = e.target.value;
+            this.updateFeeds(this.currentFolder); // Mettre à jour les feeds
+        });
+        controlBar.appendChild(folderSelect);
+
+        // Boutons de navigation
+        const prevButton = document.createElement('button');
+        prevButton.innerHTML = '⬅️ Précédent';
+        prevButton.onclick = () => this.navigateArticles('previous');
+        controlBar.appendChild(prevButton);
+
+        const nextButton = document.createElement('button');
+        nextButton.innerHTML = 'Suivant ➡️';
+        nextButton.onclick = () => this.navigateArticles('next');
+        controlBar.appendChild(nextButton);
+
+        // Ajouter un bouton pour fermer le modal
+        const closeButton = document.createElement('button');
+        closeButton.innerHTML = 'Fermer';
+        closeButton.onclick = () => this.close();
+        contentEl.appendChild(closeButton);
+
+        // Ajouter la barre de contrôle au modal
+        contentEl.appendChild(controlBar);
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+    }
+
+    navigateArticles(direction) {
+        // Implémentez la logique pour naviguer entre les articles ici
+        // Vous pouvez appeler une méthode de votre classe principale pour cela
+    }
+}
 
 module.exports = RSSReaderPlugin; 

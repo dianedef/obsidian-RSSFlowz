@@ -10,7 +10,7 @@
       "tags": [],
       "group": "xzxzx",
       "lastError": null,
-      "lastSuccessfulFetch": 1732465281790
+      "lastSuccessfulFetch": 1732586344689
     }
   ],
   "groups": [
@@ -22,8 +22,8 @@
   "fetchInterval": 3600,
   "maxArticles": 2,
   "retentionDays": 2,
-  "lastFetch": 1732465281731,
-  "readingMode": false,
+  "lastFetch": 1732586344606,
+  "readingMode": true,
   "lastReadArticle": null,
   "currentFeed": null,
   "currentFolder": null,
