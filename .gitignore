@@ -1,0 +1,40 @@
+# Dossiers de build et de dépendances
+dist/
+build/
+node_modules/
+
+# Fichiers de couverture de tests
+coverage/
+
+# Fichiers de logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers d'environnement
+.env
+.env.local
+.env.*.local
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# Fichiers d'IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Fichiers de compilation TypeScript
+*.tsbuildinfo
+
+# Fichiers temporaires
+*.tmp
+*.temp
+.cache/
+
+# Fichiers de build Obsidian
+main.js
+data.json

@@ -1,0 +1,177 @@
+## Service de Traduction (i18n)
+   Détecte automatiquement la langue de l'utilisateur
+   Gère les traductions avec une méthode t()
+   Supporte les paramètres dans les traductions
+   Utilise l'anglais comme fallback
+   Des fichiers de traduction séparés :
+   fr.ts pour le français
+   en.ts pour l'anglais
+   Structure identique pour faciliter la maintenance
+   Intégration dans le plugin principal :
+   Initialisation du service au démarrage
+   Méthode utilitaire t() pour un accès facile aux traductions
+   Utilisation dans les commandes et messages
+-
+## Gestion des traductions FR/EN
+   Méthode de traduction t()
+-
+## Service de Gestion des Feeds
+   Récupération des flux
+   Méthode fetchFeed() pour récupérer et parser un flux
+   Gestion des en-têtes HTTP appropriés
+   Détection automatique du type de flux (RSS ou Atom)
+   Parsing des flux Atom
+   Méthode parseAtomFeed() pour le flux principal
+   Méthode parseAtomEntry() pour les articles
+   Gestion des liens alternatifs
+   Support du contenu et du résumé
+   Parsing des flux RSS
+   Méthode parseRssFeed() pour le flux principal
+   Méthode parseRSSItem() pour les articles
+   Gestion des GUIDs et des liens
+   Gestion des erreurs
+   Vérification des erreurs de parsing XML
+   Logging des erreurs
+   Messages d'erreur détaillés
+Types TypeScript
+   Interface RSSFeed pour la structure du flux
+   Interface RSSItem pour les articles
+   Interface FeedSettings pour la configuration
+   Interface FeedData pour les métadonnées
+   réé une suite de tests complète pour le RSSService qui couvre les cas suivants :
+Tests de base
+   Parsing d'un flux RSS standard
+   Parsing d'un flux Atom standard
+   Vérification des champs obligatoires
+   Tests d'erreurs
+   Gestion des erreurs de parsing XML
+   Gestion des erreurs HTTP
+   Gestion des réponses invalides
+   Tests de cas particuliers
+   Flux sans articles
+   Articles avec champs manquants
+   Valeurs par défaut
+   Mocking
+   Mock de la fonction requestUrl d'Obsidian
+   Simulation de différentes réponses HTTP
+   Simulation d'erreurs réseau
+-
+## Service de Gestion des Fichiers
+   ensureFolder()
+   removeFolder()
+   cleanOldArticles()
+
+### Gestion des dossiers
+   ensureFolder() : Crée un dossier s'il n'existe pas
+   removeFolder() : Supprime un dossier et son contenu récursivement
+   fileExists() : Vérifie l'existence d'un fichier
+
+### Gestion des articles
+   saveArticle() : Sauvegarde un article en Markdown avec template
+   cleanOldArticles() : Nettoie les articles selon la période de rétention
+   sanitizeFileName() : Nettoie les noms de fichiers
+
+### Gestion des erreurs
+   Logging détaillé des erreurs
+   Propagation des erreurs avec messages explicites
+   Vérifications de sécurité
+
+### Tests pour FileService
+   Tests de ensureFolder
+   Création d'un nouveau dossier
+   Gestion des dossiers existants
+   Propagation des erreurs
+   Tests de removeFolder
+   Suppression récursive des dossiers et fichiers
+   Gestion des dossiers inexistants
+   Vérification des appels aux méthodes de l'API
+   Tests de cleanOldArticles
+   Suppression des articles selon la période de rétention
+   Filtrage des fichiers par dossier
+   Gestion des dates
+   Tests de saveArticle
+   Création de nouveaux fichiers
+   Mise à jour des fichiers existants
+   Remplacement des variables dans le template
+   Tests de sanitizeFileName
+   Remplacement des caractères invalides
+   Gestion des espaces et tirets
+   Nettoyage des noms de fichiers
+
+-
+## ReadingService
+### Navigation dans les articles
+   navigateArticles() : Navigation suivant/précédent
+   navigateToArticle() : Navigation directe
+   markCurrentArticleAsRead() : Marque comme lu
+### Gestion de l'état
+   Interface ReadingState pour le suivi
+   Méthode getState() pour l'état actuel
+   Persistance du dernier article lu
+   Interface utilisateur
+   Styles CSS personnalisés
+   Mode plein écran
+   Boutons de navigation
+   Mise en page optimisée pour la lecture
+   Utilitaires
+###Gestion des onglets Obsidian
+   Filtrage des fichiers d'articles
+   Manipulation du DOM
+Tests de enterReadingMode
+Activation du mode lecture
+Gestion de la double activation
+Chargement du dernier article lu
+### Tests de navigateArticles
+   Navigation vers l'article suivant
+   Navigation vers l'article précédent
+   Gestion des limites (début/fin)
+   Tests de markCurrentArticleAsRead
+   Marquage d'un article comme lu
+   Gestion des cas sans article actif
+   Vérification du contenu modifié
+   Tests de navigateToArticle
+   Navigation directe vers un article
+   Gestion des articles inexistants
+   Mise à jour de l'état
+   Les tests utilisent :
+   Mocks complets de l'API Obsidian
+   Mocks du DOM pour les styles
+   Assertions détaillées
+   Cas d'erreur et cas limites
+
+-
+StorageService est maintenant complet avec :
+Une interface StorageData bien définie
+Des méthodes pour charger et sauvegarder les données
+Une initialisation des valeurs par défaut
+Des tests complets couvrant :
+L'initialisation avec des valeurs par défaut
+La fusion avec des données existantes
+La sauvegarde des données
+
+-
+## Service d'Import/Export
+   Import de fichiers OPML avec gestion des catégories
+   Export des flux au format OPML
+   Gestion des flux en double lors de l'import
+   Support des structures OPML imbriquées
+### Tests :
+   Import de fichiers OPML valides
+   Gestion des flux existants
+   Gestion des erreurs de parsing XML
+   Export au format OPML
+   Vérification du contenu exporté
+   Gestion des erreurs d'export
+
+
+
+## SchedulerService :
+   Gestion des intervalles de temps
+   Tests de démarrage/arrêt des planificateurs
+   Tests de remplacement des planificateurs existants
+### SyncService :
+   Gestion des flux RSS
+   Filtrage des articles en double
+   Respect des limites d'articles
+   Gestion des erreurs
+   Tests de création de fichiers
