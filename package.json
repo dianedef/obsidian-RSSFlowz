@@ -1,16 +1,38 @@
 {
+  "name": "obsidian-rss-flowz",
+  "version": "1.0.0",
+  "description": "Un lecteur RSS qui sauvegarde les articles en markdown avec support OPML, résumés AI et transcription YouTube.",
+  "main": "main.js",
   "scripts": {
-    "test": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "dev": "node esbuild.config.mjs",
+    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+    "test": "node --max-old-space-size=4096 node_modules/vitest/vitest.mjs run",
+    "test:watch": "node --max-old-space-size=4096 node_modules/vitest/vitest.mjs",
+    "test:coverage": "node --max-old-space-size=4096 node_modules/vitest/vitest.mjs run --coverage"
   },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "rss",
+    "opml"
+  ],
+  "author": "Votre Nom",
+  "license": "MIT",
   "devDependencies": {
+    "@types/node": "^16.11.6",
     "@types/sinon": "^17.0.3",
-    "@types/xml2js": "^0.4.14",
+    "@typescript-eslint/eslint-plugin": "^5.2.0",
+    "@typescript-eslint/parser": "^5.2.0",
     "@vitest/coverage-v8": "^1.6.0",
-    "sinon": "^17.0.1",
+    "builtin-modules": "^3.2.0",
+    "esbuild": "0.13.12",
+    "obsidian": "latest",
+    "sinon": "^16.1.3",
+    "tslib": "2.3.1",
+    "typescript": "^5.0.0",
     "vitest": "^1.6.0"
   },
   "dependencies": {
-    "xml2js": "^0.6.2"
+    "fast-xml-parser": "^4.3.2"
   }
 }

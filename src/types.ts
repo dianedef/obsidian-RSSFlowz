@@ -37,4 +37,6 @@ export interface PluginSettings {
 export interface StorageData {
   feeds: FeedData[]
   settings: PluginSettings
+  readArticles?: string[]
+  lastReadArticle?: string | null
 } 

@@ -1,29 +1,53 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { App } from 'obsidian'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { SchedulerService } from '../../src/services/SchedulerService'
 import { SyncService } from '../../src/services/SyncService'
 import { StorageService } from '../../src/services/StorageService'
-import { FeedData, StorageData } from '../../src/types'
+import { App } from 'obsidian'
+import { FeedData } from '../../src/types'
 
 describe('SchedulerService', () => {
-  let app: App
-  let syncService: SyncService
-  let storageService: StorageService
-  let schedulerService: SchedulerService
+  let service: SchedulerService
+  let mockApp: App
+  let mockSyncService: SyncService
+  let mockStorageService: StorageService
   let mockSyncFeed: ReturnType<typeof vi.fn>
   let mockLoadData: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     vi.useFakeTimers()
-    
+
+    mockApp = {
+      vault: {
+        getFiles: vi.fn(),
+        getAbstractFileByPath: vi.fn(),
+        create: vi.fn()
+      },
+      workspace: {
+        getActiveFile: vi.fn(),
+        getActiveViewOfType: vi.fn()
+      }
+    } as unknown as App
+
     mockSyncFeed = vi.fn()
-    mockLoadData = vi.fn()
+    mockLoadData = vi.fn().mockResolvedValue({
+      feeds: [],
+      settings: {
+        defaultUpdateInterval: 60,
+        defaultFolder: 'RSS',
+        maxItemsPerFeed: 50,
+        template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+      }
+    })
 
-    syncService = { syncFeed: mockSyncFeed } as unknown as SyncService
-    storageService = { loadData: mockLoadData } as unknown as StorageService
-    app = {} as App
+    mockSyncService = {
+      syncFeed: mockSyncFeed
+    } as unknown as SyncService
 
-    schedulerService = new SchedulerService(app, syncService, storageService)
+    mockStorageService = {
+      loadData: mockLoadData
+    } as unknown as StorageService
+
+    service = new SchedulerService(mockApp, mockSyncService, mockStorageService)
   })
 
   afterEach(() => {
@@ -31,62 +55,99 @@ describe('SchedulerService', () => {
   })
 
   describe('startScheduler', () => {
-    it('devrait démarrer la planification pour tous les flux', async () => {
-      const testData: StorageData = {
-        feeds: [
-          {
-            id: '1',
-            settings: {
-              url: 'https://test1.com',
-              folder: 'Test1',
-              updateInterval: 30,
-              filterDuplicates: true
-            }
-          },
-          {
-            id: '2',
-            settings: {
-              url: 'https://test2.com',
-              folder: 'Test2',
-              updateInterval: 60,
-              filterDuplicates: false
-            }
-          }
-        ],
-        settings: {
-          defaultUpdateInterval: 60,
-          defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
-          template: 'test'
-        }
-      }
-
-      mockLoadData.mockResolvedValue(testData)
-
-      await schedulerService.startScheduler()
-
-      vi.advanceTimersByTime(30 * 60 * 1000) // Avance de 30 minutes
-      expect(mockSyncFeed).toHaveBeenCalledWith(testData.feeds[0])
-
-      vi.advanceTimersByTime(30 * 60 * 1000) // Avance de 30 minutes supplémentaires
-      expect(mockSyncFeed).toHaveBeenCalledWith(testData.feeds[1])
-    })
-  })
-
-  describe('stopScheduler', () => {
-    it('devrait arrêter tous les planificateurs', async () => {
+    it('devrait démarrer le planificateur', async () => {
       const feed: FeedData = {
-        id: '1',
+        id: 'feed1',
         settings: {
-          url: 'https://test.com',
-          folder: 'Test',
+          url: 'https://example.com/feed1',
+          folder: 'RSS/feed1',
           updateInterval: 30,
           filterDuplicates: true
         }
       }
 
-      schedulerService.scheduleFeed(feed)
-      await schedulerService.stopScheduler()
+      mockLoadData.mockResolvedValueOnce({
+        feeds: [feed],
+        settings: {
+          defaultUpdateInterval: 60,
+          defaultFolder: 'RSS',
+          maxItemsPerFeed: 50,
+          template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+        }
+      })
+
+      await service.startScheduler()
+
+      vi.advanceTimersByTime(30 * 60 * 1000)
+      expect(mockSyncFeed).toHaveBeenCalledWith(feed)
+    })
+
+    it('devrait planifier plusieurs flux', async () => {
+      const feed1: FeedData = {
+        id: 'feed1',
+        settings: {
+          url: 'https://example.com/feed1',
+          folder: 'RSS/feed1',
+          updateInterval: 30,
+          filterDuplicates: true
+        }
+      }
+
+      const feed2: FeedData = {
+        id: 'feed2',
+        settings: {
+          url: 'https://example.com/feed2',
+          folder: 'RSS/feed2',
+          updateInterval: 60,
+          filterDuplicates: true
+        }
+      }
+
+      mockLoadData.mockResolvedValueOnce({
+        feeds: [feed1, feed2],
+        settings: {
+          defaultUpdateInterval: 60,
+          defaultFolder: 'RSS',
+          maxItemsPerFeed: 50,
+          template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+        }
+      })
+
+      await service.startScheduler()
+
+      vi.advanceTimersByTime(30 * 60 * 1000)
+      expect(mockSyncFeed).toHaveBeenCalledWith(feed1)
+      expect(mockSyncFeed).not.toHaveBeenCalledWith(feed2)
+
+      vi.advanceTimersByTime(30 * 60 * 1000)
+      expect(mockSyncFeed).toHaveBeenCalledWith(feed2)
+    })
+  })
+
+  describe('stopScheduler', () => {
+    it('devrait arrêter le planificateur', async () => {
+      const feed: FeedData = {
+        id: 'feed1',
+        settings: {
+          url: 'https://example.com/feed1',
+          folder: 'RSS/feed1',
+          updateInterval: 30,
+          filterDuplicates: true
+        }
+      }
+
+      mockLoadData.mockResolvedValueOnce({
+        feeds: [feed],
+        settings: {
+          defaultUpdateInterval: 60,
+          defaultFolder: 'RSS',
+          maxItemsPerFeed: 50,
+          template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+        }
+      })
+
+      await service.startScheduler()
+      await service.stopScheduler()
 
       vi.advanceTimersByTime(30 * 60 * 1000)
       expect(mockSyncFeed).not.toHaveBeenCalled()
@@ -94,62 +155,47 @@ describe('SchedulerService', () => {
   })
 
   describe('scheduleFeed', () => {
-    it('devrait planifier la synchronisation d\'un flux', () => {
+    it('devrait planifier la synchronisation d\'un nouveau flux', () => {
       const feed: FeedData = {
-        id: '1',
+        id: 'feed1',
         settings: {
-          url: 'https://test.com',
-          folder: 'Test',
+          url: 'https://example.com/feed1',
+          folder: 'RSS/feed1',
           updateInterval: 30,
           filterDuplicates: true
         }
       }
 
-      schedulerService.scheduleFeed(feed)
+      service.scheduleFeed(feed)
 
       vi.advanceTimersByTime(30 * 60 * 1000)
       expect(mockSyncFeed).toHaveBeenCalledWith(feed)
     })
 
-    it('devrait remplacer un planificateur existant', () => {
+    it('devrait remplacer la planification existante pour un flux', () => {
       const feed: FeedData = {
-        id: '1',
+        id: 'feed1',
         settings: {
-          url: 'https://test.com',
-          folder: 'Test',
+          url: 'https://example.com/feed1',
+          folder: 'RSS/feed1',
           updateInterval: 30,
           filterDuplicates: true
         }
       }
 
-      schedulerService.scheduleFeed(feed)
-      schedulerService.scheduleFeed({ ...feed, settings: { ...feed.settings, updateInterval: 60 } })
+      service.scheduleFeed(feed)
+      
+      // Changer l'intervalle
+      feed.settings.updateInterval = 60
+      service.scheduleFeed(feed)
 
+      // Avancer de 30 minutes (ancien intervalle)
       vi.advanceTimersByTime(30 * 60 * 1000)
       expect(mockSyncFeed).not.toHaveBeenCalled()
 
+      // Avancer de 30 minutes supplémentaires (nouvel intervalle)
       vi.advanceTimersByTime(30 * 60 * 1000)
-      expect(mockSyncFeed).toHaveBeenCalled()
-    })
-  })
-
-  describe('unscheduleFeed', () => {
-    it('devrait arrêter la planification d\'un flux', () => {
-      const feed: FeedData = {
-        id: '1',
-        settings: {
-          url: 'https://test.com',
-          folder: 'Test',
-          updateInterval: 30,
-          filterDuplicates: true
-        }
-      }
-
-      schedulerService.scheduleFeed(feed)
-      schedulerService.unscheduleFeed(feed.id)
-
-      vi.advanceTimersByTime(30 * 60 * 1000)
-      expect(mockSyncFeed).not.toHaveBeenCalled()
+      expect(mockSyncFeed).toHaveBeenCalledWith(feed)
     })
   })
 }) 

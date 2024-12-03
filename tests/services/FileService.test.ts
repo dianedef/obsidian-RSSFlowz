@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { FileService } from '../../src/services/FileService'
 import { RSSItem } from '../../src/types'
+import { App, TFile } from 'obsidian'
 
 describe('FileService', () => {
   // Mock de l'API Obsidian
@@ -9,9 +10,9 @@ describe('FileService', () => {
       exists: vi.fn(),
       list: vi.fn(),
       remove: vi.fn(),
-      rmdir: vi.fn()
+      rmdir: vi.fn(),
+      mkdir: vi.fn()
     },
-    createFolder: vi.fn(),
     getFiles: vi.fn(),
     delete: vi.fn(),
     create: vi.fn(),
@@ -21,12 +22,12 @@ describe('FileService', () => {
 
   const mockApp = {
     vault: mockVault
-  }
+  } as unknown as App
 
   let service: FileService
 
   beforeEach(() => {
-    service = new FileService(mockApp as any)
+    service = new FileService(mockApp)
     vi.clearAllMocks()
   })
 
@@ -37,7 +38,7 @@ describe('FileService', () => {
       await service.ensureFolder('test-folder')
 
       expect(mockVault.adapter.exists).toHaveBeenCalledWith('test-folder')
-      expect(mockVault.createFolder).toHaveBeenCalledWith('test-folder')
+      expect(mockVault.adapter.mkdir).toHaveBeenCalledWith('test-folder')
     })
 
     it('ne devrait pas créer un dossier s\'il existe déjà', async () => {
@@ -46,7 +47,7 @@ describe('FileService', () => {
       await service.ensureFolder('test-folder')
 
       expect(mockVault.adapter.exists).toHaveBeenCalledWith('test-folder')
-      expect(mockVault.createFolder).not.toHaveBeenCalled()
+      expect(mockVault.adapter.mkdir).not.toHaveBeenCalled()
     })
 
     it('devrait propager les erreurs', async () => {
@@ -88,18 +89,16 @@ describe('FileService', () => {
     const mockFiles = [
       {
         path: 'RSS/test1.md',
-        stat: { mtime: Date.now() - 5 * 86400000 }, // 5 jours
-        instanceof: (type: any) => true
-      },
+        stat: { mtime: Date.now() - 5 * 86400000 } // 5 jours
+      } as TFile,
       {
         path: 'RSS/test2.md',
-        stat: { mtime: Date.now() - 15 * 86400000 }, // 15 jours
-        instanceof: (type: any) => true
-      }
+        stat: { mtime: Date.now() - 15 * 86400000 } // 15 jours
+      } as TFile
     ]
 
     it('devrait supprimer les articles plus anciens que la période de rétention', async () => {
-      mockVault.getFiles.mockResolvedValue(mockFiles)
+      mockVault.getFiles.mockReturnValue(mockFiles)
 
       await service.cleanOldArticles('RSS', 10) // 10 jours de rétention
 
@@ -112,12 +111,11 @@ describe('FileService', () => {
         ...mockFiles,
         {
           path: 'other/test.md',
-          stat: { mtime: Date.now() - 15 * 86400000 },
-          instanceof: (type: any) => true
-        }
+          stat: { mtime: Date.now() - 15 * 86400000 }
+        } as TFile
       ]
 
-      mockVault.getFiles.mockResolvedValue(mixedFiles)
+      mockVault.getFiles.mockReturnValue(mixedFiles)
 
       await service.cleanOldArticles('RSS', 10)
 
@@ -147,7 +145,7 @@ describe('FileService', () => {
     })
 
     it('devrait mettre à jour un fichier existant', async () => {
-      const mockFile = { path: 'test.md' }
+      const mockFile = { path: 'test.md' } as TFile
       mockVault.getAbstractFileByPath.mockReturnValue(mockFile)
 
       await service.saveArticle(mockArticle, 'test.md', mockTemplate)

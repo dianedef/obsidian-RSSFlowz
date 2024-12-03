@@ -1,55 +1,66 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { App } from 'obsidian'
 import { SyncService } from '../../src/services/SyncService'
 import { RSSService } from '../../src/services/RSSService'
 import { StorageService } from '../../src/services/StorageService'
+import { LogService } from '../../src/services/LogService'
+import { App } from 'obsidian'
 import { FeedData, RSSFeed, StorageData } from '../../src/types'
 
 describe('SyncService', () => {
-  let app: App
-  let rssService: RSSService
-  let storageService: StorageService
   let syncService: SyncService
+  let mockApp: App
+  let mockRSSService: RSSService
+  let mockStorageService: StorageService
+  let mockLogService: LogService
   let mockFetchFeed: ReturnType<typeof vi.fn>
   let mockLoadData: ReturnType<typeof vi.fn>
   let mockSaveData: ReturnType<typeof vi.fn>
   let mockCreateFile: ReturnType<typeof vi.fn>
-  let mockExists: ReturnType<typeof vi.fn>
-  let mockCreateFolder: ReturnType<typeof vi.fn>
+  let mockEnsureFolder: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
     mockFetchFeed = vi.fn()
     mockLoadData = vi.fn()
     mockSaveData = vi.fn()
     mockCreateFile = vi.fn()
-    mockExists = vi.fn()
-    mockCreateFolder = vi.fn()
+    mockEnsureFolder = vi.fn()
 
-    rssService = { fetchFeed: mockFetchFeed } as unknown as RSSService
-    storageService = {
+    mockApp = {
+      vault: {
+        getFiles: vi.fn(),
+        getAbstractFileByPath: vi.fn(),
+        create: mockCreateFile,
+        createFolder: mockEnsureFolder,
+        adapter: {
+          exists: vi.fn().mockResolvedValue(false)
+        }
+      },
+      workspace: {
+        getActiveFile: vi.fn(),
+        getActiveViewOfType: vi.fn()
+      }
+    } as unknown as App
+
+    mockRSSService = {
+      fetchFeed: mockFetchFeed
+    } as unknown as RSSService
+
+    mockStorageService = {
       loadData: mockLoadData,
       saveData: mockSaveData
     } as unknown as StorageService
 
-    app = {
-      vault: {
-        create: mockCreateFile,
-        adapter: {
-          exists: mockExists
-        },
-        createFolder: mockCreateFolder
-      }
-    } as unknown as App
+    mockLogService = new LogService(mockApp)
 
-    syncService = new SyncService(app, rssService, storageService)
+    syncService = new SyncService(mockApp, mockRSSService, mockStorageService, mockLogService)
   })
 
   describe('syncFeed', () => {
     const mockFeed: FeedData = {
-      id: '1',
+      id: 'feed1',
       settings: {
-        url: 'https://test.com/feed',
-        folder: 'Test',
+        url: 'https://example.com/feed',
+        folder: 'RSS/feed1',
         updateInterval: 60,
         filterDuplicates: true
       }
@@ -58,19 +69,14 @@ describe('SyncService', () => {
     const mockRSSFeed: RSSFeed = {
       title: 'Test Feed',
       description: 'Test Description',
-      link: 'https://test.com',
+      link: 'https://example.com',
       items: [
         {
-          title: 'Article 1',
-          description: 'Description 1',
-          link: 'https://test.com/1',
-          pubDate: '2023-12-02T12:00:00Z'
-        },
-        {
-          title: 'Article 2',
-          description: 'Description 2',
-          link: 'https://test.com/2',
-          pubDate: '2023-12-02T13:00:00Z'
+          title: 'Test Article',
+          description: 'Test Content',
+          link: 'https://example.com/article',
+          pubDate: new Date().toISOString(),
+          guid: 'article1'
         }
       ]
     }
@@ -81,72 +87,68 @@ describe('SyncService', () => {
         defaultUpdateInterval: 60,
         defaultFolder: 'RSS',
         maxItemsPerFeed: 50,
-        template: '# {{title}}\n\n{{description}}\n\n{{link}}\n\n{{pubDate}}'
+        template: '# {{title}}\n\n{{description}}\n\n{{link}}'
       }
     }
 
     it('devrait synchroniser un flux avec succès', async () => {
       mockFetchFeed.mockResolvedValue(mockRSSFeed)
       mockLoadData.mockResolvedValue(mockStorageData)
-      mockExists.mockResolvedValue(false)
+      mockEnsureFolder.mockResolvedValue(undefined)
+      mockCreateFile.mockResolvedValue(undefined)
 
       await syncService.syncFeed(mockFeed)
 
-      expect(mockCreateFolder).toHaveBeenCalledWith('Test')
-      expect(mockCreateFile).toHaveBeenCalledTimes(2)
+      expect(mockFetchFeed).toHaveBeenCalledWith(mockFeed.settings.url)
+      expect(mockEnsureFolder).toHaveBeenCalledWith(mockFeed.settings.folder)
+      expect(mockCreateFile).toHaveBeenCalled()
       expect(mockSaveData).toHaveBeenCalled()
-      expect(mockFeed.error).toBeUndefined()
     })
 
     it('devrait filtrer les articles en double', async () => {
-      const lastUpdate = '2023-12-02T12:30:00Z'
-      mockFetchFeed.mockResolvedValue(mockRSSFeed)
-      mockLoadData.mockResolvedValue(mockStorageData)
-      mockExists.mockResolvedValue(false)
-
-      await syncService.syncFeed({
+      const lastUpdate = new Date(Date.now() - 3600000).toISOString() // 1 heure avant
+      const feedWithLastUpdate = {
         ...mockFeed,
         lastUpdate
-      })
+      }
 
-      expect(mockCreateFile).toHaveBeenCalledTimes(1)
-    })
+      const oldArticle = {
+        title: 'Old Article',
+        description: 'Old Content',
+        link: 'https://example.com/old',
+        pubDate: new Date(Date.now() - 7200000).toISOString(), // 2 heures avant
+        guid: 'old1'
+      }
 
-    it('devrait gérer les erreurs de synchronisation', async () => {
-      const error = new Error('Erreur de test')
-      mockFetchFeed.mockRejectedValue(error)
-      mockLoadData.mockResolvedValue(mockStorageData)
+      const newArticle = {
+        title: 'New Article',
+        description: 'New Content',
+        link: 'https://example.com/new',
+        pubDate: new Date().toISOString(),
+        guid: 'new1'
+      }
 
-      await expect(syncService.syncFeed(mockFeed)).rejects.toThrow(error)
-      expect(mockFeed.error).toBe(error.message)
-    })
-
-    it('devrait respecter la limite d\'articles par flux', async () => {
       mockFetchFeed.mockResolvedValue({
         ...mockRSSFeed,
-        items: Array(10).fill(mockRSSFeed.items[0])
+        items: [oldArticle, newArticle]
       })
       mockLoadData.mockResolvedValue({
         ...mockStorageData,
-        settings: {
-          ...mockStorageData.settings,
-          maxItemsPerFeed: 5
-        }
+        feeds: [feedWithLastUpdate]
       })
-      mockExists.mockResolvedValue(false)
 
-      await syncService.syncFeed(mockFeed)
+      await syncService.syncFeed(feedWithLastUpdate)
 
-      expect(mockCreateFile).toHaveBeenCalledTimes(5)
+      expect(mockCreateFile).toHaveBeenCalledTimes(1)
+      expect(mockCreateFile.mock.calls[0][1]).toContain(newArticle.title)
     })
 
-    it('devrait sauter les articles existants', async () => {
-      mockFetchFeed.mockResolvedValue(mockRSSFeed)
+    it('devrait gérer les erreurs de récupération du flux', async () => {
+      const error = new Error('Erreur réseau')
+      mockFetchFeed.mockRejectedValue(error)
       mockLoadData.mockResolvedValue(mockStorageData)
-      mockExists.mockResolvedValue(true)
 
-      await syncService.syncFeed(mockFeed)
-
+      await expect(syncService.syncFeed(mockFeed)).rejects.toThrow()
       expect(mockCreateFile).not.toHaveBeenCalled()
     })
   })

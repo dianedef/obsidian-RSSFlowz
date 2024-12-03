@@ -1,222 +1,269 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, beforeEach, it, expect, vi } from 'vitest'
+import { App, TFile, View, WorkspaceLeaf } from 'obsidian'
 import { ReadingService } from '../../src/services/ReadingService'
+import { StorageService } from '../../src/services/StorageService'
+import { LogService } from '../../src/services/LogService'
+import type { MockApp, StorageData } from '../types/mocks'
+
+interface TestStorageService {
+    loadData: ReturnType<typeof vi.fn>;
+    saveData: ReturnType<typeof vi.fn>;
+    initializeData: ReturnType<typeof vi.fn>;
+}
+
+const defaultSettings = {
+    defaultUpdateInterval: 60,
+    defaultFolder: 'RSS',
+    maxItemsPerFeed: 50,
+    template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+}
+
+const defaultData: StorageData = {
+    feeds: [],
+    articles: [],
+    settings: defaultSettings,
+    readArticles: [],
+    lastReadArticle: null
+}
 
 describe('ReadingService', () => {
-  // Mock de l'API Obsidian
-  const mockLeaf = {
-    openFile: vi.fn(),
-    view: {
-      contentEl: {
-        classList: {
-          add: vi.fn(),
-          remove: vi.fn()
+    let service: ReadingService
+    let mockApp: MockApp
+    let mockStorageService: TestStorageService
+    let mockLogService: Partial<LogService>
+    let mockLeaf: WorkspaceLeaf
+    let mockView: View
+    let mockFile: TFile
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+        vi.clearAllMocks()
+
+        // Mock du DOM
+        document.getElementById = vi.fn()
+        document.createElement = vi.fn().mockReturnValue({
+            classList: {
+                add: vi.fn(),
+                remove: vi.fn()
+            },
+            setAttribute: vi.fn(),
+            remove: vi.fn()
+        })
+        document.head.appendChild = vi.fn()
+
+        // Mock de l'app Obsidian
+        mockApp = {
+            workspace: {
+                getLeaf: vi.fn(),
+                getActiveFile: vi.fn(),
+                on: vi.fn()
+            },
+            vault: {
+                getFiles: vi.fn().mockReturnValue([]),
+                getAbstractFileByPath: vi.fn()
+            }
         }
-      }
-    }
-  }
 
-  const mockFile = {
-    path: 'RSS/feed1/article1.md',
-    basename: 'article1',
-    parent: {
-      path: 'RSS/feed1'
-    },
-    extension: 'md',
-    stat: {
-      mtime: Date.now()
-    }
-  }
+        // Mock des fichiers
+        mockFile = {
+            path: 'test/path',
+            basename: 'test',
+            extension: 'md',
+            name: 'test.md',
+            parent: null,
+            vault: mockApp.vault,
+            stat: {
+                ctime: Date.now(),
+                mtime: Date.now(),
+                size: 0
+            }
+        } as TFile
 
-  const mockVault = {
-    getFiles: vi.fn().mockReturnValue([mockFile]),
-    read: vi.fn(),
-    modify: vi.fn()
-  }
+        // Mock de la vue
+        mockView = {
+            getViewType: vi.fn().mockReturnValue('markdown'),
+            contentEl: document.createElement('div')
+        } as unknown as View
 
-  const mockWorkspace = {
-    getActiveFile: vi.fn(),
-    getLeaf: vi.fn().mockReturnValue(mockLeaf)
-  }
+        // Mock de la feuille
+        mockLeaf = {
+            view: mockView,
+            openFile: vi.fn().mockResolvedValue(undefined)
+        } as unknown as WorkspaceLeaf
 
-  const mockApp = {
-    vault: mockVault,
-    workspace: mockWorkspace
-  }
+        // Configuration des mocks
+        mockApp.workspace.getLeaf = vi.fn().mockReturnValue(mockLeaf)
+        mockApp.workspace.getActiveFile.mockReturnValue(mockFile)
+        mockApp.vault.getFiles.mockReturnValue([mockFile])
+        mockApp.vault.getAbstractFileByPath.mockReturnValue(mockFile)
 
-  let service: ReadingService
-  let mockDocument: any
+        // Mock des services
+        mockStorageService = {
+            loadData: vi.fn().mockResolvedValue(defaultData),
+            saveData: vi.fn().mockResolvedValue(undefined),
+            initializeData: vi.fn().mockResolvedValue(undefined)
+        }
 
-  beforeEach(() => {
-    // Mock du DOM
-    mockDocument = {
-      createElement: vi.fn().mockReturnValue({
-        id: '',
-        textContent: '',
-        remove: vi.fn()
-      }),
-      head: {
-        appendChild: vi.fn()
-      },
-      getElementById: vi.fn().mockReturnValue({
-        remove: vi.fn()
-      })
-    }
+        mockLogService = {
+            debug: vi.fn(),
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn()
+        }
 
-    // Remplacer document global
-    global.document = mockDocument as any
-
-    service = new ReadingService(mockApp as any)
-    vi.clearAllMocks()
-  })
-
-  describe('enterReadingMode', () => {
-    it('devrait activer le mode lecture', async () => {
-      await service.enterReadingMode()
-
-      expect(service.isReadingModeActive()).toBe(true)
-      expect(mockDocument.createElement).toHaveBeenCalledWith('style')
-      expect(mockDocument.head.appendChild).toHaveBeenCalled()
+        service = new ReadingService(
+            mockApp as unknown as App,
+            mockStorageService as unknown as StorageService,
+            mockLogService as LogService
+        )
     })
 
-    it('ne devrait pas réactiver le mode lecture s\'il est déjà actif', async () => {
-      await service.enterReadingMode()
-      await service.enterReadingMode()
+    describe('enterReadingMode', () => {
+        it('devrait activer le mode lecture', async () => {
+            await service.enterReadingMode()
 
-      expect(mockDocument.createElement).toHaveBeenCalledTimes(1)
+            expect(document.head.appendChild).toHaveBeenCalled()
+            expect(mockLeaf.openFile).toHaveBeenCalledWith(mockFile)
+        })
+
+        it('ne devrait pas réactiver le mode lecture s\'il est déjà actif', async () => {
+            await service.enterReadingMode()
+            await service.enterReadingMode()
+
+            expect(document.head.appendChild).toHaveBeenCalledTimes(1)
+        })
+
+        it('devrait charger le dernier article lu s\'il existe', async () => {
+            mockStorageService.loadData.mockResolvedValueOnce({
+                ...defaultData,
+                lastReadArticle: 'test/path'
+            })
+            mockApp.vault.getAbstractFileByPath.mockReturnValue(mockFile)
+            mockApp.workspace.getLeaf.mockReturnValue(mockLeaf)
+            mockLeaf.openFile.mockResolvedValue(undefined)
+
+            await service.enterReadingMode()
+            await vi.runAllTimersAsync()
+
+            expect(mockLeaf.openFile).toHaveBeenCalledWith(mockFile)
+        })
     })
 
-    it('devrait charger le dernier article lu s\'il existe', async () => {
-      // Simuler un dernier article lu
-      await service.enterReadingMode()
-      const state = service.getState()
-      state.lastReadArticleId = 'lastArticle'
-      
-      mockVault.getFiles.mockReturnValueOnce([{
-        ...mockFile,
-        basename: 'lastArticle'
-      }])
+    describe('exitReadingMode', () => {
+        it('devrait désactiver le mode lecture', async () => {
+            const mockStyleElement = {
+                remove: vi.fn()
+            }
+            vi.mocked(document.getElementById).mockReturnValue(mockStyleElement as unknown as HTMLElement)
 
-      await service.enterReadingMode()
+            await service.enterReadingMode()
+            await service.exitReadingMode()
 
-      expect(mockLeaf.openFile).toHaveBeenCalled()
-    })
-  })
+            expect(mockStyleElement.remove).toHaveBeenCalled()
+        })
 
-  describe('exitReadingMode', () => {
-    it('devrait désactiver le mode lecture', async () => {
-      await service.enterReadingMode()
-      service.exitReadingMode()
+        it('ne devrait rien faire si le mode lecture n\'est pas actif', async () => {
+            await service.exitReadingMode()
 
-      expect(service.isReadingModeActive()).toBe(false)
-      expect(mockDocument.getElementById).toHaveBeenCalledWith('rss-reading-mode-styles')
+            expect(document.getElementById).not.toHaveBeenCalled()
+        })
     })
 
-    it('ne devrait rien faire si le mode lecture est déjà désactivé', () => {
-      service.exitReadingMode()
+    describe('navigateArticles', () => {
+        beforeEach(() => {
+            if (!mockApp.vault?.getFiles || !mockApp.workspace?.getActiveFile) {
+                throw new Error('Mock methods not initialized')
+            }
+            vi.clearAllMocks()
+            
+            // S'assurer que getLeaf retourne toujours le mockLeaf
+            mockApp.workspace.getLeaf = vi.fn().mockReturnValue(mockLeaf)
+        })
 
-      expect(mockDocument.getElementById).not.toHaveBeenCalled()
-    })
-  })
+        it('devrait naviguer vers l\'article suivant', async () => {
+            const mockFiles = [
+                { path: 'test1.md', extension: 'md' } as TFile,
+                { path: 'test2.md', extension: 'md' } as TFile
+            ]
+            mockApp.vault.getFiles.mockReturnValue(mockFiles)
+            mockApp.workspace.getActiveFile.mockReturnValue(mockFiles[0])
+            mockApp.vault.getAbstractFileByPath = vi.fn().mockReturnValue(mockFiles[1])
 
-  describe('navigateArticles', () => {
-    beforeEach(async () => {
-      await service.enterReadingMode()
-      const state = service.getState()
-      state.currentFeedId = 'feed1'
-    })
+            await service.navigateArticles('next')
 
-    it('devrait naviguer vers l\'article suivant', async () => {
-      mockWorkspace.getActiveFile.mockReturnValue(mockFile)
-      
-      const nextFile = {
-        ...mockFile,
-        basename: 'article2',
-        path: 'RSS/feed1/article2.md'
-      }
+            expect(mockLeaf.openFile).toHaveBeenCalledWith(mockFiles[1])
+        })
 
-      mockVault.getFiles.mockReturnValueOnce([mockFile, nextFile])
+        it('devrait naviguer vers l\'article précédent', async () => {
+            const mockFiles = [
+                { path: 'test1.md', extension: 'md' } as TFile,
+                { path: 'test2.md', extension: 'md' } as TFile
+            ]
+            mockApp.vault.getFiles.mockReturnValue(mockFiles)
+            mockApp.workspace.getActiveFile.mockReturnValue(mockFiles[1])
+            mockApp.vault.getAbstractFileByPath = vi.fn().mockReturnValue(mockFiles[0])
 
-      await service.navigateArticles('next')
+            await service.navigateArticles('previous')
 
-      expect(mockLeaf.openFile).toHaveBeenCalledWith(nextFile)
-    })
+            expect(mockLeaf.openFile).toHaveBeenCalledWith(mockFiles[0])
+        })
 
-    it('devrait naviguer vers l\'article précédent', async () => {
-      const prevFile = {
-        ...mockFile,
-        basename: 'article0',
-        path: 'RSS/feed1/article0.md'
-      }
+        it('ne devrait pas naviguer si on est au début ou à la fin', async () => {
+            const mockFiles = [
+                { path: 'test1.md' } as TFile,
+                { path: 'test2.md' } as TFile
+            ]
+            mockApp.vault.getFiles.mockReturnValue(mockFiles)
+            mockApp.workspace.getActiveFile.mockReturnValue(mockFiles[0])
 
-      mockWorkspace.getActiveFile.mockReturnValue(mockFile)
-      mockVault.getFiles.mockReturnValueOnce([prevFile, mockFile])
+            await service.navigateArticles('previous')
 
-      await service.navigateArticles('previous')
-
-      expect(mockLeaf.openFile).toHaveBeenCalledWith(prevFile)
-    })
-
-    it('ne devrait pas naviguer si on est au début ou à la fin', async () => {
-      mockWorkspace.getActiveFile.mockReturnValue(mockFile)
-      mockVault.getFiles.mockReturnValueOnce([mockFile])
-
-      await service.navigateArticles('next')
-      expect(mockLeaf.openFile).not.toHaveBeenCalled()
-
-      await service.navigateArticles('previous')
-      expect(mockLeaf.openFile).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('markCurrentArticleAsRead', () => {
-    it('devrait marquer l\'article comme lu', async () => {
-      const state = service.getState()
-      state.currentArticleId = 'article1'
-
-      mockWorkspace.getActiveFile.mockReturnValue(mockFile)
-      mockVault.read.mockResolvedValue('Statut: ◯ Non lu')
-
-      await service.markCurrentArticleAsRead()
-
-      expect(mockVault.modify).toHaveBeenCalledWith(
-        mockFile,
-        'Statut: ✓ Lu'
-      )
+            expect(mockLeaf.openFile).not.toHaveBeenCalled()
+        })
     })
 
-    it('ne devrait rien faire sans article actif', async () => {
-      await service.markCurrentArticleAsRead()
+    describe('markCurrentArticleAsRead', () => {
+        it('devrait marquer l\'article comme lu', async () => {
+            mockApp.workspace.getActiveFile.mockReturnValue(mockFile)
 
-      expect(mockVault.read).not.toHaveBeenCalled()
-      expect(mockVault.modify).not.toHaveBeenCalled()
-    })
-  })
+            await service.markCurrentArticleAsRead()
 
-  describe('navigateToArticle', () => {
-    beforeEach(async () => {
-      await service.enterReadingMode()
-    })
+            expect(mockStorageService.saveData).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    readArticles: ['test/path'],
+                    lastReadArticle: 'test/path'
+                })
+            )
+        })
 
-    it('devrait naviguer vers l\'article spécifié', async () => {
-      const targetFile = {
-        ...mockFile,
-        basename: 'targetArticle'
-      }
+        it('ne devrait rien faire sans article actif', async () => {
+            mockApp.workspace.getActiveFile.mockReturnValue(null)
 
-      mockVault.getFiles.mockReturnValueOnce([targetFile])
+            await service.markCurrentArticleAsRead()
 
-      await service.navigateToArticle('targetArticle')
-
-      expect(mockLeaf.openFile).toHaveBeenCalledWith(targetFile)
-      expect(service.getState().currentArticleId).toBe('targetArticle')
+            expect(mockStorageService.saveData).not.toHaveBeenCalled()
+        })
     })
 
-    it('ne devrait rien faire si l\'article n\'existe pas', async () => {
-      mockVault.getFiles.mockReturnValueOnce([])
+    describe('navigateToArticle', () => {
+        it('devrait naviguer vers l\'article spécifié', async () => {
+            const targetFile = { path: 'test/path', extension: 'md' } as TFile
+            mockApp.vault.getAbstractFileByPath.mockReturnValue(targetFile)
+            mockApp.workspace.getLeaf.mockReturnValue(mockLeaf)
+            mockLeaf.openFile.mockResolvedValue(undefined)
 
-      await service.navigateToArticle('nonexistentArticle')
+            await service.navigateToArticle('test/path')
+            await vi.runAllTimersAsync()
 
-      expect(mockLeaf.openFile).not.toHaveBeenCalled()
+            expect(mockLeaf.openFile).toHaveBeenCalledWith(targetFile)
+        })
+
+        it('ne devrait rien faire si l\'article n\'existe pas', async () => {
+            mockApp.vault.getFiles.mockReturnValue([])
+
+            await service.navigateToArticle('nonexistent.md')
+
+            expect(mockLeaf.openFile).not.toHaveBeenCalled()
+        })
     })
-  })
 }) 

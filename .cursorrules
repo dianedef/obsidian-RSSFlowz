@@ -1,3 +1,60 @@
+
+
+Il reste à corriger quelques erreurs de linter :
+Dans ReadingService :
+Types manquants de l'API Obsidian (TFile, WorkspaceLeaf)
+Propriétés manquantes sur App (workspace, vault.getFiles)
+Dans OpmlService :
+Dépendance manquante fast-xml-parser
+Type implicite dans les tests
+Je suggère d'ajouter aussi deux nouveaux services pour compléter l'architecture :
+1. LogService pour la gestion centralisée des logs :
+Niveaux de log (debug, info, warn, error)
+Formatage des messages
+Rotation des logs
+Intégration avec la console Obsidian
+SettingsService pour la gestion de l'interface de configuration :
+Interface de configuration du plugin
+Validation des paramètres
+Sauvegarde/chargement des préférences
+Gestion des thèmes
+
+J'ai créé un système complet de gestion des erreurs et de journalisation avec :
+Types d'erreurs spécifiques :
+RSSError pour les erreurs de flux RSS
+SyncError pour les erreurs de synchronisation
+StorageError pour les erreurs de stockage
+OpmlError pour les erreurs OPML
+Codes d'erreur détaillés pour chaque type
+Type Guards pour identifier les types d'erreurs
+Service de journalisation (LogService) avec :
+Différents niveaux de log (DEBUG, INFO, WARN, ERROR)
+Notifications Obsidian intégrées
+Gestion de la rotation des logs
+Formatage détaillé des erreurs
+Export des logs
+Tests complets pour :
+Les types d'erreurs et leurs propriétés
+Les Type Guards
+Les méthodes de journalisation
+La gestion des logs
+Le formatage des erreurs
+
+
+ différence principale entre les tests d'erreurs et les logs est :
+Tests d'erreurs (errors.test.ts) :
+Teste la structure et le comportement des types d'erreurs
+Vérifie que les Type Guards fonctionnent correctement
+S'assure que les erreurs ont les bonnes propriétés
+Valide les codes d'erreur
+Teste la création des erreurs
+Tests de logs (LogService.test.ts) :
+Teste le système de journalisation
+Vérifie les différents niveaux de log (DEBUG, INFO, WARN, ERROR)
+Teste l'intégration avec les notifications Obsidian
+Vérifie la gestion de la rotation des logs
+Teste le formatage et l'export des logs
+
 ## Service de Traduction (i18n)
    Détecte automatiquement la langue de l'utilisateur
    Gère les traductions avec une méthode t()
@@ -140,14 +197,14 @@ Chargement du dernier article lu
    Cas d'erreur et cas limites
 
 -
-StorageService est maintenant complet avec :
-Une interface StorageData bien définie
-Des méthodes pour charger et sauvegarder les données
-Une initialisation des valeurs par défaut
-Des tests complets couvrant :
-L'initialisation avec des valeurs par défaut
-La fusion avec des données existantes
-La sauvegarde des données
+## StorageService
+   Une interface StorageData bien définie
+   Des méthodes pour charger et sauvegarder les données
+   Une initialisation des valeurs par défaut
+### Tests complets couvrant :
+   L'initialisation avec des valeurs par défaut
+   La fusion avec des données existantes
+   La sauvegarde des données
 
 -
 ## Service d'Import/Export
@@ -163,8 +220,6 @@ La sauvegarde des données
    Vérification du contenu exporté
    Gestion des erreurs d'export
 
-
-
 ## SchedulerService :
    Gestion des intervalles de temps
    Tests de démarrage/arrêt des planificateurs
@@ -175,3 +230,21 @@ La sauvegarde des données
    Respect des limites d'articles
    Gestion des erreurs
    Tests de création de fichiers
+
+
+
+
+En fait, Vite et esbuild ont des rôles différents dans notre projet :
+Vite (via Vitest) est utilisé pour les tests :
+esbuild est utilisé pour le build de production car :
+Il est recommandé par Obsidian pour les plugins
+Il est plus léger et plus rapide pour bundler un seul fichier
+Il gère bien les spécificités d'Obsidian (externals, format cjs)
+Il est configuré pour exclure les dépendances d'Obsidian qui sont déjà présentes dans l'app
+On pourrait techniquement utiliser Vite pour le build aussi, mais il faudrait :
+1. Configurer Vite pour qu'il produise un bundle compatible avec Obsidian
+Gérer les externals d'Obsidian
+S'assurer que le format de sortie est correct
+Potentiellement gérer des problèmes de compatibilité
+La configuration actuelle avec esbuild est plus simple et suit les recommandations d'Obsidian pour le développement de plugins. C'est un peu comme utiliser webpack pour un plugin VSCode - c'est la solution recommandée qui fonctionne bien pour ce cas d'usage spécifique.
+Veux-tu quand même qu'on essaie de configurer Vite pour le build ? Ou on garde esbuild qui est plus simple et éprouvé pour les plugins Obsidian ?

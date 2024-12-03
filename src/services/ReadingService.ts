@@ -1,271 +1,158 @@
 import { App, TFile, WorkspaceLeaf } from 'obsidian'
-import { RSSItem } from '../types'
-
-export interface ReadingState {
-  isActive: boolean
-  currentFeedId?: string
-  currentArticleId?: string
-  lastReadArticleId?: string
-}
+import { StorageService } from './StorageService'
+import { LogService } from './LogService'
 
 export class ReadingService {
-  private state: ReadingState = {
-    isActive: false
-  }
+  private isReadingMode = false
 
-  constructor(private app: App) {}
+  constructor(
+    private app: App,
+    private storageService: StorageService,
+    private logService: LogService
+  ) {}
 
-  /**
-   * Active le mode lecture
-   */
   async enterReadingMode(): Promise<void> {
-    if (this.state.isActive) return
-
-    try {
-      // Ajouter les styles CSS pour le mode lecture
-      this.addReadingModeStyles()
-      
-      // Mettre à jour l'état
-      this.state.isActive = true
-
-      // Charger le dernier article lu s'il existe
-      if (this.state.lastReadArticleId) {
-        await this.navigateToArticle(this.state.lastReadArticleId)
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'activation du mode lecture:', error)
-      throw error
+    if (this.isReadingMode) {
+      return
     }
-  }
 
-  /**
-   * Désactive le mode lecture
-   */
-  exitReadingMode(): void {
-    if (!this.state.isActive) return
+    this.isReadingMode = true
+    this.addReadingModeStyles()
 
     try {
-      // Supprimer les styles CSS
-      this.removeReadingModeStyles()
-      
-      // Réinitialiser l'état
-      this.state = {
-        isActive: false
-      }
-    } catch (error) {
-      console.error('Erreur lors de la désactivation du mode lecture:', error)
-      throw error
-    }
-  }
-
-  /**
-   * Navigue vers l'article suivant ou précédent
-   * @param direction - Direction de navigation ('next' ou 'previous')
-   */
-  async navigateArticles(direction: 'next' | 'previous'): Promise<void> {
-    if (!this.state.isActive || !this.state.currentFeedId) return
-
-    try {
-      const currentFile = this.app.workspace.getActiveFile()
-      if (!currentFile) return
-
-      const folder = currentFile.parent
-      if (!folder) return
-
-      // Récupérer tous les fichiers du dossier
-      const files = await this.getArticleFiles(folder.path)
-      
-      // Trier par date de modification (du plus récent au plus ancien)
-      files.sort((a, b) => b.stat.mtime - a.stat.mtime)
-
-      // Trouver l'index de l'article actuel
-      const currentIndex = files.findIndex(f => f.path === currentFile.path)
-      if (currentIndex === -1) return
-
-      // Calculer le nouvel index
-      let newIndex: number
-      if (direction === 'next') {
-        newIndex = currentIndex + 1
-        if (newIndex >= files.length) return
+      const data = await this.storageService.loadData()
+      if (data.lastReadArticle) {
+        const file = this.app.vault.getAbstractFileByPath(data.lastReadArticle)
+        if (file instanceof TFile) {
+          await this.openArticle(file)
+        }
       } else {
-        newIndex = currentIndex - 1
-        if (newIndex < 0) return
+        const currentFile = this.app.workspace.getActiveFile()
+        if (currentFile) {
+          await this.openArticle(currentFile)
+        }
       }
-
-      // Ouvrir le nouvel article
-      await this.openArticle(files[newIndex])
-      
-      // Mettre à jour l'état
-      this.state.currentArticleId = files[newIndex].basename
-      this.state.lastReadArticleId = files[newIndex].basename
     } catch (error) {
-      console.error('Erreur lors de la navigation entre les articles:', error)
-      throw error
+      this.logService.error('Erreur lors de l\'entrée en mode lecture', error as Error)
     }
   }
 
-  /**
-   * Navigue directement vers un article spécifique
-   * @param articleId - ID de l'article
-   */
-  async navigateToArticle(articleId: string): Promise<void> {
-    if (!this.state.isActive) return
+  async exitReadingMode(): Promise<void> {
+    if (!this.isReadingMode) {
+      return
+    }
 
+    this.isReadingMode = false
+    this.removeReadingModeStyles()
+  }
+
+  async navigateArticles(direction: 'next' | 'previous'): Promise<void> {
+    const currentFile = this.app.workspace.getActiveFile()
+    if (!currentFile) {
+      return
+    }
+
+    const files = this.app.vault.getFiles()
+      .filter(file => file.extension === 'md')
+      .sort((a, b) => a.path.localeCompare(b.path))
+
+    const currentIndex = files.findIndex(file => file.path === currentFile.path)
+    if (currentIndex === -1) {
+      return
+    }
+
+    const nextIndex = direction === 'next'
+      ? currentIndex + 1
+      : currentIndex - 1
+
+    if (nextIndex >= 0 && nextIndex < files.length) {
+      await this.openArticle(files[nextIndex])
+    }
+  }
+
+  async navigateToArticle(path: string): Promise<void> {
     try {
-      const file = this.app.vault.getFiles().find(f => f.basename === articleId)
-      if (!file) return
-
-      await this.openArticle(file)
-      
-      // Mettre à jour l'état
-      this.state.currentArticleId = articleId
-      this.state.lastReadArticleId = articleId
+      const file = this.app.vault.getAbstractFileByPath(path)
+      if (file instanceof TFile) {
+        await this.openArticle(file)
+      }
     } catch (error) {
-      console.error('Erreur lors de la navigation vers l\'article:', error)
-      throw error
+      this.logService.error('Erreur lors de la navigation vers l\'article', error as Error)
     }
   }
 
-  /**
-   * Marque l'article actuel comme lu
-   */
   async markCurrentArticleAsRead(): Promise<void> {
-    if (!this.state.currentArticleId) return
-
-    try {
-      const file = this.app.workspace.getActiveFile()
-      if (!file) return
-
-      // Lire le contenu actuel
-      const content = await this.app.vault.read(file)
-      
-      // Mettre à jour le statut
-      const updatedContent = content.replace(
-        /Statut: ◯ Non lu/,
-        'Statut: ✓ Lu'
-      )
-      
-      // Sauvegarder les modifications
-      await this.app.vault.modify(file, updatedContent)
-    } catch (error) {
-      console.error('Erreur lors du marquage de l\'article comme lu:', error)
-      throw error
+    const currentFile = this.app.workspace.getActiveFile()
+    if (!currentFile) {
+      return
     }
+
+    const data = await this.storageService.loadData()
+    if (!data.readArticles) {
+      data.readArticles = []
+    }
+
+    if (!data.readArticles.includes(currentFile.path)) {
+      data.readArticles.push(currentFile.path)
+    }
+
+    data.lastReadArticle = currentFile.path
+    await this.storageService.saveData(data)
   }
 
-  /**
-   * Vérifie si le mode lecture est actif
-   */
-  isReadingModeActive(): boolean {
-    return this.state.isActive
-  }
-
-  /**
-   * Récupère l'état actuel du mode lecture
-   */
-  getState(): ReadingState {
-    return { ...this.state }
-  }
-
-  /**
-   * Ajoute les styles CSS pour le mode lecture
-   */
   private addReadingModeStyles(): void {
     const styleEl = document.createElement('style')
-    styleEl.id = 'rss-reading-mode-styles'
+    styleEl.id = 'rss-reading-mode'
     styleEl.textContent = `
-      .rss-reading-mode {
-        --header-height: 0px !important;
-        --file-explorer-width: 0px !important;
-        max-width: 800px !important;
-        margin: 0 auto !important;
-        padding: 2rem !important;
+      .workspace-leaf-content[data-type='markdown'] {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        font-size: 1.1em;
+        line-height: 1.6;
       }
-
-      .rss-reading-mode .markdown-preview-view {
-        padding: 0 !important;
-      }
-
-      .rss-reading-mode h1 {
-        font-size: 2.5em !important;
-        margin-bottom: 1.5rem !important;
-      }
-
       .rss-reading-mode img {
-        max-width: 100% !important;
-        height: auto !important;
-        margin: 1rem 0 !important;
+        max-width: 100%;
+        height: auto;
       }
-
-      .rss-reading-mode .nav-buttons {
-        position: fixed;
-        bottom: 2rem;
-        right: 2rem;
-        display: flex;
-        gap: 1rem;
-        z-index: 1000;
+      .rss-reading-mode h1 {
+        font-size: 2em;
+        margin-bottom: 1em;
       }
-
-      .rss-reading-mode .nav-button {
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        background: var(--interactive-accent);
-        color: var(--text-on-accent);
-        cursor: pointer;
-        border: none;
+      .rss-reading-mode a {
+        color: var(--text-accent);
+        text-decoration: none;
       }
-
-      .rss-reading-mode .nav-button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      .rss-reading-mode a:hover {
+        text-decoration: underline;
       }
     `
     document.head.appendChild(styleEl)
   }
 
-  /**
-   * Supprime les styles CSS du mode lecture
-   */
   private removeReadingModeStyles(): void {
-    const styleEl = document.getElementById('rss-reading-mode-styles')
+    const styleEl = document.getElementById('rss-reading-mode')
     if (styleEl) {
       styleEl.remove()
     }
   }
 
-  /**
-   * Récupère les fichiers d'articles d'un dossier
-   * @param folderPath - Chemin du dossier
-   */
-  private async getArticleFiles(folderPath: string): Promise<TFile[]> {
-    return this.app.vault.getFiles()
-      .filter(file => 
-        file.parent?.path === folderPath &&
-        file.extension === 'md'
-      )
-  }
-
-  /**
-   * Ouvre un article dans l'éditeur
-   * @param file - Fichier à ouvrir
-   */
   private async openArticle(file: TFile): Promise<void> {
-    const leaf = this.getOrCreateLeaf()
-    await leaf.openFile(file)
-    
-    // Ajouter la classe pour le mode lecture
-    const contentEl = leaf.view.contentEl
-    contentEl.classList.add('rss-reading-mode')
-  }
+    try {
+      const leaf = this.app.workspace.getLeaf(false)
+      if (!leaf) {
+        this.logService.error('Impossible d\'obtenir une feuille de travail')
+        return
+      }
 
-  /**
-   * Récupère ou crée un nouvel onglet
-   */
-  private getOrCreateLeaf(): WorkspaceLeaf {
-    const leaf = this.app.workspace.getLeaf(false)
-    if (!leaf) {
-      return this.app.workspace.getLeaf(true)
+      await leaf.openFile(file)
+      const data = await this.storageService.loadData()
+      await this.storageService.saveData({
+        ...data,
+        lastReadArticle: file.path
+      })
+    } catch (error) {
+      this.logService.error('Erreur lors de l\'ouverture du fichier', error as Error)
     }
-    return leaf
   }
 } 

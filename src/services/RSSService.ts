@@ -1,155 +1,147 @@
-import { requestUrl, RequestUrlResponse } from 'obsidian'
-import { RSSFeed, RSSItem, FeedData } from '../types'
+import { App, requestUrl } from 'obsidian'
+import { createRSSError, RSSErrorCode } from '../types/errors'
+import { LogService } from './LogService'
+import { RSSFeed, RSSItem } from '../types'
+import { XMLParser } from 'fast-xml-parser'
 
 export class RSSService {
-  /**
-   * Récupère et parse un flux RSS/Atom
-   * @param url - L'URL du flux à récupérer
-   * @returns Le flux parsé avec ses articles
-   */
+  private parser: XMLParser
+
+  constructor(
+    private app: App,
+    private logService: LogService
+  ) {
+    this.parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_'
+    })
+  }
+
   async fetchFeed(url: string): Promise<RSSFeed> {
     try {
-      const response = await this.fetchUrl(url)
-      const parser = new DOMParser()
-      const doc = parser.parseFromString(response.text, 'text/xml')
+      this.logService.debug('Récupération du flux RSS', { url })
+      
+      const response = await requestUrl({
+        url,
+        headers: {
+          'User-Agent': 'Obsidian RSS Reader',
+          'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml'
+        }
+      })
 
-      // Vérifier les erreurs de parsing
-      const parseError = doc.querySelector('parsererror')
-      if (parseError) {
-        throw new Error(`Erreur de parsing XML: ${parseError.textContent}`)
+      if (response.status !== 200) {
+        throw createRSSError(
+          RSSErrorCode.FETCH_ERROR,
+          `Erreur HTTP ${response.status} lors de la récupération du flux`,
+          url
+        )
       }
 
-      // Détecter le type de flux (RSS ou Atom)
-      if (doc.querySelector('feed')) {
-        return this.parseAtomFeed(doc)
-      } else {
-        return this.parseRssFeed(doc)
+      try {
+        const parsed = this.parser.parse(response.text)
+        return this.parseFeedData(parsed, url)
+      } catch (parseError) {
+        throw createRSSError(
+          RSSErrorCode.PARSE_ERROR,
+          'Erreur lors du parsing du flux XML',
+          url
+        )
       }
     } catch (error) {
-      console.error(`Erreur lors de la récupération du feed ${url}:`, error)
-      throw error
-    }
-  }
-
-  /**
-   * Parse un flux au format Atom
-   * @param doc - Le document XML du flux Atom
-   * @returns Le flux parsé
-   */
-  private parseAtomFeed(doc: Document): RSSFeed {
-    const feed = doc.querySelector('feed')
-    if (!feed) throw new Error('Document Atom invalide')
-
-    const title = feed.querySelector('title')?.textContent || 'Sans titre'
-    const description = feed.querySelector('subtitle')?.textContent || ''
-
-    // Gestion du lien principal
-    let link = ''
-    const links = feed.querySelectorAll('link')
-    for (const l of links) {
-      if (l.getAttribute('rel') === 'alternate' || !l.getAttribute('rel')) {
-        link = l.getAttribute('href') || ''
-        break
+      if (error instanceof Error) {
+        this.logService.error('Erreur lors de la récupération du flux RSS', error)
+        throw error
       }
-    }
-
-    // Parser les articles
-    const entries = Array.from(feed.querySelectorAll('entry'))
-    const items = entries.map(entry => this.parseAtomEntry(entry))
-
-    return {
-      title,
-      description,
-      link,
-      items
+      const rssError = createRSSError(
+        RSSErrorCode.NETWORK_ERROR,
+        'Erreur réseau lors de la récupération du flux',
+        url
+      )
+      this.logService.error('Erreur réseau', rssError)
+      throw rssError
     }
   }
 
-  /**
-   * Parse un article au format Atom
-   * @param entry - L'élément XML de l'article Atom
-   * @returns L'article parsé
-   */
-  private parseAtomEntry(entry: Element): RSSItem {
-    // Gestion du lien
-    let link = ''
-    const links = entry.querySelectorAll('link')
-    for (const l of links) {
-      if (l.getAttribute('rel') === 'alternate' || !l.getAttribute('rel')) {
-        link = l.getAttribute('href') || ''
-        break
-      }
+  private parseFeedData(data: any, url: string): RSSFeed {
+    if (data.rss?.channel) {
+      return this.parseRSSFeed(data.rss.channel)
+    } else if (data.feed) {
+      return this.parseAtomFeed(data.feed)
     }
 
-    // Gestion du contenu avec fallback sur le résumé
-    const content = entry.querySelector('content')?.textContent || 
-                   entry.querySelector('summary')?.textContent || ''
+    throw createRSSError(
+      RSSErrorCode.PARSE_ERROR,
+      'Format de flux non supporté',
+      url
+    )
+  }
 
+  private parseRSSFeed(channel: any): RSSFeed {
+    const feed: RSSFeed = {
+      title: channel.title || '',
+      description: channel.description || '',
+      link: channel.link || '',
+      items: []
+    }
+
+    if (channel.item) {
+      const items = Array.isArray(channel.item) ? channel.item : [channel.item]
+      feed.items = items.map(this.parseRSSItem)
+    }
+
+    return feed
+  }
+
+  private parseRSSItem(item: any): RSSItem {
     return {
-      title: entry.querySelector('title')?.textContent?.trim() || 'Sans titre',
-      description: content.trim(),
-      link: link,
-      pubDate: entry.querySelector('updated')?.textContent || 
-               entry.querySelector('published')?.textContent || 
-               new Date().toISOString(),
-      guid: entry.querySelector('id')?.textContent || link
+      title: item.title || '',
+      description: item.description || '',
+      link: item.link || '',
+      pubDate: item.pubDate || new Date().toISOString(),
+      guid: item.guid || item.link
     }
   }
 
-  /**
-   * Parse un flux au format RSS
-   * @param doc - Le document XML du flux RSS
-   * @returns Le flux parsé
-   */
-  private parseRssFeed(doc: Document): RSSFeed {
-    const channel = doc.querySelector('channel')
-    if (!channel) throw new Error('Document RSS invalide')
+  private parseAtomFeed(feed: any): RSSFeed {
+    const atomFeed: RSSFeed = {
+      title: feed.title || '',
+      description: feed.subtitle || '',
+      link: this.getAtomLink(feed.link) || '',
+      items: []
+    }
 
-    const title = channel.querySelector('title')?.textContent || 'Sans titre'
-    const description = channel.querySelector('description')?.textContent || ''
-    const link = channel.querySelector('link')?.textContent || ''
+    if (feed.entry) {
+      const entries = Array.isArray(feed.entry) ? feed.entry : [feed.entry]
+      atomFeed.items = entries.map(this.parseAtomEntry)
+    }
 
-    // Parser les articles
-    const items = Array.from(channel.querySelectorAll('item'))
-      .map(item => this.parseRSSItem(item))
+    return atomFeed
+  }
 
+  private parseAtomEntry(entry: any): RSSItem {
     return {
-      title,
-      description,
-      link,
-      items
+      title: entry.title || '',
+      description: entry.content || entry.summary || '',
+      link: this.getAtomLink(entry.link) || '',
+      pubDate: entry.updated || entry.published || new Date().toISOString(),
+      guid: entry.id || this.getAtomLink(entry.link)
     }
   }
 
-  /**
-   * Parse un article au format RSS
-   * @param item - L'élément XML de l'article RSS
-   * @returns L'article parsé
-   */
-  private parseRSSItem(item: Element): RSSItem {
-    return {
-      title: item.querySelector('title')?.textContent?.trim() || 'Sans titre',
-      description: item.querySelector('description')?.textContent?.trim() || '',
-      link: item.querySelector('link')?.textContent?.trim() || '',
-      pubDate: item.querySelector('pubDate')?.textContent || new Date().toISOString(),
-      guid: item.querySelector('guid')?.textContent || item.querySelector('link')?.textContent || ''
+  private getAtomLink(link: any): string {
+    if (!link) {
+      return ''
     }
-  }
 
-  /**
-   * Effectue une requête HTTP avec les bons en-têtes
-   * @param url - L'URL à requêter
-   * @returns La réponse de la requête
-   */
-  private async fetchUrl(url: string): Promise<RequestUrlResponse> {
-    return await requestUrl({
-      url,
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': 'application/atom+xml,application/xml,text/xml,application/rss+xml,*/*',
-        'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8',
-        'Cache-Control': 'no-cache'
-      }
-    })
+    if (typeof link === 'string') {
+      return link
+    }
+
+    if (Array.isArray(link)) {
+      const alternate = link.find(l => l['@_rel'] === 'alternate')
+      return alternate ? alternate['@_href'] : link[0]['@_href']
+    }
+
+    return link['@_href'] || ''
   }
 } 

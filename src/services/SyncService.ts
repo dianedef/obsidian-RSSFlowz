@@ -1,13 +1,16 @@
 import { App } from 'obsidian'
 import { RSSService } from './RSSService'
 import { StorageService } from './StorageService'
+import { LogService } from './LogService'
 import { FeedData, RSSItem } from '../types'
+import { createSyncError, SyncErrorCode } from '../types/errors'
 
 export class SyncService {
   constructor(
     private app: App,
     private rssService: RSSService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private logService: LogService
   ) {}
 
   async syncFeed(feed: FeedData): Promise<void> {
@@ -30,8 +33,12 @@ export class SyncService {
       
       await this.storageService.saveData(data)
     } catch (error) {
-      feed.error = error.message
-      throw error
+      const syncError = error instanceof Error 
+        ? createSyncError(SyncErrorCode.SYNC_FAILED, error.message, feed.id)
+        : createSyncError(SyncErrorCode.SYNC_FAILED, 'Erreur inconnue lors de la synchronisation', feed.id)
+      feed.error = syncError.message
+      this.logService.error('Erreur lors de la synchronisation du flux', syncError)
+      throw syncError
     }
   }
 

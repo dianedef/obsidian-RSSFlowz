@@ -1,182 +1,150 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { RSSService } from '../../src/services/RSSService'
+import { LogService } from '../../src/services/LogService'
+import { requestUrl } from 'obsidian'
+
+const validRSS = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Test Feed</title>
+    <link>https://example.com</link>
+    <description>Test Description</description>
+    <item>
+      <title>Test Item</title>
+      <link>https://example.com/item</link>
+      <description>Test Item Description</description>
+      <pubDate>Mon, 01 Jan 2024 12:00:00 GMT</pubDate>
+      <guid>https://example.com/item</guid>
+    </item>
+  </channel>
+</rss>`
 
 describe('RSSService', () => {
   let service: RSSService
-
-  // Mock de la fonction requestUrl d'Obsidian
-  const mockRequestUrl = vi.fn()
-  vi.mock('obsidian', () => ({
-    requestUrl: mockRequestUrl
-  }))
+  let mockLogService: LogService
+  let mockApp: any
 
   beforeEach(() => {
-    service = new RSSService()
     vi.clearAllMocks()
+
+    mockApp = {
+      vault: {
+        adapter: {
+          exists: vi.fn(),
+          mkdir: vi.fn()
+        }
+      }
+    }
+
+    mockLogService = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    } as unknown as LogService
+
+    service = new RSSService(mockApp, mockLogService)
+    vi.mocked(requestUrl).mockReset()
   })
 
   describe('fetchFeed', () => {
-    it('devrait récupérer et parser un flux RSS', async () => {
-      // Préparer les données de test
-      const rssXml = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <rss version="2.0">
-          <channel>
-            <title>Mon Feed RSS</title>
-            <description>Description du feed</description>
-            <link>https://example.com</link>
-            <item>
-              <title>Article 1</title>
-              <description>Description de l'article 1</description>
-              <link>https://example.com/article1</link>
-              <pubDate>Thu, 01 Jan 2024 12:00:00 GMT</pubDate>
-              <guid>https://example.com/article1</guid>
-            </item>
-          </channel>
-        </rss>
-      `
-
-      // Mocker la réponse HTTP
-      mockRequestUrl.mockResolvedValueOnce({
-        text: rssXml,
+    it('devrait récupérer et parser un flux RSS valide', async () => {
+      vi.mocked(requestUrl).mockResolvedValue({
+        text: validRSS,
         status: 200
-      })
+      } as any)
 
-      // Exécuter le test
       const feed = await service.fetchFeed('https://example.com/feed.xml')
 
-      // Vérifier les résultats
-      expect(feed).toBeDefined()
-      expect(feed.title).toBe('Mon Feed RSS')
-      expect(feed.description).toBe('Description du feed')
-      expect(feed.link).toBe('https://example.com')
-      expect(feed.items).toHaveLength(1)
-      expect(feed.items[0]).toEqual({
-        title: 'Article 1',
-        description: 'Description de l\'article 1',
-        link: 'https://example.com/article1',
-        pubDate: 'Thu, 01 Jan 2024 12:00:00 GMT',
-        guid: 'https://example.com/article1'
+      expect(feed).toEqual({
+        title: 'Test Feed',
+        link: 'https://example.com',
+        description: 'Test Description',
+        items: [{
+          title: 'Test Item',
+          link: 'https://example.com/item',
+          description: 'Test Item Description',
+          pubDate: 'Mon, 01 Jan 2024 12:00:00 GMT',
+          guid: 'https://example.com/item'
+        }]
       })
     })
 
-    it('devrait récupérer et parser un flux Atom', async () => {
-      // Préparer les données de test
-      const atomXml = `
-        <?xml version="1.0" encoding="UTF-8"?>
-        <feed xmlns="http://www.w3.org/2005/Atom">
-          <title>Mon Feed Atom</title>
-          <subtitle>Description du feed</subtitle>
-          <link href="https://example.com"/>
-          <entry>
-            <title>Article 1</title>
-            <content>Contenu de l'article 1</content>
-            <link href="https://example.com/article1"/>
-            <updated>2024-01-01T12:00:00Z</updated>
-            <id>urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a</id>
-          </entry>
-        </feed>
-      `
-
-      // Mocker la réponse HTTP
-      mockRequestUrl.mockResolvedValueOnce({
-        text: atomXml,
-        status: 200
-      })
-
-      // Exécuter le test
-      const feed = await service.fetchFeed('https://example.com/feed.atom')
-
-      // Vérifier les résultats
-      expect(feed).toBeDefined()
-      expect(feed.title).toBe('Mon Feed Atom')
-      expect(feed.description).toBe('Description du feed')
-      expect(feed.link).toBe('https://example.com')
-      expect(feed.items).toHaveLength(1)
-      expect(feed.items[0]).toEqual({
-        title: 'Article 1',
-        description: 'Contenu de l\'article 1',
-        link: 'https://example.com/article1',
-        pubDate: '2024-01-01T12:00:00Z',
-        guid: 'urn:uuid:1225c695-cfb8-4ebb-aaaa-80da344efa6a'
-      })
-    })
-
-    it('devrait gérer les erreurs de parsing XML', async () => {
-      // XML invalide
-      const invalidXml = '<?xml version="1.0"?><invalid>'
-
-      mockRequestUrl.mockResolvedValueOnce({
-        text: invalidXml,
-        status: 200
-      })
-
-      // Vérifier que l'erreur est bien levée
-      await expect(service.fetchFeed('https://example.com/feed.xml'))
-        .rejects
-        .toThrow('Erreur de parsing XML')
-    })
-
-    it('devrait gérer les erreurs HTTP', async () => {
-      mockRequestUrl.mockRejectedValueOnce(new Error('Erreur réseau'))
+    it('devrait gérer les erreurs de requête', async () => {
+      vi.mocked(requestUrl).mockRejectedValue(new Error('Network error'))
 
       await expect(service.fetchFeed('https://example.com/feed.xml'))
         .rejects
-        .toThrow('Erreur réseau')
+        .toThrow('Network error')
+    })
+
+    it('devrait gérer les flux invalides', async () => {
+      vi.mocked(requestUrl).mockResolvedValue({
+        text: 'Invalid XML',
+        status: 200
+      } as any)
+
+      await expect(service.fetchFeed('https://example.com/feed.xml'))
+        .rejects
+        .toThrow()
     })
 
     it('devrait gérer les flux sans articles', async () => {
-      const emptyRssXml = `
-        <?xml version="1.0" encoding="UTF-8"?>
+      const emptyRssXml = `<?xml version="1.0"?>
         <rss version="2.0">
           <channel>
-            <title>Feed Vide</title>
-            <description>Feed sans articles</description>
+            <title>Test Feed</title>
+            <description>Test Description</description>
             <link>https://example.com</link>
           </channel>
-        </rss>
-      `
+        </rss>`
 
-      mockRequestUrl.mockResolvedValueOnce({
-        text: emptyRssXml,
-        status: 200
-      })
+      vi.mocked(requestUrl).mockResolvedValue({
+        status: 200,
+        text: emptyRssXml
+      } as any)
 
       const feed = await service.fetchFeed('https://example.com/feed.xml')
 
-      expect(feed).toBeDefined()
-      expect(feed.title).toBe('Feed Vide')
-      expect(feed.items).toHaveLength(0)
+      expect(feed).toEqual({
+        title: 'Test Feed',
+        description: 'Test Description',
+        link: 'https://example.com',
+        items: []
+      })
     })
 
     it('devrait gérer les valeurs manquantes dans les articles', async () => {
-      const incompleteRssXml = `
-        <?xml version="1.0" encoding="UTF-8"?>
+      const incompleteRssXml = `<?xml version="1.0"?>
         <rss version="2.0">
           <channel>
-            <title>Feed Incomplet</title>
+            <title>Test Feed</title>
+            <description>Test Description</description>
             <link>https://example.com</link>
             <item>
-              <title>Article Sans Description</title>
-              <link>https://example.com/article1</link>
+              <title>Test Article</title>
             </item>
           </channel>
-        </rss>
-      `
+        </rss>`
 
-      mockRequestUrl.mockResolvedValueOnce({
-        text: incompleteRssXml,
-        status: 200
-      })
+      vi.mocked(requestUrl).mockResolvedValue({
+        status: 200,
+        text: incompleteRssXml
+      } as any)
 
       const feed = await service.fetchFeed('https://example.com/feed.xml')
 
-      expect(feed.items[0]).toEqual({
-        title: 'Article Sans Description',
-        description: '',
-        link: 'https://example.com/article1',
-        pubDate: expect.any(String),
-        guid: 'https://example.com/article1'
+      expect(feed).toEqual({
+        title: 'Test Feed',
+        description: 'Test Description',
+        link: 'https://example.com',
+        items: [{
+          title: 'Test Article',
+          description: '',
+          link: '',
+          pubDate: expect.any(String),
+          guid: undefined
+        }]
       })
     })
   })

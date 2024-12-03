@@ -1,4 +1,4 @@
-import { App, TFile } from 'obsidian'
+import { App, TFile, TFolder, Vault } from 'obsidian'
 import { RSSItem } from '../types'
 
 export class FileService {
@@ -58,7 +58,7 @@ export class FileService {
   async cleanOldArticles(rssFolder: string, retentionDays: number): Promise<void> {
     try {
       const cutoffDate = Date.now() - (retentionDays * 86400000) // 86400000 = 24h * 60m * 60s * 1000ms
-      const files = await this.app.vault.getFiles()
+      const files = this.app.vault.getFiles()
       
       // Filtrer les fichiers du dossier RSS
       const rssFiles = files.filter(file => 

@@ -5,27 +5,41 @@ import {
   StorageService, 
   SyncService, 
   SchedulerService,
-  I18nService 
+  I18nService,
+  LogService,
+  FileService,
+  ReadingService,
+  OpmlService
 } from './services'
 import { PluginSettings, FeedData } from './types'
 
 export class RSSReaderPlugin extends ObsidianPlugin {
-  settings!: PluginSettings
-  private rssService!: RSSService
-  private storageService!: StorageService
-  private syncService!: SyncService
-  private schedulerService!: SchedulerService
-  private i18nService!: I18nService
+  settings: PluginSettings
+  
+  // Services
+  private storageService: StorageService
+  private logService: LogService
+  private i18nService: I18nService
+  private fileService: FileService
+  private rssService: RSSService
+  private syncService: SyncService
+  private schedulerService: SchedulerService
+  private readingService: ReadingService
+  private opmlService: OpmlService
 
   async onload() {
     // Initialisation des services
-    this.i18nService = new I18nService(this.app)
-    this.rssService = new RSSService()
+    this.logService = new LogService(this.app)
     this.storageService = new StorageService(this.app)
-    this.syncService = new SyncService(this.app, this.rssService, this.storageService)
+    this.i18nService = new I18nService(this.app)
+    this.fileService = new FileService(this.app)
+    this.rssService = new RSSService(this.app, this.logService)
+    this.syncService = new SyncService(this.app, this.rssService, this.storageService, this.logService)
     this.schedulerService = new SchedulerService(this.app, this.syncService, this.storageService)
+    this.readingService = new ReadingService(this.app, this.storageService, this.logService)
+    this.opmlService = new OpmlService(this.app, this.storageService, this.logService)
 
-    // Chargement des données et initialisation des settings
+    // Chargement des paramètres
     await this.loadSettings()
 
     // Ajout de l'onglet de paramètres
@@ -36,34 +50,64 @@ export class RSSReaderPlugin extends ObsidianPlugin {
 
     // Commandes
     this.addCommand({
-      id: 'refresh-all-feeds',
+      id: 'refresh-feeds',
       name: this.i18nService.t('commands.refresh.name'),
       callback: async () => {
+        this.logService.info(this.i18nService.t('commands.refresh.start'))
         const data = await this.storageService.loadData()
         for (const feed of data.feeds) {
-          try {
-            await this.syncService.syncFeed(feed)
-          } catch (error) {
-            console.error(
-              this.i18nService.t('notices.feed.fetchError', { title: feed.settings.url }),
+          await this.syncService.syncFeed(feed).catch(error => {
+            this.logService.error(
+              this.i18nService.t('commands.refresh.error', { url: feed.settings.url }),
               error
             )
-          }
+          })
+        }
+        this.logService.info(this.i18nService.t('commands.refresh.complete'))
+      }
+    })
+
+    this.addCommand({
+      id: 'import-opml',
+      name: this.i18nService.t('commands.import.name'),
+      callback: async () => {
+        // TODO: Ajouter l'interface utilisateur pour l'import OPML
+      }
+    })
+
+    this.addCommand({
+      id: 'export-opml',
+      name: this.i18nService.t('commands.export.name'),
+      callback: async () => {
+        try {
+          const opml = await this.opmlService.exportOpml()
+          const path = 'RSS/export.opml'
+          await this.app.vault.create(path, opml)
+          this.logService.info(this.i18nService.t('commands.export.success', { path }))
+        } catch (error) {
+          this.logService.error(this.i18nService.t('commands.export.error'), error)
         }
       }
     })
 
     this.addCommand({
-      id: 'add-feed',
-      name: this.i18nService.t('commands.addFeed.name'),
+      id: 'toggle-reading-mode',
+      name: this.i18nService.t('commands.reading.toggle'),
       callback: () => {
-        // TODO: Implémenter l'interface d'ajout de flux
+        if (this.readingService.isActive()) {
+          this.readingService.exitReadingMode()
+        } else {
+          this.readingService.enterReadingMode()
+        }
       }
     })
+
+    this.logService.info(this.i18nService.t('plugin.loaded'))
   }
 
   async onunload() {
     await this.schedulerService.stopScheduler()
+    this.logService.info(this.i18nService.t('plugin.unloaded'))
   }
 
   async loadSettings() {
@@ -77,27 +121,35 @@ export class RSSReaderPlugin extends ObsidianPlugin {
     await this.storageService.saveData(data)
   }
 
+  // Méthodes utilitaires pour la gestion des flux
   async addFeed(feedData: FeedData) {
     const data = await this.storageService.loadData()
     data.feeds.push(feedData)
     await this.storageService.saveData(data)
     this.schedulerService.scheduleFeed(feedData)
+    this.logService.info(this.i18nService.t('feeds.added', { url: feedData.settings.url }))
   }
 
   async removeFeed(feedId: string) {
     const data = await this.storageService.loadData()
-    data.feeds = data.feeds.filter(feed => feed.id !== feedId)
-    await this.storageService.saveData(data)
-    this.schedulerService.unscheduleFeed(feedId)
+    const feed = data.feeds.find(f => f.id === feedId)
+    if (feed) {
+      data.feeds = data.feeds.filter(f => f.id !== feedId)
+      await this.storageService.saveData(data)
+      this.schedulerService.unscheduleFeed(feedId)
+      await this.fileService.removeFolder(feed.settings.folder)
+      this.logService.info(this.i18nService.t('feeds.removed', { url: feed.settings.url }))
+    }
   }
 
   async updateFeed(feedData: FeedData) {
     const data = await this.storageService.loadData()
-    const index = data.feeds.findIndex(feed => feed.id === feedData.id)
+    const index = data.feeds.findIndex(f => f.id === feedData.id)
     if (index !== -1) {
       data.feeds[index] = feedData
       await this.storageService.saveData(data)
       this.schedulerService.scheduleFeed(feedData)
+      this.logService.info(this.i18nService.t('feeds.updated', { url: feedData.settings.url }))
     }
   }
 
