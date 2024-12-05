@@ -4,14 +4,12 @@ import { StorageService } from "../../src/services/StorageService";
 import { SyncService } from "../../src/services/SyncService";
 import { LogService } from "../../src/services/LogService";
 import { FeedData, FeedSettings } from "../../src/types";
+import type { Mock } from 'vitest';
 
 describe("SchedulerService", () => {
 	let service: SchedulerService;
-	let mockStorageService: {
-		loadData: ReturnType<typeof vi.fn>;
-		saveData: ReturnType<typeof vi.fn>;
-	};
-	let mockSyncService: { syncFeed: ReturnType<typeof vi.fn> };
+	let mockStorageService: { loadData: Mock; saveData: Mock };
+	let mockSyncService: { syncFeed: Mock };
 	let mockLogService: LogService;
 	let mockPlugin: any;
 
@@ -22,7 +20,7 @@ describe("SchedulerService", () => {
 				settings: {
 					url: "https://example.com/feed1",
 					folder: "RSS/feed1",
-					filterDuplicates: true,
+					filterDuplicates: true
 				},
 			},
 			{
@@ -30,7 +28,7 @@ describe("SchedulerService", () => {
 				settings: {
 					url: "https://example.com/feed2",
 					folder: "RSS/feed2",
-					filterDuplicates: true,
+					filterDuplicates: true
 				},
 			},
 		],
@@ -46,11 +44,11 @@ describe("SchedulerService", () => {
 
 		mockStorageService = {
 			loadData: vi.fn().mockResolvedValue(defaultData),
-			saveData: vi.fn(),
+			saveData: vi.fn()
 		};
 
 		mockSyncService = {
-			syncFeed: vi.fn().mockImplementation(() => Promise.resolve()),
+			syncFeed: vi.fn().mockResolvedValue(undefined)
 		};
 
 		mockLogService = {
@@ -72,12 +70,16 @@ describe("SchedulerService", () => {
 		);
 	});
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	describe("startScheduler", () => {
 		it("devrait démarrer le planificateur", async () => {
 			await service.startScheduler();
 
 			// Vérifier que les feeds sont planifiés
-			vi.advanceTimersByTime(30 * 60 * 1000); // 30 minutes
+			await vi.advanceTimersByTimeAsync(30 * 60 * 1000); // 30 minutes
 			expect(mockSyncService.syncFeed).toHaveBeenCalledTimes(2);
 			expect(mockLogService.info).toHaveBeenCalledWith("Planificateur démarré");
 		});
@@ -99,8 +101,8 @@ describe("SchedulerService", () => {
 			await service.startScheduler();
 			await service.stopScheduler();
 
-			vi.advanceTimersByTime(30 * 60 * 1000);
-			expect(mockSyncService.syncFeed).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+			expect(mockSyncService.syncFeed).toHaveBeenCalledTimes(0);
 			expect(mockLogService.info).toHaveBeenCalledWith("Planificateur arrêté");
 		});
 	});
@@ -110,14 +112,14 @@ describe("SchedulerService", () => {
 			const feed: FeedData = defaultData.feeds[0];
 			await service.scheduleFeed(feed);
 
-			vi.advanceTimersByTime(30 * 60 * 1000);
+			await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
 			expect(mockSyncService.syncFeed).toHaveBeenCalledWith(feed);
 			expect(mockLogService.info).toHaveBeenCalledWith(
 				"Feed planifié",
 				expect.objectContaining({
 					feed: feed.id,
 					url: feed.settings.url,
-					interval: 30,
+					interval: 30
 				})
 			);
 		});
@@ -125,35 +127,28 @@ describe("SchedulerService", () => {
 		it("devrait gérer les erreurs de synchronisation", async () => {
 			const feed: FeedData = defaultData.feeds[0];
 			const error = new Error("Sync error");
+			mockSyncService.syncFeed.mockRejectedValueOnce(error);
 
-			// Configurer le mock pour rejeter la première fois
-			mockSyncService.syncFeed.mockImplementationOnce(() =>
-				Promise.reject(error)
-			);
-
-			// Créer un intervalle court pour le test
+			// Réduire l'intervalle pour le test
 			const testData = {
 				...defaultData,
 				settings: {
 					...defaultData.settings,
-					defaultUpdateInterval: 0.001, // 1ms
-				},
+					defaultUpdateInterval: 1 // 1 minute
+				}
 			};
 			mockStorageService.loadData.mockResolvedValueOnce(testData);
 
 			await service.scheduleFeed(feed);
-
-			// Attendre que le premier intervalle se déclenche
-			await new Promise((resolve) => setTimeout(resolve, 10));
-
-			// Arrêter tous les timers
-			vi.clearAllTimers();
+			
+			// Avancer le temps d'une minute
+			await vi.advanceTimersByTimeAsync(60 * 1000);
 
 			expect(mockLogService.error).toHaveBeenCalledWith(
 				"Erreur lors de la synchronisation planifiée",
 				expect.objectContaining({
 					feed: feed.id,
-					error,
+					error
 				})
 			);
 
@@ -168,8 +163,8 @@ describe("SchedulerService", () => {
 			await service.scheduleFeed(feed);
 			service.unscheduleFeed(feed.id);
 
-			vi.advanceTimersByTime(30 * 60 * 1000);
-			expect(mockSyncService.syncFeed).not.toHaveBeenCalled();
+			await vi.advanceTimersByTimeAsync(30 * 60 * 1000);
+			expect(mockSyncService.syncFeed).toHaveBeenCalledTimes(0);
 			expect(mockLogService.info).toHaveBeenCalledWith(
 				"Feed déplanifié",
 				expect.objectContaining({ feed: feed.id })
