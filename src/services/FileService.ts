@@ -1,8 +1,8 @@
-import { App, TFile, TFolder, Vault } from 'obsidian'
+import { Plugin, TFile } from 'obsidian'
 import { RSSItem } from '../types'
 
 export class FileService {
-  constructor(private app: App) {}
+  constructor(private plugin: Plugin) {}
 
   /**
    * Crée un dossier s'il n'existe pas déjà
@@ -10,9 +10,8 @@ export class FileService {
    */
   async ensureFolder(path: string): Promise<void> {
     try {
-      const exists = await this.app.vault.adapter.exists(path)
-      if (!exists) {
-        await this.app.vault.createFolder(path)
+      if (!(await this.plugin.app.vault.adapter.exists(path))) {
+        await this.plugin.app.vault.createFolder(path)
       }
     } catch (error) {
       console.error(`Erreur lors de la création du dossier ${path}:`, error)
@@ -26,14 +25,14 @@ export class FileService {
    */
   async removeFolder(path: string): Promise<void> {
     try {
-      const exists = await this.app.vault.adapter.exists(path)
+      const exists = await this.plugin.app.vault.adapter.exists(path)
       if (exists) {
         // Récupérer la liste des fichiers et sous-dossiers
-        const listing = await this.app.vault.adapter.list(path)
+        const listing = await this.plugin.app.vault.adapter.list(path)
         
         // Supprimer d'abord les fichiers
         for (const file of listing.files) {
-          await this.app.vault.adapter.remove(file)
+          await this.plugin.app.vault.adapter.remove(file)
         }
         
         // Supprimer récursivement les sous-dossiers
@@ -42,7 +41,7 @@ export class FileService {
         }
         
         // Enfin, supprimer le dossier lui-même
-        await this.app.vault.adapter.rmdir(path)
+        await this.plugin.app.vault.adapter.rmdir(path)
       }
     } catch (error) {
       console.error(`Erreur lors de la suppression du dossier ${path}:`, error)
@@ -58,18 +57,17 @@ export class FileService {
   async cleanOldArticles(rssFolder: string, retentionDays: number): Promise<void> {
     try {
       const cutoffDate = Date.now() - (retentionDays * 86400000) // 86400000 = 24h * 60m * 60s * 1000ms
-      const files = this.app.vault.getFiles()
+      const files = this.plugin.app.vault.getFiles()
       
       // Filtrer les fichiers du dossier RSS
       const rssFiles = files.filter(file => 
-        file.path.startsWith(rssFolder) && 
-        file instanceof TFile
+        file.path.startsWith(rssFolder)
       )
 
       // Supprimer les fichiers plus anciens que la date limite
       for (const file of rssFiles) {
         if (file.stat.mtime < cutoffDate) {
-          await this.app.vault.delete(file)
+          await this.plugin.app.vault.delete(file)
         }
       }
     } catch (error) {
@@ -94,11 +92,11 @@ export class FileService {
         .replace(/{{pubDate}}/g, article.pubDate)
 
       // Créer ou mettre à jour le fichier
-      const file = this.app.vault.getAbstractFileByPath(filePath)
+      const file = this.plugin.app.vault.getAbstractFileByPath(filePath)
       if (file instanceof TFile) {
-        await this.app.vault.modify(file, content)
+        await this.plugin.app.vault.modify(file, content)
       } else {
-        await this.app.vault.create(filePath, content)
+        await this.plugin.app.vault.create(filePath, content)
       }
     } catch (error) {
       console.error(`Erreur lors de la sauvegarde de l'article dans ${filePath}:`, error)
@@ -112,7 +110,7 @@ export class FileService {
    * @returns true si le fichier existe
    */
   async fileExists(path: string): Promise<boolean> {
-    return await this.app.vault.adapter.exists(path)
+    return await this.plugin.app.vault.adapter.exists(path)
   }
 
   /**
@@ -122,10 +120,9 @@ export class FileService {
    */
   sanitizeFileName(fileName: string): string {
     return fileName
-      .replace(/[/\\?%*:|"<>]/g, '-') // Remplacer les caractères invalides par des tirets
-      .replace(/\s+/g, '-')           // Remplacer les espaces par des tirets
-      .replace(/-+/g, '-')            // Éviter les tirets multiples
-      .replace(/^-|-$/g, '')          // Supprimer les tirets en début et fin
-      .trim()
+      .toLowerCase() // Conversion en minuscules
+      .replace(/[^a-z0-9]+/g, '-') // Remplace les caractères non alphanumériques par des tirets
+      .replace(/^-+|-+$/g, '') // Supprime les tirets en début et fin
+      .replace(/-{2,}/g, '-') // Remplace les tirets multiples par un seul
   }
 } 

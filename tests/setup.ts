@@ -67,8 +67,11 @@ global.window = {
 
 global.document = global.window.document as any
 
-// Setup Vitest globals
-beforeEach(() => {
+// Mock des timers
+vi.useFakeTimers()
+
+// Nettoyage après chaque test
+afterEach(() => {
   vi.clearAllMocks()
   // Reset document.head
   Object.defineProperty(global.document, 'head', {
@@ -76,6 +79,6 @@ beforeEach(() => {
       appendChild: vi.fn(),
       removeChild: vi.fn()
     },
-    writable: true
+    writable: true,
   })
 }) 

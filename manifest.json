@@ -7,5 +7,8 @@
 	"author": "Votre Nom",
 	"authorUrl": "https://votre-site.com",
 	"isDesktopOnly": false,
-	"js": "main.js"
+	"js": "main.js",
+	"dependencies": {
+		"fast-xml-parser": "^4.3.2"
+	}
 }

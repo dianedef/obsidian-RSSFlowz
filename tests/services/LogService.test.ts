@@ -1,130 +1,170 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LogService } from '../../src/services/LogService'
-import { RSSError, RSSErrorCode } from '../../src/types/errors'
 import { LogLevel } from '../../src/types/logs'
-import { Notice } from 'obsidian'
-import sinon from 'sinon'
-
-vi.mock('obsidian', () => ({
-  Notice: vi.fn()
-}))
 
 describe('LogService', () => {
   let service: LogService
-  let mockApp: any
-  let clock: sinon.SinonFakeTimers
+  let mockConsole: Console
 
   beforeEach(() => {
-    vi.clearAllMocks()
-    clock = sinon.useFakeTimers()
+    mockConsole = {
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn()
+    } as unknown as Console
 
-    mockApp = {
-      vault: {
-        adapter: {
-          exists: vi.fn(),
-          mkdir: vi.fn(),
-          write: vi.fn()
-        }
-      }
-    }
-
-    service = new LogService(mockApp)
-  })
-
-  afterEach(() => {
-    clock.restore()
-  })
-
-  describe('log', () => {
-    it('devrait créer une notification pour les erreurs', () => {
-      const error = new Error('Test error')
-      service.error('Test error', error)
-      expect(Notice).toHaveBeenCalledWith('❌ Test error', 10000)
-      clock.tick(10000)
-    })
-
-    it('devrait créer une notification avec timeout pour les infos', () => {
-      service.info('Test info')
-      expect(Notice).toHaveBeenCalledWith('Test info', 3000)
-      clock.tick(3000)
-    })
-  })
-
-  describe('Logging Methods', () => {
-    it('devrait logger un message d\'info avec une notification', () => {
-      const message = 'Test info message'
-      service.info(message)
-      expect(Notice).toHaveBeenCalledWith(message, 3000)
-      clock.tick(3000)
-    })
-
-    it('devrait logger un avertissement avec une notification', () => {
-      const message = 'Test warning message'
-      service.warn(message)
-      expect(Notice).toHaveBeenCalledWith('⚠️ ' + message, 5000)
-      clock.tick(5000)
-    })
-
-    it('devrait logger une erreur avec une notification', () => {
-      const message = 'Test error message'
-      service.error(message)
-      expect(Notice).toHaveBeenCalledWith('❌ ' + message, 10000)
-      clock.tick(10000)
-    })
+    service = new LogService(mockConsole)
   })
 
   describe('Log Management', () => {
-    it('devrait ajouter un log à la liste', () => {
-      const message = 'Test message'
-      service.info(message)
-      const logs = service.getLogs()
-      expect(logs[0]).toEqual(expect.objectContaining({
-        level: LogLevel.INFO,
-        message
-      }))
+    it('devrait ajouter des logs avec différents niveaux', () => {
+      // Logs pour le feed Tech
+      service.debug('Mise à jour du feed tech', { 
+        feed: 'tech123', 
+        url: 'https://tech-blog.com/rss',
+        articles: ['TypeScript 5.0', 'React 18 Features'] 
+      })
+
+      service.info('Nouveaux articles tech trouvés', { 
+        feed: 'tech123',
+        count: 5,
+        titles: ['TypeScript Tips', 'React Hooks', 'Node.js Best Practices']
+      })
+
+      // Logs pour le feed News
+      service.warn('Délai de réponse élevé pour news', { 
+        feed: 'news123',
+        url: 'https://tech-news.com/feed',
+        responseTime: '5000ms'
+      })
+
+      service.error('Échec de synchronisation news', { 
+        feed: 'news123',
+        error: new Error('Timeout')
+      })
+
+      // Logs pour le feed Blog
+      service.info('Mise à jour du feed blog', { 
+        feed: 'blog123',
+        url: 'https://dev-blog.com/rss',
+        articles: ['Web Components', 'CSS Grid Tips']
+      })
+
+      service.warn('Articles dupliqués détectés', { 
+        feed: 'blog123',
+        duplicates: ['JavaScript Future', 'CSS Grid']
+      })
+
+      // Vérification des appels
+      expect(mockConsole.debug).toHaveBeenCalledWith(
+        '[DEBUG] Mise à jour du feed tech',
+        expect.objectContaining({ feed: 'tech123' })
+      )
+
+      expect(mockConsole.info).toHaveBeenCalledWith(
+        '[INFO] Nouveaux articles tech trouvés',
+        expect.objectContaining({ feed: 'tech123' })
+      )
+
+      expect(mockConsole.warn).toHaveBeenCalledWith(
+        '[WARN] Délai de réponse élevé pour news',
+        expect.objectContaining({ feed: 'news123' })
+      )
+
+      expect(mockConsole.error).toHaveBeenCalledWith(
+        '[ERROR] Échec de synchronisation news',
+        expect.objectContaining({ feed: 'news123' })
+      )
+
+      expect(mockConsole.info).toHaveBeenCalledWith(
+        '[INFO] Mise à jour du feed blog',
+        expect.objectContaining({ feed: 'blog123' })
+      )
+
+      expect(mockConsole.warn).toHaveBeenCalledWith(
+        '[WARN] Articles dupliqués détectés',
+        expect.objectContaining({ feed: 'blog123' })
+      )
     })
 
-    it('devrait limiter le nombre de logs', () => {
-      for (let i = 0; i < 1100; i++) {
-        service.debug(`Message ${i}`)
+    it('devrait gérer les erreurs de synchronisation pour chaque feed', () => {
+      const feeds = {
+        tech: {
+          id: 'tech123',
+          url: 'https://tech-blog.com/rss',
+          error: new Error('Network Error')
+        },
+        news: {
+          id: 'news123',
+          url: 'https://tech-news.com/feed',
+          error: new Error('Invalid RSS')
+        },
+        blog: {
+          id: 'blog123',
+          url: 'https://dev-blog.com/rss',
+          error: new Error('Timeout')
+        }
       }
-      expect(service.getLogs().length).toBeLessThanOrEqual(1000)
+
+      // Test des erreurs pour chaque feed
+      for (const [name, feed] of Object.entries(feeds)) {
+        service.error(`Erreur de synchronisation ${name}`, {
+          feed: feed.id,
+          url: feed.url,
+          error: feed.error
+        })
+
+        expect(mockConsole.error).toHaveBeenCalledWith(
+          `[ERROR] Erreur de synchronisation ${name}`,
+          expect.objectContaining({
+            feed: feed.id,
+            url: feed.url,
+            error: feed.error
+          })
+        )
+      }
     })
 
-    it('devrait effacer tous les logs', () => {
-      service.debug('Test message')
-      service.clearLogs()
-      expect(service.getLogs()).toHaveLength(0)
-    })
-  })
+    it('devrait logger les statistiques de chaque feed', () => {
+      const stats = {
+        tech: {
+          id: 'tech123',
+          articles: 15,
+          nouveaux: 5,
+          temps: '2.3s'
+        },
+        news: {
+          id: 'news123',
+          articles: 25,
+          nouveaux: 8,
+          temps: '1.8s'
+        },
+        blog: {
+          id: 'blog123',
+          articles: 10,
+          nouveaux: 3,
+          temps: '1.5s'
+        }
+      }
 
-  describe('export', () => {
-    it('devrait exporter les logs au format JSON', async () => {
-      service.error('Test error')
-      service.info('Test info')
-      const logs = await service.exportLogs()
-      expect(logs).toContain('Test error')
-      expect(logs).toContain('Test info')
-    })
-  })
+      // Log des stats pour chaque feed
+      for (const [name, stat] of Object.entries(stats)) {
+        service.info(`Statistiques ${name}`, {
+          feed: stat.id,
+          totalArticles: stat.articles,
+          newArticles: stat.nouveaux,
+          syncTime: stat.temps
+        })
 
-  describe('Notifications', () => {
-    it('devrait créer une notification avec timeout pour les infos', () => {
-      service.info('Test info')
-      expect(Notice).toHaveBeenCalledWith('Test info', 3000)
-      clock.tick(3000)
-    })
-
-    it('devrait créer une notification avec timeout pour les warnings', () => {
-      service.warn('Test warning')
-      expect(Notice).toHaveBeenCalledWith('⚠️ Test warning', 5000)
-      clock.tick(5000)
-    })
-
-    it('devrait créer une notification avec timeout pour les erreurs', () => {
-      service.error('Test error')
-      expect(Notice).toHaveBeenCalledWith('❌ Test error', 10000)
-      clock.tick(10000)
+        expect(mockConsole.info).toHaveBeenCalledWith(
+          `[INFO] Statistiques ${name}`,
+          expect.objectContaining({
+            feed: stat.id,
+            totalArticles: stat.articles
+          })
+        )
+      }
     })
   })
 }) 

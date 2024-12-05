@@ -6,26 +6,26 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
-    include: ['tests/**/*.test.ts'],
+    include: ['./tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
     },
-    maxWorkers: 1,
-    maxConcurrency: 1,
+    pool: 'threads',
     poolOptions: {
-      vmThreads: {
+      threads: {
+        useAtomics: false,
         maxThreads: 1,
         minThreads: 1
       }
     },
-    testTimeout: 10000,
-    hookTimeout: 10000,
-    teardownTimeout: 10000,
-    isolate: false,
     sequence: {
       hooks: 'list'
-    }
+    },
+    testTimeout: 10000,
+    hookTimeout: 10000,
+    teardownTimeout: 10000
   },
   resolve: {
     alias: {

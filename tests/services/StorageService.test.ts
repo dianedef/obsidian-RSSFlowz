@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { StorageService } from '../../src/services/StorageService'
-import { App } from 'obsidian'
+import { Plugin } from 'obsidian'
 import { StorageData } from '../../src/types'
+import { MockPlugin } from '../types/mocks'
 
 describe('StorageService', () => {
   let service: StorageService
-  let mockApp: App
+  let mockPlugin: MockPlugin
   let mockLoadData: ReturnType<typeof vi.fn>
   let mockSaveData: ReturnType<typeof vi.fn>
 
@@ -21,22 +22,27 @@ describe('StorageService', () => {
     }))
     mockSaveData = vi.fn().mockImplementation(async () => {})
 
-    mockApp = {
-      vault: {
-        getFiles: vi.fn(),
-        getAbstractFileByPath: vi.fn(),
-        create: vi.fn(),
-        createBinary: vi.fn()
+    mockPlugin = {
+      app: {
+        vault: {
+          adapter: {
+            exists: vi.fn(),
+            mkdir: vi.fn(),
+            write: vi.fn()
+          }
+        }
       },
-      workspace: {
-        getActiveFile: vi.fn(),
-        getActiveViewOfType: vi.fn()
+      manifest: {
+        id: 'test-plugin',
+        name: 'Test Plugin',
+        version: '1.0.0',
+        minAppVersion: '0.15.0'
       },
       loadData: mockLoadData,
       saveData: mockSaveData
-    } as unknown as App
+    } as MockPlugin
 
-    service = new StorageService(mockApp)
+    service = new StorageService(mockPlugin)
   })
 
   describe('loadData', () => {
@@ -63,7 +69,6 @@ describe('StorageService', () => {
           settings: {
             url: 'https://example.com/feed',
             folder: 'Test',
-            updateInterval: 30,
             filterDuplicates: true
           }
         }],
@@ -97,7 +102,7 @@ describe('StorageService', () => {
 
       await service.saveData(dataToSave)
 
-      expect(mockSaveData).toHaveBeenCalledWith('obsidian-rss-reader', dataToSave)
+      expect(mockSaveData).toHaveBeenCalledWith(dataToSave)
     })
   })
 }) 

@@ -1,91 +1,63 @@
-import { App, Notice } from 'obsidian'
-import { RSSError, SyncError, StorageError, OpmlError } from '../types/errors'
+import { Plugin, Notice } from 'obsidian'
 import { LogLevel } from '../types/logs'
 
-interface LogEntry {
-  level: LogLevel
-  message: string
-  timestamp: number
-  error?: Error | RSSError | SyncError | StorageError | OpmlError
-  context?: Record<string, unknown>
-}
-
 export class LogService {
-  private logs: LogEntry[] = []
+  private logs: any[] = []
   private maxLogs = 1000
 
-  constructor(private app: App) {}
+  constructor(private console: Console) {}
 
   debug(message: string, context?: Record<string, unknown>): void {
-    this.log(LogLevel.DEBUG, message, undefined, context)
+    this.log(LogLevel.DEBUG, message, context)
   }
 
   info(message: string, context?: Record<string, unknown>): void {
-    this.log(LogLevel.INFO, message, undefined, context)
-    new Notice(message, 3000)
+    this.log(LogLevel.INFO, message, context)
   }
 
-  warn(message: string, error?: Error, context?: Record<string, unknown>): void {
-    this.log(LogLevel.WARN, message, error, context)
-    new Notice(`⚠️ ${message}`, 5000)
+  warn(message: string, context?: Record<string, unknown>): void {
+    this.log(LogLevel.WARN, message, context)
   }
 
-  error(message: string, error?: Error, context?: Record<string, unknown>): void {
-    this.log(LogLevel.ERROR, message, error, context)
-    new Notice(`❌ ${message}`, 10000)
+  error(message: string, context?: Record<string, unknown>): void {
+    this.log(LogLevel.ERROR, message, context)
   }
 
-  log(
-    level: LogLevel,
-    message: string | Error,
-    error?: Error,
-    context?: Record<string, unknown>
-  ): void {
-    const messageStr = message instanceof Error ? message.message : message
-    const entry: LogEntry = {
-      level,
-      message: messageStr,
-      timestamp: Date.now(),
-      error: error || (message instanceof Error ? message : undefined),
-      context
-    }
-
-    this.logs.unshift(entry)
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
+    const logMessage = `[${level}] ${message}`
     
-    // Rotation des logs
-    if (this.logs.length > this.maxLogs) {
-      this.logs = this.logs.slice(0, this.maxLogs)
-    }
-
-    // Log console
-    const logMessage = `[RSS Reader] [${level}] ${messageStr}`
     switch (level) {
       case LogLevel.DEBUG:
-        console.debug(logMessage, context)
+        this.console.debug(logMessage, context)
         break
       case LogLevel.INFO:
-        console.info(logMessage, context)
+        this.console.info(logMessage, context)
         break
       case LogLevel.WARN:
-        console.warn(logMessage, error, context)
+        this.console.warn(logMessage, context)
         break
       case LogLevel.ERROR:
-        console.error(logMessage, error, context)
+        this.console.error(logMessage, context)
         break
+    }
+
+    this.logs.push({
+      level,
+      message,
+      timestamp: Date.now(),
+      context
+    })
+
+    if (this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(-this.maxLogs)
     }
   }
 
-  getLogs(level?: LogLevel): LogEntry[] {
-    return level 
-      ? this.logs.filter(entry => entry.level === level)
-      : this.logs
+  getLogs(): any[] {
+    return this.logs
   }
 
   clearLogs(): void {
     this.logs = []
-  }
-
-  exportLogs(): string {
-    return JSON.stringify(this.logs, null, 2)
   }
 } 

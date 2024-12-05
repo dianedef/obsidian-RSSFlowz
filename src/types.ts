@@ -16,7 +16,6 @@ export interface RSSItem {
 export interface FeedSettings {
   url: string
   folder: string
-  updateInterval: number
   filterDuplicates: boolean
 }
 

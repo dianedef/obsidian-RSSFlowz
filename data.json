@@ -13,19 +13,10 @@
       "lastSuccessfulFetch": 1732586344689
     }
   ],
-  "groups": [
-    "xzxzx"
-  ],
-  "openaiKey": "",
-  "rssFolder": "RSS",
-  "fetchFrequency": "startup",
-  "fetchInterval": 3600,
-  "maxArticles": 2,
-  "retentionDays": 2,
-  "lastFetch": 1732586344606,
-  "readingMode": true,
-  "lastReadArticle": null,
-  "currentFeed": null,
-  "currentFolder": null,
-  "articleStates": {}
+  "settings": {
+    "defaultUpdateInterval": 60,
+    "defaultFolder": "RSS",
+    "maxItemsPerFeed": 5,
+    "template": "# {{title}}\n\n{{description}}\n\n{{link}}"
+  }
 }

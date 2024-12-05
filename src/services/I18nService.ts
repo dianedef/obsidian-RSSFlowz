@@ -1,4 +1,4 @@
-import { App } from 'obsidian'
+import { Plugin } from 'obsidian'
 import { fr } from '../i18n/fr'
 import { en } from '../i18n/en'
 
@@ -8,7 +8,7 @@ export class I18nService {
   private locale: string
   private translations: Record<string, any>
 
-  constructor(private app: App) {
+  constructor(private plugin: Plugin) {
     // Obtenir la locale d'Obsidian ou utiliser 'en' par défaut
     this.locale = (window as any).moment?.locale() || 'en'
     this.translations = {

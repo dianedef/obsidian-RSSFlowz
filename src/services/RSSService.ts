@@ -1,4 +1,4 @@
-import { App, requestUrl } from 'obsidian'
+import { Plugin, requestUrl } from 'obsidian'
 import { createRSSError, RSSErrorCode } from '../types/errors'
 import { LogService } from './LogService'
 import { RSSFeed, RSSItem } from '../types'
@@ -8,7 +8,7 @@ export class RSSService {
   private parser: XMLParser
 
   constructor(
-    private app: App,
+    private plugin: Plugin,
     private logService: LogService
   ) {
     this.parser = new XMLParser({

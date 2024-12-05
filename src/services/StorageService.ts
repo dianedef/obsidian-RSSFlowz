@@ -1,18 +1,18 @@
-import { App } from 'obsidian'
-import { StorageData, PluginSettings, FeedData } from '../types'
+import { Plugin } from 'obsidian'
+import { StorageData, PluginSettings } from '../types'
 
 export class StorageService {
   private static readonly STORAGE_KEY = 'obsidian-rss-reader'
 
-  constructor(private app: App) {}
+  constructor(private plugin: Plugin) {}
 
   async loadData(): Promise<StorageData> {
-    const data = await this.app.loadData(StorageService.STORAGE_KEY) as StorageData | null
+    const data = await this.plugin.loadData() as StorageData | null
     return this.initializeData(data)
   }
 
   async saveData(data: StorageData): Promise<void> {
-    await this.app.saveData(StorageService.STORAGE_KEY, data)
+    await this.plugin.saveData(data)
   }
 
   private initializeData(data: StorageData | null): StorageData {

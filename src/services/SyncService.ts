@@ -1,4 +1,4 @@
-import { App } from 'obsidian'
+import { App, Plugin } from 'obsidian'
 import { RSSService } from './RSSService'
 import { StorageService } from './StorageService'
 import { LogService } from './LogService'
@@ -7,7 +7,7 @@ import { createSyncError, SyncErrorCode } from '../types/errors'
 
 export class SyncService {
   constructor(
-    private app: App,
+    private plugin: Plugin,
     private rssService: RSSService,
     private storageService: StorageService,
     private logService: LogService
@@ -54,18 +54,18 @@ export class SyncService {
       }
 
       const content = this.renderTemplate(template, item)
-      await this.app.vault.create(filePath, content)
+      await this.plugin.app.vault.create(filePath, content)
     }
   }
 
   private async ensureFolder(path: string): Promise<void> {
-    if (!(await this.app.vault.adapter.exists(path))) {
-      await this.app.vault.createFolder(path)
+    if (!(await this.plugin.app.vault.adapter.exists(path))) {
+      await this.plugin.app.vault.createFolder(path)
     }
   }
 
   private async fileExists(path: string): Promise<boolean> {
-    return await this.app.vault.adapter.exists(path)
+    return await this.plugin.app.vault.adapter.exists(path)
   }
 
   private renderTemplate(template: string, item: RSSItem): string {

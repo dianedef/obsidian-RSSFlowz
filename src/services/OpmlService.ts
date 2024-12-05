@@ -1,16 +1,16 @@
-import { App, requestUrl } from 'obsidian'
+import { Plugin, requestUrl } from 'obsidian'
 import { XMLParser, XMLBuilder } from 'fast-xml-parser'
 import { StorageService } from './StorageService'
 import { LogService } from './LogService'
-import { createOpmlError, OpmlErrorCode, OpmlError } from '../types/errors'
-import { FeedData } from '../types'
+import { createOpmlError, OpmlErrorCode } from '../types/errors'
+import { FeedData, FeedSettings } from '../types'
 
 export class OpmlService {
   private parser: XMLParser
   private builder: XMLBuilder
 
   constructor(
-    private app: App,
+    private plugin: Plugin,
     private storageService: StorageService,
     private logService: LogService
   ) {
@@ -20,7 +20,8 @@ export class OpmlService {
     })
     this.builder = new XMLBuilder({
       ignoreAttributes: false,
-      attributeNamePrefix: '@_'
+      attributeNamePrefix: '@',
+      format: true
     })
   }
 
@@ -31,24 +32,21 @@ export class OpmlService {
         throw new Error(`HTTP ${response.status}`)
       }
 
-      const parser = new XMLParser({
-        ignoreAttributes: false,
-        attributeNamePrefix: '@_'
-      })
-      const opml = parser.parse(response.text)
+      const parsed = this.parser.parse(response.text)
+      if (!parsed.opml?.body?.outline) {
+        throw new Error('Format OPML invalide')
+      }
 
-      const data = await this.storageService.loadData()
-      const newFeeds = this.parseFeedsFromOpml(opml)
+      const newFeeds = this.extractFeeds(parsed.opml.body.outline)
+      const storageData = await this.storageService.loadData()
       
-      await this.storageService.saveData({
-        ...data,
-        feeds: [...data.feeds, ...newFeeds]
-      })
-      
+      storageData.feeds = [...storageData.feeds, ...newFeeds]
+      await this.storageService.saveData(storageData)
+
       this.logService.info(`${newFeeds.length} flux importés avec succès`)
     } catch (error) {
-      this.logService.error('Erreur lors de l\'import OPML', error)
-      throw createOpmlError('ImportError', 'Erreur lors de l\'import OPML', error)
+      this.logService.error('Erreur lors de l\'import OPML', error as Error)
+      throw createOpmlError(OpmlErrorCode.IMPORT_FAILED, 'Erreur lors de l\'import OPML')
     }
   }
 
@@ -78,57 +76,45 @@ export class OpmlService {
           }
         }
       }
-
-      const builder = new XMLBuilder({
-        ignoreAttributes: false,
-        attributeNamePrefix: '@',
-        format: true
-      })
       
-      return builder.build(opml)
+      return this.builder.build(opml)
     } catch (error) {
-      this.logService.error('Erreur lors de l\'export OPML', error)
-      throw createOpmlError('ExportError', 'Erreur lors de l\'export OPML', error)
+      this.logService.error('Erreur lors de l\'export OPML', error as Error)
+      throw createOpmlError(OpmlErrorCode.EXPORT_FAILED, 'Erreur lors de l\'export OPML')
     }
   }
 
-  private parseOpmlOutlines(outlines: any[], parentFolder: string = 'RSS'): FeedData[] {
+  private extractFeeds(outlines: any[], folder: string = 'RSS'): FeedData[] {
     const feeds: FeedData[] = []
-    const processOutline = (outline: any, folder: string) => {
-      if (outline['@_type'] === 'rss') {
+
+    const processOutline = (outline: any, currentFolder: string) => {
+      if (outline['@_xmlUrl']) {
+        const settings: FeedSettings = {
+          url: outline['@_xmlUrl'],
+          folder: currentFolder,
+          filterDuplicates: true
+        }
         feeds.push({
           id: crypto.randomUUID(),
-          settings: {
-            url: outline['@_xmlUrl'],
-            folder: folder,
-            updateInterval: 60,
-            filterDuplicates: true
-          }
+          settings
         })
-      } else {
-        const newFolder = outline['@_text'] || outline['@_title'] || folder
-        if (Array.isArray(outline.outline)) {
-          outline.outline.forEach(child => processOutline(child, newFolder))
-        } else if (outline.outline) {
-          processOutline(outline.outline, newFolder)
-        }
+      }
+
+      const newFolder = outline['@_text'] || outline['@_title'] || currentFolder
+      if (Array.isArray(outline.outline)) {
+        outline.outline.forEach((child: any) => processOutline(child, newFolder))
+      } else if (outline.outline) {
+        processOutline(outline.outline, newFolder)
       }
     }
 
     if (Array.isArray(outlines)) {
-      outlines.forEach(outline => processOutline(outline, parentFolder))
-    } else if (outlines) {
-      processOutline(outlines, parentFolder)
+      outlines.forEach(outline => processOutline(outline, folder))
+    } else {
+      processOutline(outlines, folder)
     }
 
     return feeds
-  }
-
-  private parseFeedsFromOpml(opml: any): FeedData[] {
-    if (!opml.opml?.body?.outline) {
-      throw new Error('Format OPML invalide')
-    }
-    return this.parseOpmlOutlines(opml.opml.body.outline)
   }
 
   private groupFeedsByFolder(feeds: FeedData[]): Record<string, FeedData[]> {
