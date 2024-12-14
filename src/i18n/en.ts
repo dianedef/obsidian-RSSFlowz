@@ -3,6 +3,84 @@ export const en = {
     loaded: 'RSS Reader plugin loaded',
     unloaded: 'RSS Reader plugin unloaded'
   },
+  settings: {
+    title: 'RSS Reader Settings',
+    openaiKey: {
+      name: 'OpenAI API Key',
+      desc: 'Your OpenAI API key for summaries'
+    },
+    rssFolder: {
+      name: 'RSS Folder',
+      desc: 'Folder where articles will be saved'
+    },
+    fetchFrequency: {
+      name: 'Update Frequency',
+      desc: 'How often do you want to fetch new articles?',
+      options: {
+        startup: 'At startup only',
+        daily: 'Once a day',
+        hourly: 'Every hour'
+      }
+    },
+    maxArticles: {
+      name: 'Maximum Number of Articles',
+      desc: 'Maximum number of articles to fetch per feed'
+    },
+    retentionDays: {
+      name: 'Retention Period (days)',
+      desc: 'Number of days to keep articles before deletion'
+    },
+    importExport: {
+      title: 'Import/Export',
+      opmlImport: {
+        name: 'Import OPML File',
+        desc: 'Import feeds from an OPML file',
+        button: 'Import OPML'
+      },
+      opmlExport: {
+        name: 'Export to OPML',
+        desc: 'Export your feeds in OPML format',
+        button: 'Export OPML'
+      },
+      jsonImport: {
+        name: 'Import JSON Configuration',
+        desc: 'Restore a previously exported configuration',
+        button: 'Import data.json'
+      },
+      jsonExport: {
+        name: 'Export JSON Configuration',
+        desc: 'Backup all your settings into a file',
+        button: 'Export data.json'
+      }
+    },
+    groups: {
+      title: 'Group Management',
+      add: {
+        name: 'Add a Group',
+        desc: 'Create a new group to organize your feeds',
+        placeholder: 'Name of the new group',
+        success: 'Group added:'
+      },
+      delete: {
+        button: 'Delete',
+        confirm: 'Are you sure you want to delete this group?',
+        success: 'Group deleted:'
+      },
+      none: 'No group'
+    },
+    feeds: {
+      title: 'Feed Management',
+      search: {
+        placeholder: 'Search for a feed...'
+      },
+      add: {
+        name: 'Add a Feed',
+        desc: 'Enter the URL of an RSS feed',
+        placeholder: 'RSS feed URL',
+        success: 'Feed added: {title}'
+      }
+    }
+  },
   commands: {
     refresh: {
       name: 'Refresh feeds',
@@ -21,31 +99,49 @@ export const en = {
       error: 'Error exporting OPML'
     },
     reading: {
-      toggle: 'Toggle reading mode'
+      toggle: 'Toggle reading mode',
+      next: 'Next article',
+      previous: 'Previous article'
     }
   },
-  feeds: {
-    added: 'RSS feed added: {url}',
-    removed: 'RSS feed removed: {url}',
-    updated: 'RSS feed updated: {url}'
-  },
-  settings: {
-    title: 'RSS Reader Settings',
-    defaultFolder: {
-      name: 'Default folder',
-      desc: 'Folder where notes will be created by default'
+  notices: {
+    import: {
+      opml: {
+        loading: 'Importing OPML...',
+        success: 'OPML import successful',
+        error: 'Error importing OPML'
+      },
+      json: {
+        loading: 'Importing configuration...',
+        success: 'Configuration imported successfully',
+        error: 'Error importing configuration'
+      }
     },
-    updateInterval: {
-      name: 'Update interval',
-      desc: 'Default interval in minutes between updates'
-    },
-    maxItems: {
-      name: 'Maximum number of articles',
-      desc: 'Maximum number of articles to keep per feed'
+    export: {
+      opml: {
+        loading: 'Exporting OPML...',
+        success: 'Feeds exported successfully',
+        error: 'Error exporting OPML'
+      },
+      json: {
+        loading: 'Exporting configuration...',
+        success: 'Configuration exported successfully',
+        error: 'Error exporting configuration'
+      }
     },
     template: {
       name: 'Note template',
       desc: 'Template for note creation (uses {{title}}, {{description}}, {{link}}, {{pubDate}})'
+    },
+    feed: {
+      exists: 'This RSS feed is already in your list',
+      invalid: 'Invalid URL: This is not a valid RSS/Atom feed',
+      added: 'Feed added: {title}',
+      deleted: 'Feed deleted: {title}',
+      moved: 'Feed {title} moved from "{source}" to "{destination}"',
+      fetchError: 'Error fetching feed {title}',
+      fetchSuccess: '{count} articles fetched for {title}',
+      noArticles: 'No articles found for {title}'
     }
   },
   errors: {
@@ -62,6 +158,8 @@ export const en = {
     storage: {
       load: 'Error loading data',
       save: 'Error saving data'
-    }
+    },
+    ssl: 'SSL Certificate Error\nThe site has an invalid certificate.\nCheck if the site is accessible in your browser.',
+    generic: 'Error: {message}'
   }
-} 
+}

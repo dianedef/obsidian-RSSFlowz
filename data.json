@@ -10,9 +10,24 @@
       "tags": [],
       "group": "xzxzx",
       "lastError": null,
-      "lastSuccessfulFetch": 1732586344689
+      "lastSuccessfulFetch": 1734195023487
     }
   ],
+  "groups": [
+    "Défaut"
+  ],
+  "openaiKey": "",
+  "rssFolder": "RSS",
+  "fetchFrequency": "hourly",
+  "fetchInterval": 3600,
+  "maxArticles": 50,
+  "retentionDays": 30,
+  "lastFetch": 1734195023348,
+  "readingMode": false,
+  "lastReadArticle": null,
+  "currentFeed": null,
+  "currentFolder": null,
+  "articleStates": {},
   "settings": {
     "defaultUpdateInterval": 60,
     "defaultFolder": "RSS",

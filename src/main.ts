@@ -12,6 +12,7 @@ import {
 	OpmlService,
 } from "./services";
 import { PluginSettings, FeedData } from "./types";
+import { DEFAULT_SETTINGS } from "./types/settings";
 
 export default class RSSReaderPlugin extends Plugin {
 	settings!: PluginSettings;
@@ -30,7 +31,7 @@ export default class RSSReaderPlugin extends Plugin {
 	async onload() {
 		try {
 			// Initialisation des services
-			this.logService = new LogService(this);
+			this.logService = new LogService(console);
 			this.storageService = new StorageService(this);
 			this.i18nService = new I18nService(this);
 			this.fileService = new FileService(this);
@@ -43,8 +44,9 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.schedulerService = new SchedulerService(
 				this,
+				this.storageService,
 				this.syncService,
-				this.storageService
+				this.logService
 			);
 			this.readingService = new ReadingService(
 				this,
@@ -139,15 +141,53 @@ export default class RSSReaderPlugin extends Plugin {
 		this.logService.info(this.i18nService.t("plugin.unloaded"));
 	}
 
-	async loadSettings() {
-		const data = await this.storageService.loadData();
-		this.settings = data.settings;
+	async loadSettings(): Promise<void> {
+		try {
+			const savedData = await this.storageService.loadData();
+			this.logService.debug('Données chargées:', { data: savedData });
+			
+			// Fusion des paramètres par défaut avec les données sauvegardées
+			this.settings = {
+				...DEFAULT_SETTINGS,
+				...savedData?.settings,
+				// Mise à jour des timestamps si nécessaire
+				lastFetch: savedData?.settings?.lastFetch || Date.now()
+			};
+
+			this.logService.debug('Settings après fusion:', { settings: this.settings });
+			
+			// Mise à jour du mode lecture si nécessaire
+			if (this.settings.readingMode) {
+				await this.readingService.enterReadingMode();
+			}
+
+			// Sauvegarder les paramètres fusionnés
+			await this.saveSettings();
+		} catch (error) {
+			this.logService.error('Erreur lors du chargement des paramètres', { error: error as Error });
+			this.settings = { ...DEFAULT_SETTINGS };
+		}
 	}
 
-	async saveSettings() {
-		const data = await this.storageService.loadData();
-		data.settings = this.settings;
-		await this.storageService.saveData(data);
+	async saveSettings(): Promise<void> {
+		try {
+			const data = await this.storageService.loadData();
+			data.settings = this.settings;
+			await this.storageService.saveData(data);
+			this.logService.debug('Paramètres sauvegardés', { settings: this.settings });
+		} catch (error) {
+			this.logService.error('Erreur lors de la sauvegarde des paramètres', { error: error as Error });
+		}
+	}
+
+	// Méthodes utilitaires pour la gestion des paramètres
+	async updateSettings(partialSettings: Partial<PluginSettings>): Promise<void> {
+		this.settings = {
+			...this.settings,
+			...partialSettings
+		};
+		await this.saveSettings();
+		this.logService.info('Paramètres mis à jour');
 	}
 
 	// Méthodes utilitaires pour la gestion des flux

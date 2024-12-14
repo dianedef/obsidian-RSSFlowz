@@ -18,12 +18,29 @@ export class SchedulerService {
     try {
       const data = await this.storageService.loadData()
       
+      if (!data || !data.feeds) {
+        this.logService.warn('Aucun feed trouvé dans les données')
+        return
+      }
+
       for (const feed of data.feeds) {
-        await this.scheduleFeed(feed)
+        if (!feed || !feed.url) {
+          this.logService.warn('Feed invalide trouvé dans les données')
+          continue
+        }
+        await this.scheduleFeed({
+          id: feed.url,
+          settings: {
+            url: feed.url,
+            folder: data.settings?.defaultFolder || 'RSS',
+            filterDuplicates: true
+          }
+        })
       }
 
       this.logService.info('Planificateur démarré')
-    } catch (error) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
       this.logService.error('Erreur lors du démarrage du planificateur', { error })
       throw error
     }
@@ -36,7 +53,8 @@ export class SchedulerService {
       }
       this.intervals.clear()
       this.logService.info('Planificateur arrêté')
-    } catch (error) {
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
       this.logService.error('Erreur lors de l\'arrêt du planificateur', { error })
       throw error
     }
@@ -44,13 +62,17 @@ export class SchedulerService {
 
   async scheduleFeed(feed: FeedData): Promise<void> {
     try {
+      if (!feed || !feed.settings?.url) {
+        throw new Error('Feed invalide')
+      }
+
       // Arrêter l'intervalle existant s'il y en a un
       if (this.intervals.has(feed.id)) {
         clearInterval(this.intervals.get(feed.id))
       }
 
       const data = await this.storageService.loadData()
-      const updateInterval = data.settings.defaultUpdateInterval
+      const updateInterval = data.settings?.defaultUpdateInterval || 60
 
       const interval = setInterval(async () => {
         try {
@@ -59,12 +81,9 @@ export class SchedulerService {
             feed: feed.id,
             url: feed.settings.url
           })
-        } catch (error) {
-          this.logService.error('Erreur lors de la synchronisation planifiée', {
-            feed: feed.id,
-            url: feed.settings.url,
-            error
-          })
+        } catch (err) {
+          const error = err instanceof Error ? err : new Error(String(err))
+          this.logService.error('Erreur lors de la synchronisation planifiée', { error })
         }
       }, updateInterval * 60 * 1000) // Conversion minutes -> millisecondes
 
@@ -74,11 +93,9 @@ export class SchedulerService {
         url: feed.settings.url,
         interval: updateInterval
       })
-    } catch (error) {
-      this.logService.error('Erreur lors de la planification du feed', {
-        feed: feed.id,
-        error
-      })
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.logService.error('Erreur lors de la planification du feed', { error })
       throw error
     }
   }
@@ -90,11 +107,9 @@ export class SchedulerService {
         this.intervals.delete(feedId)
         this.logService.info('Feed déplanifié', { feed: feedId })
       }
-    } catch (error) {
-      this.logService.error('Erreur lors de la déplanification du feed', {
-        feed: feedId,
-        error
-      })
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.logService.error('Erreur lors de la déplanification du feed', { error })
       throw error
     }
   }

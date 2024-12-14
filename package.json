@@ -1,42 +1,16 @@
 {
-  "name": "obsidian-rss-flowz",
-  "version": "1.0.0",
-  "description": "Un plugin RSS avancé pour Obsidian",
-  "main": "main.js",
-  "scripts": {
-    "dev": "node esbuild.config.mjs",
-    "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "test": "cross-env NODE_OPTIONS='--max-old-space-size=8192' vitest",
-    "test:coverage": "cross-env NODE_OPTIONS='--max-old-space-size=4096' vitest run --coverage",
-    "lint": "eslint . --ext .ts",
-    "format": "prettier --write ."
-  },
-  "keywords": [
-    "obsidian",
-    "plugin",
-    "rss"
-  ],
-  "author": "Votre nom",
-  "license": "MIT",
-  "devDependencies": {
-    "@types/node": "^16.11.6",
-    "@types/sinon": "^17.0.3",
-    "@typescript-eslint/eslint-plugin": "^5.2.0",
-    "@typescript-eslint/parser": "^5.2.0",
-    "@vitest/coverage-v8": "^1.2.1",
-    "builtin-modules": "^3.2.0",
-    "cross-env": "^7.0.3",
-    "esbuild": "^0.19.12",
-    "eslint": "^8.54.0",
-    "jsdom": "^24.0.0",
-    "obsidian": "latest",
-    "prettier": "^3.1.0",
-    "sinon": "^19.0.2",
-    "tslib": "2.3.1",
-    "typescript": "4.4.4",
-    "vitest": "^1.2.1"
-  },
-  "dependencies": {
-    "fast-xml-parser": "^4.3.2"
-  }
+	"name": "obsidian-rss-flowz",
+	"version": "1.0.0",
+	"description": "Un plugin RSS avancé pour Obsidian",
+	"main": "main.js",
+	"keywords": [
+		"obsidian",
+		"plugin",
+		"rss"
+	],
+	"author": "Votre nom",
+	"license": "MIT",
+	"dependencies": {
+		"fast-xml-parser": "^4.3.2"
+	}
 }
