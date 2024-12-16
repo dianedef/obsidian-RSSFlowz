@@ -78,6 +78,18 @@ export const en = {
         desc: 'Enter the URL of an RSS feed',
         placeholder: 'RSS feed URL',
         success: 'Feed added: {title}'
+      },
+      deleteAll: {
+        name: 'Delete all feeds',
+        desc: 'Delete all feeds from your list',
+        button: 'Delete all feeds',
+        confirm: 'Are you sure you want to delete these feeds?',
+        confirmMessage: 'Are you sure you want to delete these feeds?',
+        success: 'Feeds deleted:'
+      },
+      delete: {
+        button: 'Delete',
+        success: 'Feed deleted: {title}'
       }
     }
   },

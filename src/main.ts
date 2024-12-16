@@ -1,4 +1,4 @@
-import { Plugin, App } from "obsidian";
+import { Plugin } from "obsidian";
 import { RSSReaderSettingsTab } from "./ui/SettingsTab";
 import {
 	RSSService,
@@ -10,23 +10,33 @@ import {
 	FileService,
 	ReadingService,
 	OpmlService,
+	SettingsService,
+	RegisterStyles,
 } from "./services";
-import { PluginSettings, FeedData } from "./types";
-import { DEFAULT_SETTINGS } from "./types/settings";
-
+import { FeedData } from "./types";
+import { PluginSettings } from "./types/settings";
 export default class RSSReaderPlugin extends Plugin {
-	settings!: PluginSettings;
-
 	// Services
 	private storageService!: StorageService;
 	private logService!: LogService;
 	private i18nService!: I18nService;
-	private fileService!: FileService;
+	fileService!: FileService;
 	private rssService!: RSSService;
 	private syncService!: SyncService;
 	private schedulerService!: SchedulerService;
 	private readingService!: ReadingService;
 	private opmlService!: OpmlService;
+	settingsService: SettingsService;
+	private stylesService!: RegisterStyles;
+
+	// Méthodes pour la gestion des settings
+	async loadData(): Promise<any> {
+		return await super.loadData();
+	}
+
+	async saveData(data: any): Promise<void> {
+		await super.saveData(data);
+	}
 
 	async onload() {
 		try {
@@ -35,6 +45,27 @@ export default class RSSReaderPlugin extends Plugin {
 			this.storageService = new StorageService(this);
 			this.i18nService = new I18nService(this);
 			this.fileService = new FileService(this);
+			this.settingsService = new SettingsService(
+				this,
+				this.storageService,
+				this.logService
+			);
+			this.readingService = new ReadingService(
+				this,
+				this.storageService,
+				this.settingsService,
+				this.logService
+			);
+
+			// Connecter le ReadingService au SettingsService après l'initialisation des deux services
+			this.settingsService.setReadingModeHandler(async (isReading: boolean) => {
+				if (isReading) {
+					await this.readingService.enterReadingMode();
+				} else {
+					await this.readingService.exitReadingMode();
+				}
+			});
+
 			this.rssService = new RSSService(this, this.logService);
 			this.syncService = new SyncService(
 				this,
@@ -48,19 +79,48 @@ export default class RSSReaderPlugin extends Plugin {
 				this.syncService,
 				this.logService
 			);
-			this.readingService = new ReadingService(
-				this,
-				this.storageService,
-				this.logService
-			);
 			this.opmlService = new OpmlService(
 				this,
 				this.storageService,
 				this.logService
 			);
+			this.stylesService = new RegisterStyles(this);
 
-			// Chargement des paramètres
-			await this.loadSettings();
+			// Enregistrer les styles CSS
+			this.stylesService.register();
+
+			// Chargement des paramètres et initialisation des dossiers
+			await this.settingsService.loadSettings();
+			await this.fileService.initializeFolders(
+				this.settingsService.getSettings().rssFolder,
+				this.settingsService.getSettings().groups || []
+			);
+
+			// Ajout des boutons dans la barre d'outils
+			this.addRibbonIcon('refresh-cw', this.t('ribbons.refresh.tooltip'), async () => {
+				try {
+					await this.syncService.syncAllFeeds();
+					this.logService.info(this.t('ribbons.refresh.success'));
+				} catch (error) {
+					this.logService.error(this.t('ribbons.refresh.error'), { error: error as Error });
+				}
+			});
+
+			this.addRibbonIcon('book-open', this.t('ribbons.reading.tooltip'), async () => {
+				try {
+					const settings = this.settingsService.getSettings();
+						await this.settingsService.updateSettings({
+							readingMode: !settings.readingMode
+						});
+						this.logService.info(
+							settings.readingMode 
+								? this.t('ribbons.reading.disabled')
+								: this.t('ribbons.reading.enabled')
+						);
+				} catch (error) {
+					this.logService.error(this.t('ribbons.reading.error'), { error: error as Error });
+				}
+			});
 
 			// Ajout de l'onglet de paramètres
 			this.addSettingTab(new RSSReaderSettingsTab(this.app, this));
@@ -73,46 +133,11 @@ export default class RSSReaderPlugin extends Plugin {
 				id: "refresh-feeds",
 				name: this.i18nService.t("commands.refresh.name"),
 				callback: async () => {
-					this.logService.info(this.i18nService.t("commands.refresh.start"));
-					const data = await this.storageService.loadData();
-					for (const feed of data.feeds) {
-						await this.syncService.syncFeed(feed).catch((error) => {
-							this.logService.error(
-								this.i18nService.t("commands.refresh.error", {
-									url: feed.settings.url,
-								}),
-								error
-							);
-						});
-					}
-					this.logService.info(this.i18nService.t("commands.refresh.complete"));
-				},
-			});
-
-			this.addCommand({
-				id: "import-opml",
-				name: this.i18nService.t("commands.import.name"),
-				callback: async () => {
-					// TODO: Ajouter l'interface utilisateur pour l'import OPML
-				},
-			});
-
-			this.addCommand({
-				id: "export-opml",
-				name: this.i18nService.t("commands.export.name"),
-				callback: async () => {
 					try {
-						const opml = await this.opmlService.exportOpml();
-						const path = "RSS/export.opml";
-						await this.app.vault.create(path, opml);
-						this.logService.info(
-							this.i18nService.t("commands.export.success", { path })
-						);
+						await this.syncService.syncAllFeeds();
+						this.logService.info(this.t('commands.refresh.success'));
 					} catch (error) {
-						this.logService.error(
-							this.i18nService.t("commands.export.error"),
-							error as Error
-						);
+						this.logService.error(this.t('commands.refresh.error'), { error: error as Error });
 					}
 				},
 			});
@@ -120,81 +145,89 @@ export default class RSSReaderPlugin extends Plugin {
 			this.addCommand({
 				id: "toggle-reading-mode",
 				name: this.i18nService.t("commands.reading.toggle"),
-				callback: () => {
-					if (this.readingService.isActive()) {
-						this.readingService.exitReadingMode();
-					} else {
-						this.readingService.enterReadingMode();
+				callback: async () => {
+					try {
+						const settings = this.settingsService.getSettings();
+						await this.settingsService.updateSettings({
+							readingMode: !settings.readingMode
+						});
+					} catch (error) {
+						this.logService.error(this.t('commands.reading.error'), { error: error as Error });
 					}
 				},
 			});
 
+			this.addCommand({
+				id: "mark-current-read",
+				name: this.i18nService.t("commands.reading.markRead"),
+				checkCallback: (checking: boolean) => {
+					const isActive = this.readingService.isActive();
+					if (checking) {
+						return isActive;
+					}
+					if (isActive) {
+						this.readingService.markCurrentArticleAsRead();
+					}
+					return false;
+				}
+			});
+
+			this.addCommand({
+				id: "next-article",
+				name: this.i18nService.t("commands.reading.next"),
+				checkCallback: (checking: boolean) => {
+					const isActive = this.readingService.isActive();
+					if (checking) {
+						return isActive;
+					}
+					if (isActive) {
+						this.readingService.navigateArticles('next');
+					}
+					return false;
+				},
+				hotkeys: [{ modifiers: ["Mod"], key: "ArrowRight" }]
+			});
+
+			this.addCommand({
+				id: "previous-article",
+				name: this.i18nService.t("commands.reading.previous"),
+				checkCallback: (checking: boolean) => {
+					const isActive = this.readingService.isActive();
+					if (checking) {
+						return isActive;
+					}
+					if (isActive) {
+						this.readingService.navigateArticles('previous');
+					}
+					return false;
+				},
+				hotkeys: [{ modifiers: ["Mod"], key: "ArrowLeft" }]
+			});
+
 			this.logService.info(this.i18nService.t("plugin.loaded"));
 		} catch (error) {
-			console.error("Erreur lors du chargement du plugin:", error);
+			console.error("Erreur lors du chargement du plugin:", { error: error as Error });
 			throw error;
 		}
 	}
 
 	async onunload() {
 		await this.schedulerService.stopScheduler();
+		this.stylesService.unregister();
 		this.logService.info(this.i18nService.t("plugin.unloaded"));
-	}
-
-	async loadSettings(): Promise<void> {
-		try {
-			const savedData = await this.storageService.loadData();
-			this.logService.debug('Données chargées:', { data: savedData });
-			
-			// Fusion des paramètres par défaut avec les données sauvegardées
-			this.settings = {
-				...DEFAULT_SETTINGS,
-				...savedData?.settings,
-				// Mise à jour des timestamps si nécessaire
-				lastFetch: savedData?.settings?.lastFetch || Date.now()
-			};
-
-			this.logService.debug('Settings après fusion:', { settings: this.settings });
-			
-			// Mise à jour du mode lecture si nécessaire
-			if (this.settings.readingMode) {
-				await this.readingService.enterReadingMode();
-			}
-
-			// Sauvegarder les paramètres fusionnés
-			await this.saveSettings();
-		} catch (error) {
-			this.logService.error('Erreur lors du chargement des paramètres', { error: error as Error });
-			this.settings = { ...DEFAULT_SETTINGS };
-		}
-	}
-
-	async saveSettings(): Promise<void> {
-		try {
-			const data = await this.storageService.loadData();
-			data.settings = this.settings;
-			await this.storageService.saveData(data);
-			this.logService.debug('Paramètres sauvegardés', { settings: this.settings });
-		} catch (error) {
-			this.logService.error('Erreur lors de la sauvegarde des paramètres', { error: error as Error });
-		}
 	}
 
 	// Méthodes utilitaires pour la gestion des paramètres
 	async updateSettings(partialSettings: Partial<PluginSettings>): Promise<void> {
-		this.settings = {
-			...this.settings,
-			...partialSettings
-		};
-		await this.saveSettings();
+		this.settingsService.updateSettings(partialSettings);
 		this.logService.info('Paramètres mis à jour');
 	}
 
 	// Méthodes utilitaires pour la gestion des flux
 	async addFeed(feedData: FeedData) {
-		const data = await this.storageService.loadData();
-		data.feeds.push(feedData);
-		await this.storageService.saveData(data);
+		const settings = this.settingsService.getSettings();
+		settings.feeds.push(feedData);
+		await this.settingsService.updateSettings(settings);
 		this.schedulerService.scheduleFeed(feedData);
 		this.logService.info(
 			this.i18nService.t("feeds.added", { url: feedData.settings.url })
@@ -202,11 +235,11 @@ export default class RSSReaderPlugin extends Plugin {
 	}
 
 	async removeFeed(feedId: string) {
-		const data = await this.storageService.loadData();
-		const feed = data.feeds.find((f) => f.id === feedId);
+		const settings = this.settingsService.getSettings();
+		const feed = settings.feeds.find((f) => f.id === feedId);
 		if (feed) {
-			data.feeds = data.feeds.filter((f) => f.id !== feedId);
-			await this.storageService.saveData(data);
+			settings.feeds = settings.feeds.filter((f) => f.id !== feedId);
+			await this.settingsService.updateSettings(settings);
 			this.schedulerService.unscheduleFeed(feedId);
 			await this.fileService.removeFolder(feed.settings.folder);
 			this.logService.info(
@@ -216,11 +249,11 @@ export default class RSSReaderPlugin extends Plugin {
 	}
 
 	async updateFeed(feedData: FeedData) {
-		const data = await this.storageService.loadData();
-		const index = data.feeds.findIndex((f) => f.id === feedData.id);
+		const settings = this.settingsService.getSettings();
+		const index = settings.feeds.findIndex((f) => f.id === feedData.id);
 		if (index !== -1) {
-			data.feeds[index] = feedData;
-			await this.storageService.saveData(data);
+			settings.feeds[index] = feedData;
+			await this.settingsService.updateSettings(settings);
 			this.schedulerService.scheduleFeed(feedData);
 			this.logService.info(
 				this.i18nService.t("feeds.updated", { url: feedData.settings.url })

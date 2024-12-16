@@ -15,4 +15,4 @@ export interface PluginSettings {
   defaultFolder: string;
   maxItemsPerFeed: number;
   template: string;
-} 
+}

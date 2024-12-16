@@ -1,7 +1,7 @@
 import { Plugin, requestUrl } from 'obsidian'
 import { createRSSError, RSSErrorCode } from '../types/errors'
 import { LogService } from './LogService'
-import { RSSFeed, RSSItem } from '../types'
+import { RSSFeed, RSSItem, FeedData } from '../types'
 import { XMLParser } from 'fast-xml-parser'
 
 export class RSSService {
@@ -13,33 +13,59 @@ export class RSSService {
   ) {
     this.parser = new XMLParser({
       ignoreAttributes: false,
-      attributeNamePrefix: '@_'
+      attributeNamePrefix: '@_',
+      removeNSPrefix: true,
+      textNodeName: '_text',
+      parseAttributeValue: true,
+      trimValues: true
     })
   }
 
-  async fetchFeed(url: string): Promise<RSSFeed> {
+  private cleanXML(xml: string): string {
+    return xml
+      .replace(/^\s+/, '')
+      .replace(/^\uFEFF/, '')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  }
+
+  async fetchFeed(url: string, feedData: FeedData): Promise<RSSFeed> {
     try {
-      this.logService.debug('Récupération du flux RSS', { url })
+      this.logService.debug({
+        message: 'Récupération du flux RSS',
+        data: { url }
+      })
       
-      const response = await requestUrl({
+      const response = await request({
         url,
         headers: {
           'User-Agent': 'Obsidian RSS Reader',
-          'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml'
+          'Accept': 'application/rss+xml, application/atom+xml, application/xml, text/xml',
+          'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8',
+          'Cache-Control': 'no-cache'
         }
       })
 
-      if (response.status !== 200) {
+      if (!response) {
         throw createRSSError(
           RSSErrorCode.FETCH_ERROR,
-          `Erreur HTTP ${response.status} lors de la récupération du flux`,
+          'Pas de réponse du serveur',
           url
         )
       }
 
       try {
-        const parsed = this.parser.parse(response.text)
-        return this.parseFeedData(parsed, url)
+        const cleanedXML = this.cleanXML(response)
+        const parsed = this.parser.parse(cleanedXML)
+
+        if (parsed.parsererror) {
+          throw createRSSError(
+            RSSErrorCode.PARSE_ERROR,
+            `Erreur de parsing XML: ${parsed.parsererror._text || 'Format XML invalide'}`,
+            url
+          )
+        }
+
+        return this.parseFeedData(parsed, url, feedData)
       } catch (parseError) {
         throw createRSSError(
           RSSErrorCode.PARSE_ERROR,
@@ -47,26 +73,22 @@ export class RSSService {
           url
         )
       }
-    } catch (error) {
-      if (error instanceof Error) {
-        this.logService.error('Erreur lors de la récupération du flux RSS', error)
-        throw error
-      }
-      const rssError = createRSSError(
-        RSSErrorCode.NETWORK_ERROR,
-        'Erreur réseau lors de la récupération du flux',
-        url
-      )
-      this.logService.error('Erreur réseau', rssError)
-      throw rssError
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error(String(err))
+      this.logService.error({
+        message: 'Erreur lors de la récupération du flux RSS',
+        error,
+        data: { url }
+      })
+      throw error
     }
   }
 
-  private parseFeedData(data: any, url: string): RSSFeed {
+  private parseFeedData(data: any, url: string, feedData: FeedData): RSSFeed {
     if (data.rss?.channel) {
-      return this.parseRSSFeed(data.rss.channel)
+      return this.parseRSSFeed(data.rss.channel, feedData, url)
     } else if (data.feed) {
-      return this.parseAtomFeed(data.feed)
+      return this.parseAtomFeed(data.feed, feedData, url)
     }
 
     throw createRSSError(
@@ -76,55 +98,83 @@ export class RSSService {
     )
   }
 
-  private parseRSSFeed(channel: any): RSSFeed {
+  private parseRSSFeed(channel: any, feedData: FeedData, feedUrl: string): RSSFeed {
     const feed: RSSFeed = {
-      title: channel.title || '',
-      description: channel.description || '',
-      link: channel.link || '',
-      items: []
+      title: channel.title?._text || feedData.settings.title || '',
+      description: channel.description?._text || '',
+      link: channel.link?._text || '',
+      items: [],
+      feedUrl,
+      lastUpdate: new Date()
     }
 
     if (channel.item) {
       const items = Array.isArray(channel.item) ? channel.item : [channel.item]
-      feed.items = items.map(this.parseRSSItem)
+      feed.items = items
+        .slice(0, feedData.settings.maxArticles || 50)
+        .map(item => this.parseRSSItem(item, feedData))
     }
 
     return feed
   }
 
-  private parseRSSItem(item: any): RSSItem {
+  private parseRSSItem(item: any, feedData: FeedData): RSSItem {
+    const content = 
+      item['content:encoded']?._text?.trim() || 
+      item.encoded?._text?.trim() ||
+      item.description?._text?.trim() || 
+      ''
+
     return {
-      title: item.title || '',
-      description: item.description || '',
-      link: item.link || '',
-      pubDate: item.pubDate || new Date().toISOString(),
-      guid: item.guid || item.link
+      title: item.title?._text?.trim() || 'Sans titre',
+      description: item.description?._text?.trim() || '',
+      content: content,
+      link: item.link?._text?.trim() || '',
+      pubDate: item.pubDate?._text ? new Date(item.pubDate._text) : new Date(),
+      guid: item.guid?._text || item.link?._text || '',
+      categories: feedData.settings.tags || [],
+      author: item.author?._text || item.creator?._text || '',
+      feedTitle: feedData.settings.title
     }
   }
 
-  private parseAtomFeed(feed: any): RSSFeed {
+  private parseAtomFeed(feed: any, feedData: FeedData, feedUrl: string): RSSFeed {
     const atomFeed: RSSFeed = {
-      title: feed.title || '',
-      description: feed.subtitle || '',
+      title: feed.title?._text || feedData.settings.title || '',
+      description: feed.subtitle?._text || '',
       link: this.getAtomLink(feed.link) || '',
-      items: []
+      items: [],
+      feedUrl,
+      lastUpdate: new Date()
     }
 
     if (feed.entry) {
       const entries = Array.isArray(feed.entry) ? feed.entry : [feed.entry]
-      atomFeed.items = entries.map(this.parseAtomEntry)
+      atomFeed.items = entries
+        .slice(0, feedData.settings.maxArticles || 50)
+        .map(entry => this.parseAtomEntry(entry, feedData))
     }
 
     return atomFeed
   }
 
-  private parseAtomEntry(entry: any): RSSItem {
+  private parseAtomEntry(entry: any, feedData: FeedData): RSSItem {
+    const content = 
+      entry.content?._text?.trim() || 
+      entry.summary?._text?.trim() || 
+      ''
+    
     return {
-      title: entry.title || '',
-      description: entry.content || entry.summary || '',
+      title: entry.title?._text?.trim() || 'Sans titre',
+      description: entry.summary?._text?.trim() || content,
+      content: content,
       link: this.getAtomLink(entry.link) || '',
-      pubDate: entry.updated || entry.published || new Date().toISOString(),
-      guid: entry.id || this.getAtomLink(entry.link)
+      pubDate: entry.updated?._text ? new Date(entry.updated._text) : 
+               entry.published?._text ? new Date(entry.published._text) : new Date(),
+      guid: entry.id?._text || this.getAtomLink(entry.link),
+      categories: feedData.settings.tags || [],
+      author: entry.author?.name?._text || '',
+      feedTitle: feedData.settings.title
     }
   }
 
@@ -138,7 +188,7 @@ export class RSSService {
     }
 
     if (Array.isArray(link)) {
-      const alternate = link.find(l => l['@_rel'] === 'alternate')
+      const alternate = link.find(l => l['@_rel'] === 'alternate' || !l['@_rel'])
       return alternate ? alternate['@_href'] : link[0]['@_href']
     }
 

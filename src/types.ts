@@ -1,3 +1,5 @@
+import { PluginSettings } from './types/settings'
+
 export interface RSSFeed {
   title: string
   description: string
@@ -16,21 +18,26 @@ export interface RSSItem {
 export interface FeedSettings {
   url: string
   folder: string
-  filterDuplicates: boolean
-}
+  title: string;
+  template?: string;
+  type: 'multiple' | 'single';
+  status: 'active' | 'paused';
+  filterDuplicates?: boolean;
+  group?: string;
+  summarize?: boolean;
+  transcribe?: boolean;
+  rewrite?: boolean;
+} 
 
 export interface FeedData {
   id: string
   settings: FeedSettings
   lastUpdate?: string
-  error?: string
-}
-
-export interface PluginSettings {
-  defaultUpdateInterval: number
-  defaultFolder: string
-  maxItemsPerFeed: number
-  template: string
+  lastSuccessfulFetch?: number
+  lastError?: {
+    message: string
+    timestamp: number
+  }
 }
 
 export interface StorageData {

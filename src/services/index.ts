@@ -5,8 +5,10 @@ import { OpmlService } from './OpmlService'
 import { RSSService } from './RSSService'
 import { ReadingService } from './ReadingService'
 import { SchedulerService } from './SchedulerService'
+import { SettingsService } from './SettingsService'
 import { StorageService } from './StorageService'
 import { SyncService } from './SyncService'
+import { RegisterStyles } from './RegisterStyles'
 
 export {
   FileService,
@@ -16,6 +18,8 @@ export {
   RSSService,
   ReadingService,
   SchedulerService,
+  SettingsService,
   StorageService,
-  SyncService
+  SyncService,
+  RegisterStyles
 } 

@@ -78,6 +78,18 @@ export const fr = {
         desc: 'Entrez l\'URL d\'un flux RSS',
         placeholder: 'URL du feed RSS',
         success: 'Feed ajouté : {title}'
+      },
+      deleteAll: {
+        name: 'Supprimer tous les feeds',
+        desc: 'Supprimer tous les feeds de votre liste',
+        button: 'Supprimer tous les feeds',
+        confirm: 'Êtes-vous sûr de vouloir supprimer ces feeds ?',
+        confirmMessage: 'Êtes-vous sûr de vouloir supprimer ces feeds ?',
+        success: 'Feeds supprimés :'
+      },
+      delete: {
+        button: 'Supprimer',
+        success: 'Feed supprimé : {title}'
       }
     }
   },

@@ -1,8 +1,28 @@
-import { Plugin, TFile } from 'obsidian'
+import { Plugin, TAbstractFile } from 'obsidian'
 import { RSSItem } from '../types'
 
 export class FileService {
   constructor(private plugin: Plugin) {}
+
+  /**
+   * Initialise les dossiers nécessaires pour le plugin
+   * @param rssFolder - Dossier racine RSS
+   * @param groups - Liste des groupes à créer
+   */
+  async initializeFolders(rssFolder: string, groups: string[]): Promise<void> {
+    try {
+      // Créer le dossier racine
+      await this.ensureFolder(rssFolder);
+
+      // Créer les dossiers des groupes
+      for (const group of groups) {
+        await this.ensureFolder(`${rssFolder}/${group}`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'initialisation des dossiers:', error);
+      throw error;
+    }
+  }
 
   /**
    * Crée un dossier s'il n'existe pas déjà
@@ -93,7 +113,7 @@ export class FileService {
 
       // Créer ou mettre à jour le fichier
       const file = this.plugin.app.vault.getAbstractFileByPath(filePath)
-      if (file instanceof TFile) {
+      if (file instanceof TAbstractFile) {
         await this.plugin.app.vault.modify(file, content)
       } else {
         await this.plugin.app.vault.create(filePath, content)

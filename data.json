@@ -1,37 +1,26 @@
 {
-  "feeds": [
-    {
-      "title": "Cointelegraph.com News",
-      "url": "https://cointelegraph.com/rss",
-      "type": "multiple",
-      "status": "active",
-      "summarize": false,
-      "transcribe": false,
-      "tags": [],
-      "group": "xzxzx",
-      "lastError": null,
-      "lastSuccessfulFetch": 1734195023487
-    }
-  ],
-  "groups": [
-    "Défaut"
-  ],
-  "openaiKey": "",
-  "rssFolder": "RSS",
-  "fetchFrequency": "hourly",
-  "fetchInterval": 3600,
-  "maxArticles": 50,
-  "retentionDays": 30,
-  "lastFetch": 1734195023348,
-  "readingMode": false,
-  "lastReadArticle": null,
-  "currentFeed": null,
-  "currentFolder": null,
-  "articleStates": {},
+  "feeds": [],
   "settings": {
+    "feeds": [],
+    "groups": [
+      "Défaut",
+      "ll"
+    ],
+    "openaiKey": "",
+    "rssFolder": "RSS",
+    "fetchFrequency": "startup",
+    "maxArticles": 50,
+    "retentionDays": 30,
+    "readingMode": true,
+    "lastFetch": 1734268636325,
+    "lastReadArticle": null,
+    "currentFeed": null,
+    "currentFolder": null,
+    "articleStates": {},
     "defaultUpdateInterval": 60,
     "defaultFolder": "RSS",
     "maxItemsPerFeed": 5,
-    "template": "# {{title}}\n\n{{description}}\n\n{{link}}"
+    "template": "# {{title}}\n\n{{description}}\n\n{{link}}",
+    "fetchInterval": 3600
   }
 }
