@@ -17,10 +17,10 @@
     "currentFeed": null,
     "currentFolder": null,
     "articleStates": {},
+    "template": "# {{title}}\n\n{{description}}\n\n{{link}}",
     "defaultUpdateInterval": 60,
     "defaultFolder": "RSS",
     "maxItemsPerFeed": 5,
-    "template": "# {{title}}\n\n{{description}}\n\n{{link}}",
     "fetchInterval": 3600
   }
 }

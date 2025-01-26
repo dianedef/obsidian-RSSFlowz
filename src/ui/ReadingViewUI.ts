@@ -20,6 +20,10 @@ export class ReadingViewUI extends ItemView {
 		return "RSS Reader";
 	}
 
+	getIcon(): string {
+		return "book-open";
+	}
+
 	async onOpen() {
 		const container = this.containerEl.children[1];
 		container.empty();

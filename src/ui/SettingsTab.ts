@@ -361,15 +361,15 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     containerEl.createEl('h1', {text: this.plugin.t('settings.feeds.title')});
 
 // Barre de recherche pour les feeds
-    const searchContainer = containerEl.createDiv('search-container');
+    const searchContainer = containerEl.createDiv('rssflowz-search-container');
     const searchInput = searchContainer.createEl('input', {
       type: 'text',
       placeholder: this.plugin.t('settings.feeds.search.placeholder'),
-      cls: 'feed-search-input'
+      cls: 'rssflowz-feed-search-input'
     });
 
 // Container pour tous les feeds
-    const feedsContainer = containerEl.createDiv('feeds-container');
+    const feedsContainer = containerEl.createDiv('rssflowz-feeds-container');
     
 // Fonction pour filtrer et afficher les feeds
     const filterAndDisplayFeeds = (searchTerm = '') => {
@@ -397,17 +397,17 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           }
 
           feeds.forEach(({feed, index}) => {
-            const feedContainer = feedsContainer.createDiv('feed-container collapsed');
-            const headerContainer = feedContainer.createDiv('feed-header');
+            const feedContainer = feedsContainer.createDiv('rssflowz-feed-container rssflowz-collapsed');
+            const headerContainer = feedContainer.createDiv('rssflowz-feed-header');
             
 // Ajouter le titre du feed et son statut
-            const titleContainer = headerContainer.createDiv('feed-title-container');
+            const titleContainer = headerContainer.createDiv('rssflowz-feed-title-container');
             titleContainer.createEl('span', { text: feed.title });
             
 // Ajouter une icône d'erreur si nécessaire
             if (feed.lastError) {
                 const errorIcon = titleContainer.createEl('span', { 
-                    cls: 'feed-error-icon',
+                    cls: 'rssflowz-feed-error-icon',
                     attr: {
                         'aria-label': `Dernière erreur: ${feed.lastError.message}\nLe ${new Date(feed.lastError.timestamp).toLocaleString()}`
                     }
@@ -418,23 +418,23 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
 // Ajouter la date du dernier fetch réussi
             if (feed.lastSuccessfulFetch) {
                 const lastFetchSpan = titleContainer.createEl('span', {
-                    cls: 'feed-last-fetch',
+                    cls: 'rssflowz-feed-last-fetch',
                     text: `Dernière mise à jour: ${new Date(feed.lastSuccessfulFetch).toLocaleString()}`
                 });
             }
 
-            const optionsContainer = feedContainer.createDiv('feed-options');
+            const optionsContainer = feedContainer.createDiv('rssflowz-feed-options');
             optionsContainer.style.display = 'none';
 
 // Créer un conteneur pour les boutons
-            const buttonContainer = headerContainer.createDiv('feed-buttons');
+            const buttonContainer = headerContainer.createDiv('rssflowz-feed-buttons');
 
             let toggleButton: ButtonComponent;
 
 // Fonction pour toggle le feed
             const toggleFeed = () => {
-                const isCollapsed = feedContainer.classList.contains('collapsed');
-                feedContainer.classList.toggle('collapsed');
+                const isCollapsed = feedContainer.classList.contains('rssflowz-collapsed');
+                feedContainer.classList.toggle('rssflowz-collapsed');
                 optionsContainer.style.display = isCollapsed ? 'block' : 'none';
                 if (toggleButton) {
                   toggleButton.setIcon(isCollapsed ? 'chevron-up' : 'chevron-down');
@@ -463,7 +463,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
 // Rendre le header cliquable
             headerContainer.addEventListener('click', (event: MouseEvent) => {
                 const target = event.target as HTMLElement;
-                if (!target.closest('.feed-buttons')) {
+                if (!target.closest('.rssflowz-feed-buttons')) {
                   toggleFeed();
                 }
             });
