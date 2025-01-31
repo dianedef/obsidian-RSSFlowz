@@ -84,7 +84,7 @@ export class RSSService {
     }
   }
 
-  private parseFeedData(data: any, url: string, feedData: FeedData): RSSFeed {
+  private parseFeedData(data: Record<string, any>, url: string, feedData: FeedData): RSSFeed {
     if (data.rss?.channel) {
       return this.parseRSSFeed(data.rss.channel, feedData, url)
     } else if (data.feed) {
@@ -98,7 +98,7 @@ export class RSSService {
     )
   }
 
-  private parseRSSFeed(channel: any, feedData: FeedData, feedUrl: string): RSSFeed {
+  private parseRSSFeed(channel: Record<string, any>, feedData: FeedData, feedUrl: string): RSSFeed {
     const feed: RSSFeed = {
       title: channel.title?._text || feedData.settings.title || '',
       description: channel.description?._text || '',
@@ -112,13 +112,13 @@ export class RSSService {
       const items = Array.isArray(channel.item) ? channel.item : [channel.item]
       feed.items = items
         .slice(0, feedData.settings.maxArticles || 50)
-        .map(item => this.parseRSSItem(item, feedData))
+        .map((item: Record<string, any>) => this.parseRSSItem(item, feedData))
     }
 
     return feed
   }
 
-  private parseRSSItem(item: any, feedData: FeedData): RSSItem {
+  private parseRSSItem(item: Record<string, any>, feedData: FeedData): RSSItem {
     const content = 
       item['content:encoded']?._text?.trim() || 
       item.encoded?._text?.trim() ||
@@ -138,7 +138,7 @@ export class RSSService {
     }
   }
 
-  private parseAtomFeed(feed: any, feedData: FeedData, feedUrl: string): RSSFeed {
+  private parseAtomFeed(feed: Record<string, any>, feedData: FeedData, feedUrl: string): RSSFeed {
     const atomFeed: RSSFeed = {
       title: feed.title?._text || feedData.settings.title || '',
       description: feed.subtitle?._text || '',
@@ -152,13 +152,13 @@ export class RSSService {
       const entries = Array.isArray(feed.entry) ? feed.entry : [feed.entry]
       atomFeed.items = entries
         .slice(0, feedData.settings.maxArticles || 50)
-        .map(entry => this.parseAtomEntry(entry, feedData))
+        .map((entry: Record<string, any>) => this.parseAtomEntry(entry, feedData))
     }
 
     return atomFeed
   }
 
-  private parseAtomEntry(entry: any, feedData: FeedData): RSSItem {
+  private parseAtomEntry(entry: Record<string, any>, feedData: FeedData): RSSItem {
     const content = 
       entry.content?._text?.trim() || 
       entry.summary?._text?.trim() || 
@@ -178,7 +178,7 @@ export class RSSService {
     }
   }
 
-  private getAtomLink(link: any): string {
+  private getAtomLink(link: Record<string, any> | Record<string, any>[] | string | undefined): string {
     if (!link) {
       return ''
     }

@@ -5,28 +5,37 @@ export interface RSSFeed {
   description: string
   link: string
   items: RSSItem[]
+  feedUrl: string
+  lastUpdate: Date
 }
 
 export interface RSSItem {
   title: string
   description: string
   link: string
-  pubDate: string
+  pubDate: Date
   guid?: string
+  content?: string
+  categories?: string[]
+  author?: string
+  feedTitle?: string
 }
 
 export interface FeedSettings {
   url: string
   folder: string
-  title: string;
-  template?: string;
-  type: 'multiple' | 'single';
-  status: 'active' | 'paused';
-  filterDuplicates?: boolean;
-  group?: string;
-  summarize?: boolean;
-  transcribe?: boolean;
-  rewrite?: boolean;
+  title: string
+  template?: string
+  type: 'multiple' | 'single'
+  status: 'active' | 'paused'
+  filterDuplicates?: boolean
+  group?: string
+  summarize?: boolean
+  transcribe?: boolean
+  rewrite?: boolean
+  maxArticles?: number
+  tags?: string[]
+  updateInterval?: number
 } 
 
 export interface FeedData {

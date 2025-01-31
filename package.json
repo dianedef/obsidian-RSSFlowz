@@ -11,6 +11,21 @@
 	"author": "Votre nom",
 	"license": "MIT",
 	"dependencies": {
-		"fast-xml-parser": "^4.3.2"
+		"fast-xml-parser": "^4.5.1"
+	},
+	"devDependencies": {
+		"@types/jest": "^29.5.12",
+		"@types/node": "^20.17.16",
+		"typescript": "^5.7.3",
+		"vitest": "^2.1.8",
+		"esbuild": "^0.24.2",
+		"builtin-modules": "^4.0.0"
+	},
+	"scripts": {
+		"test": "vitest",
+		"test:watch": "vitest watch",
+		"dev": "node esbuild.config.js",
+		"build": "node esbuild.config.js production",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	}
 }

@@ -3,7 +3,8 @@ import { LogServiceInterface } from '../types/logs'
 import { ReadingState } from '../types/reading'
 import { StorageService } from './StorageService'
 import { SettingsService } from './SettingsService'
-import { Article, Feed } from '../types'
+import { Article, Feed, FeedSettings } from '../types'
+import { PluginSettings } from '../types/settings'
 
 export class ReadingService {
   private currentState: ReadingState = {
@@ -324,7 +325,7 @@ export class ReadingService {
   }
 
   private getArticleId(feedUrl: string, articleLink: string): string {
-    return `${feedUrl}|${articleLink}`;
+    return `${feedUrl}::${articleLink}`;
   }
 
   async saveArticles(articles: Article[], feed: Feed): Promise<void> {
@@ -410,293 +411,179 @@ export class ReadingService {
     }
   }
 
-  
-  updateFeedSelect(selectElement, currentFolder) {
-    // Vider le select
-    selectElement.innerHTML = '';
-    
-    // Filtrer les feeds du dossier sélectionné
-    const feeds = this.settings.feeds.filter(feed => 
-       (currentFolder === 'Défaut' && !feed.group) || 
-       feed.group === currentFolder
-    );
-
-    // Ajouter une option par défaut
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.text = 'Sélectionner un feed...';
-    selectElement.appendChild(defaultOption);
-
-    // Ajouter une option pour chaque feed
-    feeds.forEach(feed => {
-       const option = document.createElement('option');
-       option.value = feed.url;
-       option.text = feed.title;
-       if (feed.url === this.settings.currentFeed) {
-          option.selected = true;
-       }
-       selectElement.appendChild(option);
-    });
-
-    // Ajouter l'événement de changement
-    selectElement.addEventListener('change', (e) => {
-       this.settings.currentFeed = e.target.value;
-       this.saveData(this.settings);
-       // Ici vous pourrez ajouter la logique pour charger les articles du feed sélectionné
-    });
- }
-
- async selectFolder(folderName) {
-    this.settings.currentFolder = folderName;
-    await this.saveData(this.settings);
-    
-    // Mettre à jour le sélecteur de feeds
-    const feedSelect = this.readingModeContainer.querySelector('.reading-mode-select:nth-child(2)');
-    if (feedSelect) {
-       this.updateFeedSelect(feedSelect, folderName);
+  async deleteCurrentArticle(): Promise<void> {
+    if (!this.currentState.currentFile) {
+      this.logService.warn('Aucun article actif')
+      return
     }
- }
 
- getArticleId(feedUrl, articleLink) {
-    return `${feedUrl}::${articleLink}`;
- }
-
- async markArticleAsRead(feedUrl, articleLink) {
-    const articleId = this.getArticleId(feedUrl, articleLink);
-    this.settings.articleStates[articleId] = {
-       ...this.settings.articleStates[articleId],
-       read: true,
-       lastUpdate: Date.now()
-    };
-    await this.saveData(this.settings);
- }
-
- async markArticleAsDeleted(feedUrl, articleLink) {
-    const articleId = this.getArticleId(feedUrl, articleLink);
-    this.settings.articleStates[articleId] = {
-       ...this.settings.articleStates[articleId],
-       deleted: true,
-       lastUpdate: Date.now()
-    };
-    await this.saveData(this.settings);
- }
-
- async markCurrentArticleAsRead() {
-    if (!this.settings.currentFeed || !this.settings.lastReadArticle) return;
-    
-    await this.markArticleAsRead(this.settings.currentFeed, this.settings.lastReadArticle);
-    // Rafraîchir l'affichage de l'article
-    await this.refreshCurrentArticle();
-    new Notice('Article marqué comme lu');
- }
-
- async deleteCurrentArticle() {
-    if (!this.settings.currentFeed || !this.settings.lastReadArticle) return;
-    
-    await this.markArticleAsDeleted(this.settings.currentFeed, this.settings.lastReadArticle);
-    // Supprimer le fichier physiquement
-    const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
-    if (feed) {
-       const baseFolder = this.settings.rssFolder;
-       const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
-       const articlePath = feed.type === 'uniqueFile'
-          ? `${groupFolder}/${feed.title}.md`
-          : `${groupFolder}/${feed.title}/${this.settings.lastReadArticle}.md`;
-       
-       try {
-          await this.app.vault.adapter.remove(articlePath);
-          new Notice('Article supprimé');
-          // Passer à l'article suivant
-          await this.navigateArticles('next');
-       } catch (error) {
-          console.error('Erreur lors de la suppression:', error);
-          new Notice('Erreur lors de la suppression de l\'article');
-       }
-    }
- }
-
- async cleanArticleStates() {
-    const now = Date.now();
-    const retentionPeriod = this.settings.retentionDays * 86400000; // conversion en millisecondes
-    
-    const newStates = {};
-    for (const [articleId, state] of Object.entries(this.settings.articleStates)) {
-       if (now - state.lastUpdate < retentionPeriod) {
-          newStates[articleId] = state;
-       }
-    }
-    
-    this.settings.articleStates = newStates;
-    await this.saveData(this.settings);
- }
-
- async navigateArticles(direction) {
     try {
-        // Récupérer tous les feeds du groupe actuel
-        const currentGroup = this.settings.currentFolder || 'Défaut';
-        let groupFeeds = this.settings.feeds.filter(feed => 
-            (currentGroup === 'Défaut' && !feed.group) || 
-            feed.group === currentGroup
-        );
+      const settings = this.settingsService.getSettings()
+      const currentFeed = settings.currentFeed
+      const lastReadArticle = settings.lastReadArticle
 
-        // Si un feed spécifique est sélectionné, filtrer uniquement ses articles
-        if (this.settings.currentFeed) {
-            groupFeeds = groupFeeds.filter(f => f.url === this.settings.currentFeed);
+      if (currentFeed && lastReadArticle) {
+        await this.markArticleAsDeleted(currentFeed, lastReadArticle)
+      }
+
+      const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed)
+      if (feed && feed.type === 'single') {
+        const contentEl = this.plugin.app.workspace.activeLeaf?.view.contentEl
+        if (contentEl) {
+          contentEl.empty()
         }
+      } else {
+        await this.plugin.app.vault.delete(this.currentState.currentFile)
+      }
 
-        if (!groupFeeds.length) {
-            new Notice('Aucun feed disponible dans ce groupe');
-            return;
-        }
-
-        // Récupérer tous les articles des feeds sélectionnés
-        let allArticles = [];
-        for (const feed of groupFeeds) {
-            const baseFolder = this.settings.rssFolder;
-            const groupFolder = feed.group ? `${baseFolder}/${feed.group}` : baseFolder;
-
-            try {
-                if (feed.type === 'uniqueFile') {
-                    // Pour les feeds en fichier unique
-                    const filePath = `${groupFolder}/${feed.title}.md`;
-                    const content = await this.app.vault.adapter.read(filePath);
-                    const articles = content.split('\n---\n').map(article => {
-                        const titleMatch = article.match(/# (.*)/);
-                        const linkMatch = article.match(/Lien: (.*)/);
-                        const dateMatch = article.match(/Date: (.*)/);
-                        return {
-                            title: titleMatch?.[1] || 'Sans titre',
-                            link: linkMatch?.[1] || '',
-                            date: dateMatch?.[1] || '',
-                            content: article,
-                            feedUrl: feed.url,
-                            feedTitle: feed.title,
-                            path: filePath
-                        };
-                    });
-                    allArticles.push(...articles);
-                } else {
-                    // Pour les feeds multi-fichiers
-                    const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
-                    const files = await this.app.vault.adapter.list(feedFolder);
-                    const articles = await Promise.all(files.files.map(async file => {
-                        const content = await this.app.vault.adapter.read(file);
-                        const titleMatch = content.match(/# (.*)/);
-                        const linkMatch = content.match(/Lien: (.*)/);
-                        const dateMatch = content.match(/Date: (.*)/);
-                        return {
-                            title: titleMatch?.[1] || 'Sans titre',
-                            link: linkMatch?.[1] || '',
-                            date: dateMatch?.[1] || '',
-                            content: content,
-                            feedUrl: feed.url,
-                            feedTitle: feed.title,
-                            path: file
-                        };
-                    }));
-                    allArticles.push(...articles);
-                }
-            } catch (error) {
-                console.error(`Erreur lors de la lecture du feed ${feed.title}:`, error);
-            }
-        }
-
-        // Filtrer les articles supprimés
-        allArticles = allArticles.filter(article => {
-            const articleId = this.getArticleId(article.feedUrl, article.link);
-            return !this.settings.articleStates[articleId]?.deleted;
-        });
-
-        // Trier par date (du plus récent au plus ancien)
-        allArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        // Trouver l'index de l'article actuel
-        let currentIndex = allArticles.findIndex(article => 
-            article.link === this.settings.lastReadArticle
-        );
-        if (currentIndex === -1) currentIndex = direction === 'next' ? -1 : allArticles.length;
-
-        // Calculer le nouvel index
-        let newIndex;
-        if (direction === 'next') {
-            newIndex = currentIndex + 1;
-            if (newIndex >= allArticles.length) {
-                new Notice('Fin des articles');
-                return;
-            }
-        } else if (direction === 'previous') {
-            newIndex = currentIndex - 1;
-            if (newIndex < 0) {
-                new Notice('Début des articles');
-                return;
-            }
-        }
-
-        // Ouvrir le nouvel article
-        const article = allArticles[newIndex];
-        this.settings.lastReadArticle = article.link;
-        await this.saveData(this.settings);
-
-        // Ouvrir le fichier
-        const file = await this.app.vault.getAbstractFileByPath(article.path);
-        if (file) {
-            await this.app.workspace.getLeaf().openFile(file);
-            
-            // Si c'est un fichier unique, scroller jusqu'à l'article
-            if (article.feedUrl && this.settings.feeds.find(f => f.url === article.feedUrl)?.type === 'uniqueFile') {
-                setTimeout(() => {
-                    const contentEl = this.app.workspace.activeLeaf.view.contentEl;
-                    const sections = contentEl.querySelectorAll('h1');
-                    for (const section of sections) {
-                        if (section.textContent.includes(article.title)) {
-                            section.scrollIntoView({ behavior: 'smooth' });
-                            break;
-                        }
-                    }
-                }, 100);
-            }
-        }
-
-        // Mettre à jour l'interface
-        this.updateNavigationButtons(newIndex, allArticles.length);
-
+      this.logService.info('Article supprimé', { path: this.currentState.currentFile.path })
+      await this.navigateArticles('next')
     } catch (error) {
-        console.error('Erreur lors de la navigation:', error);
-        new Notice('Erreur lors de la navigation entre les articles');
+      this.logService.error('Erreur lors de la suppression de l\'article', { error })
+      throw error
     }
- }
+  }
 
- // Méthode pour mettre à jour l'état des boutons de navigation
- updateNavigationButtons(currentIndex, totalArticles) {
-    const prevButton = this.readingModeContainer.querySelector('button:nth-child(3)');
-    const nextButton = this.readingModeContainer.querySelector('button:nth-child(4)');
-    
+  updateNavigationButtons(currentIndex: number, totalArticles: number): void {
+    const prevButton = document.querySelector('.rss-nav-prev') as HTMLButtonElement
+    const nextButton = document.querySelector('.rss-nav-next') as HTMLButtonElement
+
     if (prevButton) {
-       prevButton.disabled = currentIndex <= 0;
+      prevButton.disabled = currentIndex <= 0
     }
     if (nextButton) {
-       nextButton.disabled = currentIndex >= totalArticles - 1;
+      nextButton.disabled = currentIndex >= totalArticles - 1
     }
- }
+  }
 
- // Méthode pour rafraîchir l'affichage de l'article courant
- async refreshCurrentArticle() {
-    const leaf = this.app.workspace.activeLeaf;
+  async refreshCurrentArticle(): Promise<void> {
+    const leaf = this.plugin.app.workspace.activeLeaf
     if (leaf && leaf.view) {
-       await leaf.view.load();
+      await leaf.view.load()
     }
- }
+  }
 
- // Ajouter cette nouvelle méthode pour la navigation directe vers un article
- async navigateToArticle(articleLink) {
-    if (!this.settings.currentFeed) return;
+  async navigateToArticle(articleLink: string): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    const currentFeed = settings.currentFeed
+    if (!currentFeed) return
+
+    const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed)
+    if (!feed) return
+
+    await this.settingsService.updateSettings({
+      ...settings,
+      lastReadArticle: articleLink
+    })
+    await this.navigateArticles('current')
+  }
+
+  async markArticleAsRead(feedUrl: string, articleLink: string): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    const articleId = this.getArticleId(feedUrl, articleLink)
+    const articleStates = settings.articleStates || {}
     
-    const feed = this.settings.feeds.find(f => f.url === this.settings.currentFeed);
-    if (!feed) return;
+    articleStates[articleId] = {
+      ...articleStates[articleId],
+      read: true,
+      lastUpdate: Date.now()
+    }
 
-    this.settings.lastReadArticle = articleLink;
-    await this.saveData(this.settings);
-    await this.navigateArticles('current'); // Ajouter 'current' comme nouvelle option
- }
-  
+    await this.settingsService.updateSettings({
+      ...settings,
+      articleStates
+    })
+  }
+
+  async markArticleAsDeleted(feedUrl: string, articleLink: string): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    const articleId = this.getArticleId(feedUrl, articleLink)
+    const articleStates = settings.articleStates || {}
+    
+    articleStates[articleId] = {
+      ...articleStates[articleId],
+      deleted: true,
+      lastUpdate: Date.now()
+    }
+
+    await this.settingsService.updateSettings({
+      ...settings,
+      articleStates
+    })
+  }
+
+  private getArticleId(feedUrl: string, articleLink: string): string {
+    return `${feedUrl}::${articleLink}`
+  }
+
+  async updateFeedSelect(selectElement: HTMLSelectElement, currentFolder: string): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    
+    // Vider le select
+    selectElement.innerHTML = ''
+    
+    // Filtrer les feeds du dossier sélectionné
+    const feeds = settings.feeds.filter((feed: FeedSettings) => 
+      (currentFolder === 'Défaut' && !feed.group) || 
+      feed.group === currentFolder
+    )
+
+    // Ajouter une option par défaut
+    const defaultOption = document.createElement('option')
+    defaultOption.value = ''
+    defaultOption.text = 'Sélectionner un feed...'
+    selectElement.appendChild(defaultOption)
+
+    // Ajouter une option pour chaque feed
+    feeds.forEach((feed: FeedSettings) => {
+      const option = document.createElement('option')
+      option.value = feed.url
+      option.text = feed.title
+      if (feed.url === settings.currentFeed) {
+        option.selected = true
+      }
+      selectElement.appendChild(option)
+    })
+
+    // Ajouter l'événement de changement
+    selectElement.addEventListener('change', async (e: Event) => {
+      const target = e.target as HTMLSelectElement
+      await this.settingsService.updateSettings({
+        ...settings,
+        currentFeed: target.value
+      })
+    })
+  }
+
+  async selectFolder(folderName: string): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    await this.settingsService.updateSettings({
+      ...settings,
+      currentFolder: folderName
+    })
+    
+    // Mettre à jour le sélecteur de feeds
+    const feedSelect = document.querySelector('.reading-mode-select:nth-child(2)') as HTMLSelectElement
+    if (feedSelect) {
+      await this.updateFeedSelect(feedSelect, folderName)
+    }
+  }
+
+  async cleanArticleStates(): Promise<void> {
+    const settings = this.settingsService.getSettings()
+    const now = Date.now()
+    const retentionPeriod = settings.retentionDays * 86400000 // conversion en millisecondes
+    
+    const newStates: Record<string, any> = {}
+    for (const [articleId, state] of Object.entries(settings.articleStates || {})) {
+      if (now - state.lastUpdate < retentionPeriod) {
+        newStates[articleId] = state
+      }
+    }
+    
+    await this.settingsService.updateSettings({
+      ...settings,
+      articleStates: newStates
+    })
+  }
 } 

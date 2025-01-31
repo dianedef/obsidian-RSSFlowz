@@ -2,7 +2,8 @@ import { Plugin } from 'obsidian'
 import { StorageService } from './StorageService'
 import { SyncService } from './SyncService'
 import { LogService } from './LogService'
-import { FeedData, Settings } from '../types'
+import { FeedData } from '../types'
+import { PluginSettings, FetchFrequency } from '../types/settings'
 
 export class SchedulerService {
   private intervals: Map<string, number> = new Map()
@@ -20,19 +21,16 @@ export class SchedulerService {
       const data = await this.storageService.loadData()
       
       if (!data || !data.settings) {
-        this.logService.warn({
-          message: 'Aucune donnée ou paramètres trouvés lors du démarrage du planificateur',
-          data: { dataExists: !!data, settingsExist: !!data?.settings }
+        this.logService.warn('Aucune donnée ou paramètres trouvés lors du démarrage du planificateur', {
+          dataExists: !!data,
+          settingsExist: !!data?.settings
         })
         return
       }
 
-      this.logService.debug({
-        message: 'Démarrage du planificateur',
-        data: {
-          fetchFrequency: data.settings.fetchFrequency,
-          feedCount: data.settings.feeds?.length || 0
-        }
+      this.logService.debug('Démarrage du planificateur', {
+        fetchFrequency: data.settings.fetchFrequency,
+        feedCount: data.settings.feeds?.length || 0
       })
       
       // Si la fréquence est 'startup', synchroniser immédiatement
@@ -48,12 +46,9 @@ export class SchedulerService {
           const now = Date.now()
           const timeSinceLastFetch = now - currentData.settings.lastFetch
 
-          this.logService.debug({
-            message: 'Vérification des mises à jour',
-            data: {
-              timeSinceLastFetch,
-              fetchFrequency: currentData.settings.fetchFrequency
-            }
+          this.logService.debug('Vérification des mises à jour', {
+            timeSinceLastFetch,
+            fetchFrequency: currentData.settings.fetchFrequency
           })
 
           if (currentData.settings.fetchFrequency === 'daily' && timeSinceLastFetch >= 86400000) {
@@ -67,11 +62,7 @@ export class SchedulerService {
           }
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err))
-          this.logService.error({
-            message: 'Erreur lors de la vérification des mises à jour',
-            error,
-            data: { mainInterval: this.mainInterval }
-          })
+          this.logService.error('Erreur lors de la vérification des mises à jour', { error })
         }
       }, 60000) // Vérifier toutes les minutes
 
@@ -80,9 +71,8 @@ export class SchedulerService {
       
       // Démarrer les intervalles individuels pour chaque feed actif
       const activeFeeds = data.settings.feeds.filter(feed => feed.settings.status === 'active')
-      this.logService.info({
-        message: 'Démarrage des intervalles individuels',
-        data: { activeFeedCount: activeFeeds.length }
+      this.logService.info('Démarrage des intervalles individuels', {
+        activeFeedCount: activeFeeds.length
       })
 
       for (const feed of activeFeeds) {
@@ -90,31 +80,17 @@ export class SchedulerService {
           await this.scheduleFeed(feed)
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err))
-          this.logService.error({
-            message: `Erreur lors de la planification du feed ${feed.settings.title}`,
-            error,
-            data: { feedId: feed.id }
-          })
+          this.logService.error(`Erreur lors de la planification du feed ${feed.settings.title}`, { error })
         }
       }
       
-      this.logService.info({
-        message: 'Planificateur démarré avec succès',
-        data: {
-          mainIntervalId: this.mainInterval,
-          individualIntervalsCount: this.intervals.size
-        }
+      this.logService.info('Planificateur démarré avec succès', {
+        mainIntervalId: this.mainInterval,
+        individualIntervalsCount: this.intervals.size
       })
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.logService.error({
-        message: 'Erreur critique lors du démarrage du planificateur',
-        error,
-        data: {
-          mainIntervalExists: !!this.mainInterval,
-          individualIntervalsCount: this.intervals.size
-        }
-      })
+      this.logService.error('Erreur critique lors du démarrage du planificateur', { error })
       throw error
     }
   }
@@ -134,33 +110,21 @@ export class SchedulerService {
       for (const [feedId, interval] of this.intervals.entries()) {
         try {
           window.clearInterval(interval)
-          this.logService.debug({
-            message: 'Intervalle individuel arrêté',
-            data: { feedId }
-          })
+          this.logService.debug('Intervalle individuel arrêté', { feedId })
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err))
-          this.logService.warn({
-            message: `Erreur lors de l'arrêt de l'intervalle pour le feed ${feedId}`,
-            error
-          })
+          this.logService.warn(`Erreur lors de l'arrêt de l'intervalle pour le feed ${feedId}`, { error })
         }
       }
       this.intervals.clear()
       
-      this.logService.info({
-        message: 'Planificateur arrêté avec succès',
-        data: { intervalsStopped: intervalCount }
-      })
+      this.logService.info('Planificateur arrêté avec succès', { intervalsStopped: intervalCount })
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.logService.error({
-        message: 'Erreur lors de l\'arrêt du planificateur',
+      this.logService.error('Erreur lors de l\'arrêt du planificateur', { 
         error,
-        data: {
-          mainIntervalExists: !!this.mainInterval,
-          remainingIntervals: this.intervals.size
-        }
+        mainIntervalExists: !!this.mainInterval,
+        remainingIntervals: this.intervals.size
       })
       throw error
     }
@@ -172,22 +136,16 @@ export class SchedulerService {
         throw new Error('Feed invalide ou paramètres manquants')
       }
 
-      this.logService.debug({
-        message: 'Planification du feed',
-        data: {
-          feedId: feed.id,
-          title: feed.settings.title,
-          status: feed.settings.status
-        }
+      this.logService.debug('Planification du feed', {
+        feedId: feed.id,
+        title: feed.settings.title,
+        status: feed.settings.status
       })
 
       // Si un intervalle existe déjà pour ce feed, le nettoyer
       if (this.intervals.has(feed.id)) {
         window.clearInterval(this.intervals.get(feed.id))
-        this.logService.debug({
-          message: 'Ancien intervalle nettoyé',
-          data: { feedId: feed.id }
-        })
+        this.logService.debug('Ancien intervalle nettoyé', { feedId: feed.id })
       }
 
       // Créer un nouvel intervalle si le feed est actif
@@ -195,29 +153,26 @@ export class SchedulerService {
         const updateInterval = feed.settings.updateInterval || 3600000
         const interval = window.setInterval(async () => {
           try {
-            this.logService.debug({
-              message: 'Exécution de la synchronisation planifiée',
-              data: { feedId: feed.id, title: feed.settings.title }
+            this.logService.debug('Exécution de la synchronisation planifiée', { 
+              feedId: feed.id, 
+              title: feed.settings.title 
             })
 
             await this.syncService.syncFeed(feed)
             const data = await this.storageService.loadData()
             await this.updateLastFetchTime(data.settings)
 
-            this.logService.info({
-              message: 'Synchronisation planifiée réussie',
-              data: { feedId: feed.id, title: feed.settings.title }
+            this.logService.info('Synchronisation planifiée réussie', { 
+              feedId: feed.id, 
+              title: feed.settings.title 
             })
           } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err))
-            this.logService.error({
-              message: 'Erreur lors de la synchronisation planifiée',
+            this.logService.error('Erreur lors de la synchronisation planifiée', {
               error,
-              data: {
-                feedId: feed.id,
-                title: feed.settings.title,
-                interval: updateInterval
-              }
+              feedId: feed.id,
+              title: feed.settings.title,
+              interval: updateInterval
             })
           }
         }, updateInterval)
@@ -225,21 +180,17 @@ export class SchedulerService {
         this.intervals.set(feed.id, interval)
         this.plugin.registerInterval(interval)
 
-        this.logService.info({
-          message: 'Feed planifié avec succès',
-          data: {
-            feedId: feed.id,
-            title: feed.settings.title,
-            interval: updateInterval
-          }
+        this.logService.info('Feed planifié avec succès', {
+          feedId: feed.id,
+          title: feed.settings.title,
+          interval: updateInterval
         })
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.logService.error({
-        message: 'Erreur lors de la planification du feed',
+      this.logService.error('Erreur lors de la planification du feed', {
         error,
-        data: { feedId: feed.id }
+        feedId: feed.id
       })
       throw error
     }
@@ -247,50 +198,39 @@ export class SchedulerService {
 
   unscheduleFeed(feedId: string): void {
     try {
-      this.logService.debug({
-        message: 'Déplanification du feed',
-        data: { feedId }
-      })
+      this.logService.debug('Déplanification du feed', { feedId })
 
       if (this.intervals.has(feedId)) {
         window.clearInterval(this.intervals.get(feedId))
         this.intervals.delete(feedId)
-        this.logService.info({
-          message: 'Feed déplanifié avec succès',
-          data: { feedId }
-        })
+        this.logService.info('Feed déplanifié avec succès', { feedId })
       } else {
-        this.logService.warn({
-          message: 'Tentative de déplanification d\'un feed non planifié',
-          data: { feedId }
-        })
+        this.logService.warn('Tentative de déplanification d\'un feed non planifié', { feedId })
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.logService.error({
-        message: 'Erreur lors de la déplanification du feed',
+      this.logService.error('Erreur lors de la déplanification du feed', {
         error,
-        data: { feedId }
+        feedId
       })
       throw error
     }
   }
 
-  private async updateLastFetchTime(settings: Settings): Promise<void> {
+  private async updateLastFetchTime(settings: PluginSettings): Promise<void> {
     try {
       settings.lastFetch = Date.now()
-      await this.storageService.saveData({ settings })
-      this.logService.debug({
-        message: 'Temps de dernière synchronisation mis à jour',
-        data: { lastFetch: settings.lastFetch }
+      const currentData = await this.storageService.loadData()
+      await this.storageService.saveData({
+        ...currentData,
+        settings
+      })
+      this.logService.debug('Temps de dernière synchronisation mis à jour', {
+        lastFetch: settings.lastFetch
       })
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err))
-      this.logService.error({
-        message: 'Erreur lors de la mise à jour du temps de dernière synchronisation',
-        error,
-        data: { attemptedLastFetch: Date.now() }
-      })
+      this.logService.error('Erreur lors de la mise à jour du temps de dernière synchronisation', { error })
       throw error
     }
   }

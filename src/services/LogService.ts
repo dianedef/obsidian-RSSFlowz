@@ -1,32 +1,33 @@
 import { Plugin, Notice } from 'obsidian'
 import { LogLevel } from '../types/logs'
 
+interface LogContext extends Record<string, unknown> {
+  error?: Error
+}
+
 export class LogService {
   private logs: any[] = []
   private maxLogs = 1000
 
   constructor(private console: Console) {}
 
-  debug(message: string, context?: Record<string, unknown>): void {
+  debug(message: string, context?: LogContext): void {
     this.log(LogLevel.DEBUG, message, context)
   }
 
-  info(message: string, context?: Record<string, unknown>): void {
+  info(message: string, context?: LogContext): void {
     this.log(LogLevel.INFO, message, context)
   }
 
-  warn(message: string, context?: Record<string, unknown>): void {
+  warn(message: string, context?: LogContext): void {
     this.log(LogLevel.WARN, message, context)
   }
 
-  error(message: string, context?: { error: Error }): void {
-    if (!context || !context.error) {
-      context = { error: new Error(message) }
-    }
+  error(message: string, context?: LogContext): void {
     this.log(LogLevel.ERROR, message, context)
   }
 
-  private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
+  private log(level: LogLevel, message: string, context?: LogContext): void {
     const logMessage = `[${level}] ${message}`
     const logContext = context || {}
     
@@ -41,9 +42,8 @@ export class LogService {
         this.console.warn(logMessage, logContext)
         break
       case LogLevel.ERROR:
-        if ('error' in logContext) {
-          const error = logContext.error as Error
-          this.console.error(logMessage, error)
+        if (logContext.error instanceof Error) {
+          this.console.error(logMessage, logContext.error)
         } else {
           this.console.error(logMessage, logContext)
         }
