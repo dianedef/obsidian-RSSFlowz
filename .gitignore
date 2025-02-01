@@ -41,3 +41,4 @@ data.json
 # Fichiers de couverture de tests
 *.sublime-project
 *.sublime-workspace
+data.json

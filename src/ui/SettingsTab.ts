@@ -77,7 +77,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           dropdown.addOption('daily', this.plugin.t('settings.fetchFrequency.options.daily'))
           dropdown.addOption('hourly', this.plugin.t('settings.fetchFrequency.options.hourly'))
           dropdown.setValue(settings.fetchFrequency)
-            .onChange(async (value: string) => {
+            .onChange(async (value: FetchFrequency) => {
               await this.plugin.settingsService.updateSettings({ fetchFrequency: value })
             })
         })
@@ -262,54 +262,48 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                   reader.onload = async (event: ProgressEvent<FileReader>) => {
                     try {
                       if (event.target?.result) {
-                        const config = JSON.parse(event.target.result as string)
+                        const config = JSON.parse(event.target.result as string);
 
                         // Vérifier que le fichier contient les champs essentiels
                         if (!config.feeds || !Array.isArray(config.groups)) {
-                          new Notice(this.plugin.t('settings.importExport.jsonImport.error'))
-                          return
+                          new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
+                          return;
                         }
 
                         // Créer une sauvegarde de la configuration actuelle
-                        const backup = await this.plugin.loadData()
-                        const backupJson = JSON.stringify(backup, null, 2)
-                        const backupBlob = new Blob([backupJson], { type: 'application/json' })
-                        const backupUrl = window.URL.createObjectURL(backupBlob)
-                        const backupA = document.createElement('a')
-                        backupA.href = backupUrl
-                        backupA.download = 'rss-reader-config-backup.json'
-                        backupA.click()
-                        window.URL.revokeObjectURL(backupUrl)
+                        const backup = await this.plugin.settingsService.getSettings();
+                        const backupJson = JSON.stringify(backup, null, 2);
+                        const backupBlob = new Blob([backupJson], { type: 'application/json' });
+                        const backupUrl = window.URL.createObjectURL(backupBlob);
+                        const backupA = document.createElement('a');
+                        backupA.href = backupUrl;
+                        backupA.download = 'rss-reader-config-backup.json';
+                        backupA.click();
+                        window.URL.revokeObjectURL(backupUrl);
 
                         // Appliquer la nouvelle configuration
-                        this.plugin.settings = Object.assign({}, this.plugin.settings, config)
-                        await this.plugin.saveData(this.plugin.settings)
+                        await this.plugin.settingsService.updateSettings(config);
 
                         // Recréer les dossiers nécessaires
-                        await this.plugin.ensureFolder(this.plugin.settings.rssFolder)
-                        for (const group of this.plugin.settings.groups) {
-                          if (group !== this.plugin.t('settings.groups.none')) {
-                            await this.plugin.ensureFolder(`${this.plugin.settings.rssFolder}/${group}`)
-                          }
-                        }
+                        const settings = this.plugin.settingsService.getSettings();
+                        await this.plugin.fileService.initializeFolders(settings.rssFolder, settings.groups || []);
 
                         // Recréer les dossiers pour chaque feed non-unique
-                        for (const feed of this.plugin.settings.feeds) {
+                        for (const feed of settings.feeds) {
                           if (feed.type !== 'uniqueFile') {
-                            const feedPath = `${this.plugin.settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/')
-                            await this.plugin.ensureFolder(feedPath)
+                            const feedPath = `${settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/');
+                            await this.plugin.fileService.ensureFolder(feedPath);
                           }
                         }
 
-                        new Notice(this.plugin.t('settings.importExport.jsonImport.success') + '\nUne sauvegarde a été créée')
+                        new Notice(this.plugin.t('settings.importExport.jsonImport.success') + '\nUne sauvegarde a été créée');
 
                         // Recharger l'interface des paramètres
-                        this.plugin.settings = await this.plugin.loadData()
-                        this.display()
+                        this.display();
                       }
                     } catch (error) {
-                      console.error('Erreur lors du parsing:', error)
-                      new Notice(this.plugin.t('settings.importExport.jsonImport.error'))
+                      console.error('Erreur lors du parsing:', error);
+                      new Notice(this.plugin.t('settings.importExport.jsonImport.error'));
                     }
                   }
 
@@ -373,27 +367,28 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
               .setWarning()
               .onClick(async () => {
                 try {
-                  const groupPath = `${this.plugin.settings.rssFolder}/${group}`
+                  const settings = this.plugin.settingsService.getSettings();
+                  const groupPath = `${settings.rssFolder}/${group}`;
 
                   // Déplacer les feeds de ce groupe vers "Sans groupe"
-                  this.plugin.settings.feeds.forEach(feed => {
+                  settings.feeds.forEach(feed => {
                     if (feed.group === group) {
-                      feed.group = ''
+                      feed.group = '';
                     }
-                  })
+                  });
 
                   // Supprimer le dossier et son contenu
-                  await this.plugin.removeFolder(groupPath)
+                  await this.plugin.fileService.removeFolder(groupPath);
 
                   // Supprimer le groupe des paramètres
-                  this.plugin.settings.groups.splice(index, 1)
-                  await this.plugin.saveData(this.plugin.settings)
+                  settings.groups.splice(index, 1);
+                  await this.plugin.settingsService.updateSettings(settings);
 
-                  new Notice(this.plugin.t('settings.groups.delete.success') + ` : ${group}`)
-                  this.display()
+                  new Notice(this.plugin.t('settings.groups.delete.success') + ` : ${group}`);
+                  this.display();
                 } catch (error) {
-                  console.error(`Erreur lors de la suppression du groupe ${group}:`, error)
-                  new Notice(this.plugin.t('settings.groups.delete.error'))
+                  console.error(`Erreur lors de la suppression du groupe ${group}:`, error);
+                  new Notice(this.plugin.t('settings.groups.delete.error'));
                 }
               }))
         }
@@ -501,7 +496,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
               // Créer un conteneur pour les boutons
               const buttonContainer = headerContainer.createDiv('rssflowz-feed-buttons');
 
-              let toggleButton: ButtonComponent;
+              let toggleButton: ExtraButtonComponent;
 
               // Fonction pour toggle le feed
               const toggleFeed = () => {
@@ -515,16 +510,17 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
 
               // Ajouter les boutons dans leur conteneur
               new Setting(buttonContainer)
-                  .addExtraButton((button: ButtonComponent) => button
+                  .addExtraButton((button: ExtraButtonComponent) => button
                     .setIcon(feed.status === 'active' ? 'check-circle' : 'circle')
                     .setTooltip(feed.status === 'active' ? 'Actif' : 'Pausé')
                     .onClick(async () => {
+                        const settings = this.plugin.settingsService.getSettings();
                         feed.status = feed.status === 'active' ? 'paused' : 'active';
-                        await this.plugin.saveData(this.plugin.settings);
+                        await this.plugin.settingsService.updateSettings(settings);
                         button.setIcon(feed.status === 'active' ? 'check-circle' : 'circle');
                         new Notice(`Feed ${feed.title} ${feed.status === 'active' ? 'activé' : 'pausé'}`);
                     }))
-                  .addExtraButton((button: ButtonComponent) => {
+                  .addExtraButton((button: ExtraButtonComponent) => {
                     toggleButton = button;
                     button.setIcon('chevron-down')
                         .setTooltip('Afficher/Masquer les options')
@@ -590,7 +586,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                           await this.plugin.ensureFolder(newPath);
                         }
                         
-                        if (feed.type === 'uniqueFile') {
+                        if (feed.type === 'single') {
                           // Pour les fichiers uniques
                           const oldFilePath = `${oldPath}/${feed.title}.md`;
                           const newFilePath = `${newPath}/${feed.title}.md`;
@@ -604,7 +600,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                           const newFeedFolder = `${newPath}/${feed.title}`;
                           
                           if (await this.app.vault.adapter.exists(oldFeedFolder)) {
-                            await this.plugin.ensureFolder(newFeedFolder);
+                            await this.plugin.fileService.ensureFolder(newFeedFolder);
                             
                             const files = await this.app.vault.adapter.list(oldFeedFolder);
                             for (const file of files.files) {
@@ -614,7 +610,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                             }
                             
                             // Supprimer l'ancien dossier
-                            await this.plugin.removeFolder(oldFeedFolder);
+                            await this.plugin.fileService.removeFolder(oldFeedFolder);
                           }
                         }
                         
@@ -641,13 +637,14 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                   .addToggle(toggle => toggle
                     .setValue(feed.summarize || false)
                     .onChange(async (value: boolean) => {
-                        if (value && !this.plugin.settings.openaiKey) {
+                        const settings = this.plugin.settingsService.getSettings();
+                        if (value && !settings.openaiKey) {
                           new Notice(this.plugin.t('settings.feeds.summarize.error'));
                           toggle.setValue(false);
                           return;
                         }
-                        this.plugin.settings.feeds[index].summarize = value;
-                        await this.plugin.saveData(this.plugin.settings);
+                        settings.feeds[index].summarize = value;
+                        await this.plugin.settingsService.updateSettings(settings);
                         new Notice(this.plugin.t('notices.settings.aiToggled')
                           .replace('{feature}', this.plugin.t('settings.feeds.summarize.name'))
                           .replace('{status}', value ? '✅' : '❌')
@@ -662,13 +659,14 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                   .addToggle(toggle => toggle
                     .setValue(feed.rewrite || false)
                     .onChange(async (value: boolean) => {
-                        if (value && !this.plugin.settings.openaiKey) {
+                        const settings = this.plugin.settingsService.getSettings();
+                        if (value && !settings.openaiKey) {
                           new Notice(this.plugin.t('settings.feeds.rewrite.error'));
                           toggle.setValue(false);
                           return;
                         }
-                        this.plugin.settings.feeds[index].rewrite = value;
-                        await this.plugin.saveData(this.plugin.settings);
+                        settings.feeds[index].rewrite = value;
+                        await this.plugin.settingsService.updateSettings(settings);
                         new Notice(this.plugin.t('notices.settings.aiToggled')
                           .replace('{feature}', this.plugin.t('settings.feeds.rewrite.name'))
                           .replace('{status}', value ? '✅' : '❌')
@@ -683,13 +681,14 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                   .addToggle(toggle => toggle
                     .setValue(feed.transcribe || false)
                     .onChange(async (value: boolean) => {
-                        if (value && !this.plugin.settings.openaiKey) {
+                        const settings = this.plugin.settingsService.getSettings();
+                        if (value && !settings.openaiKey) {
                           new Notice(this.plugin.t('settings.feeds.transcribe.error'));
                           toggle.setValue(false);
                           return;
                         }
-                        this.plugin.settings.feeds[index].transcribe = value;
-                        await this.plugin.saveData(this.plugin.settings);
+                        settings.feeds[index].transcribe = value;
+                        await this.plugin.settingsService.updateSettings(settings);
                         new Notice(this.plugin.t('notices.settings.aiToggled')
                           .replace('{feature}', this.plugin.t('settings.feeds.transcribe.name'))
                           .replace('{status}', value ? '✅' : '❌')

@@ -26,6 +26,24 @@ export interface PluginSettings {
 	template: string;
 	digest: DigestSettings;
 }
+
+export interface FeedSettings {
+	title: string;
+	url: string;
+	type: 'multiple' | 'single';
+	status: 'active' | 'paused';
+	summarize: boolean;
+	transcribe: boolean;
+	rewrite: boolean;
+	group?: string;
+	folder?: string;
+	lastError?: {
+		message: string;
+		timestamp: number;
+	};
+	lastSuccessfulFetch?: number;
+}
+
 export const DEFAULT_SETTINGS: PluginSettings = {
 	feeds: [],
 	groups: ['Défaut'],
