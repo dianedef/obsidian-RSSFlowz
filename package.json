@@ -11,15 +11,16 @@
 	"author": "Votre nom",
 	"license": "MIT",
 	"dependencies": {
-		"fast-xml-parser": "^4.5.1"
+		"@mozilla/readability": "^0.5.0",
+		"fast-xml-parser": "^4.5.1",
+		"linkedom": "^0.18.7"
 	},
 	"devDependencies": {
 		"@types/jest": "^29.5.12",
 		"@types/node": "^20.17.16",
-		"typescript": "^5.7.3",
-		"vitest": "^2.1.8",
 		"esbuild": "^0.24.2",
-		"builtin-modules": "^4.0.0"
+		"typescript": "^5.7.3",
+		"vitest": "^2.1.8"
 	},
 	"scripts": {
 		"test": "vitest",

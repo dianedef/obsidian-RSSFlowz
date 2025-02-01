@@ -265,4 +265,13 @@ export default class RSSReaderPlugin extends Plugin {
 	t(key: string, params: Record<string, string> = {}): string {
 		return this.i18nService.t(key, params);
 	}
+
+	// Méthodes pour l'import/export OPML
+	async importOpml(content: string) {
+		return await this.opmlService.importOpml(content);
+	}
+
+	async exportOpml() {
+		return await this.opmlService.exportOpml();
+	}
 }

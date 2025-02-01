@@ -1,10 +1,173 @@
 {
-  "feeds": [],
+  "feeds": [
+    {
+      "id": "f2d98381-68d4-42ae-8d74-d9fb81296370",
+      "settings": {
+        "title": "The Forest",
+        "url": "https://forest.quest/artifacts/rss/",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:41.057Z",
+      "lastSuccessfulFetch": 1738434701057
+    },
+    {
+      "id": "e7b920ef-aeb6-49b1-afdc-aa27ccfc3326",
+      "settings": {
+        "title": "Mozilla Hacks – the Web developer blog",
+        "url": "https://hacks.mozilla.org/feed/",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:42.279Z",
+      "lastSuccessfulFetch": 1738434702279
+    },
+    {
+      "id": "feb0eb19-8c57-4dfb-940f-2374e4bb5233",
+      "settings": {
+        "title": "Lean Productivity",
+        "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCPBbCmGKB3LX7SCI70HieXQ",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:42.312Z",
+      "lastSuccessfulFetch": 1738434702312
+    },
+    {
+      "id": "ec4eb4e8-d40a-4775-9151-92e3b7e3bbfe",
+      "settings": {
+        "title": "Elestio blog",
+        "url": "https://blog.elest.io/rss/",
+        "type": "feed",
+        "status": "paused",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      }
+    },
+    {
+      "id": "ae3efe8e-650a-4abb-ae78-0c42341ed71f",
+      "settings": {
+        "title": "Vercel News",
+        "url": "https://vercel.com/atom",
+        "type": "feed",
+        "status": "paused",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      }
+    },
+    {
+      "id": "af4f0f45-0044-405e-85ba-a6e7f5be00ac",
+      "settings": {
+        "title": "developer.chrome.com: Blog",
+        "url": "https://developer.chrome.com/static/blog/feed.xml?hl=fr",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.207Z",
+      "lastSuccessfulFetch": 1738434703207
+    },
+    {
+      "id": "6904f997-a3d0-4afd-8d40-c5ffb6d8de4e",
+      "settings": {
+        "title": "Cursor Blog | RSS Feed",
+        "url": "https://cursor.com/atom.xml",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.239Z",
+      "lastSuccessfulFetch": 1738434703239
+    },
+    {
+      "id": "1419a53a-e5f6-4eed-808b-e57db91253d3",
+      "settings": {
+        "title": "Codelynx",
+        "url": "https://codelynx.dev/rss",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.437Z",
+      "lastSuccessfulFetch": 1738434703437
+    },
+    {
+      "id": "eba572a1-7624-47bb-a2f0-7914afaee29d",
+      "settings": {
+        "title": "The Nuxt Blog",
+        "url": "https://nuxt.com/blog/rss.xml",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.459Z",
+      "lastSuccessfulFetch": 1738434703459
+    },
+    {
+      "id": "169b97e3-5ab0-45ab-8553-09ec2ffe4378",
+      "settings": {
+        "title": "The Astro Blog",
+        "url": "https://astro.build/rss.xml",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.514Z",
+      "lastSuccessfulFetch": 1738434703514
+    },
+    {
+      "id": "b03b0251-f0b9-4000-9dee-d982fcb515a9",
+      "settings": {
+        "title": "The Vue Point",
+        "url": "https://blog.vuejs.org/feed.rss",
+        "type": "feed",
+        "status": "active",
+        "summarize": false,
+        "transcribe": false,
+        "category": "",
+        "folder": "RSS"
+      },
+      "lastUpdate": "2025-02-01T18:31:43.546Z",
+      "lastSuccessfulFetch": 1738434703546
+    }
+  ],
   "settings": {
     "feeds": [],
     "groups": [
       "Défaut",
-      "ll"
+      "ll",
+      "Tech"
     ],
     "openaiKey": "",
     "rssFolder": "RSS",
@@ -18,6 +181,12 @@
     "currentFolder": null,
     "articleStates": {},
     "template": "# {{title}}\n\n{{description}}\n\n{{link}}",
+    "digest": {
+      "enabled": false,
+      "mode": "disabled",
+      "template": "",
+      "folderPath": ""
+    },
     "defaultUpdateInterval": 60,
     "defaultFolder": "RSS",
     "maxItemsPerFeed": 5,

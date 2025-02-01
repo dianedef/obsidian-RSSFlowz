@@ -28,35 +28,56 @@ export class OpmlService {
   async exportOpml(): Promise<void> {
     try {
       const data = await this.storageService.loadData();
-      const opml = `<?xml version="1.0" encoding="UTF-8"?>
-      <opml version="1.0">
-      <head>
-         <title>RSS Feeds Export</title>
-      </head>
-      <body>
-      <outline text="Feeds" title="Feeds">
-         ${data.feeds.map(feed => `
-         <outline 
-            title="${feed.settings.title}"
-            type="rss"
-            xmlUrl="${feed.settings.url}"
-            category="${feed.settings.category || ''}"
-            status="${feed.settings.status}"
-            saveType="${feed.settings.type}"
-            summarize="${feed.settings.summarize || false}"
-            transcribe="${feed.settings.transcribe || false}"
-         />`).join('\n')}
-      </outline>
-      </body>
-      </opml>`;
+      const now = new Date().toISOString();
+      
+      // Création d'un document OPML 2.0 propre
+      const opmlDoc = {
+        '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },
+        opml: {
+          '@_version': '2.0',
+          head: {
+            title: 'RSS Feeds Export',
+            dateCreated: now,
+            dateModified: now,
+            ownerName: 'RSSFlowz',
+            docs: 'http://dev.opml.org/spec2.html'
+          },
+          body: {
+            outline: {
+              '@_text': 'Feeds',
+              '@_title': 'Feeds',
+              outline: data.feeds.map(feed => ({
+                '@_text': feed.settings.title || feed.settings.url,
+                '@_title': feed.settings.title || feed.settings.url,
+                '@_type': 'rss',
+                '@_xmlUrl': this.sanitizeUrl(feed.settings.url),
+                '@_htmlUrl': feed.settings.link || '',
+                '@_description': feed.settings.description || '',
+                '@_category': feed.settings.category || '',
+                '@_status': feed.settings.status || 'active',
+                '@_saveType': feed.settings.type || 'multiple',
+                '@_summarize': String(feed.settings.summarize || false),
+                '@_transcribe': String(feed.settings.transcribe || false)
+              }))
+            }
+          }
+        }
+      };
 
-      // Créer un blob et le télécharger
-      const blob = new Blob([opml], { type: 'text/xml' });
+      // Utilisation du builder XML pour générer le document
+      const opml = this.builder.build(opmlDoc);
+
+      // Création et téléchargement du fichier
+      const blob = new Blob([opml], { type: 'text/xml;charset=utf-8' });
       const url = window.URL.createObjectURL(blob);
+      const filename = `rss-feeds-${new Date().toISOString().split('T')[0]}.opml`;
+      
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'rss-feeds.opml';
+      a.download = filename;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
       this.logService.info('Export OPML réussi');
@@ -66,159 +87,11 @@ export class OpmlService {
     }
   }
 
-  async importOpml(fileContent: string): Promise<{
-    success: boolean;
-    imported: number;
-    errors: Array<{ title: string; url: string; error: string }>;
-    duplicates: Array<{ title: string; url: string; error: string }>;
-  }> {
+  private sanitizeUrl(url: string): string {
     try {
-      // 1. Nettoyer le contenu
-      const cleanedContent = fileContent.replace(
-        /(<outline[^>]*)(title="[^"]*&[^"]*\"|category="[^"]*&[^"]*")([^>]*>)/g,
-        (match, before, attribute, after) => {
-          return before + attribute.replace(/&(?!(amp|lt|gt|apos|quot);)/g, '&amp;') + after;
-        }
-      );
-      
-      // 2. Encoder les URLs
-      const preparedContent = cleanedContent.replace(
-        /xmlUrl="([^"]*)"/g,
-        (match, url) => `xmlUrl="${encodeURIComponent(url)}"`
-      );
-      
-      const doc = this.parser.parse(preparedContent);
-      
-      // Trouver tous les outlines avec xmlUrl
-      const feedOutlines = this.extractFeedOutlines(doc);
-      
-      if (!feedOutlines.length) {
-        this.logService.warn('Aucun feed RSS trouvé dans le fichier OPML');
-        return {
-          success: false,
-          imported: 0,
-          errors: [],
-          duplicates: []
-        };
-      }
-
-      let successCount = 0;
-      const errorFeeds: Array<{ title: string; url: string; error: string }> = [];
-      const duplicateFeeds: Array<{ title: string; url: string; error: string }> = [];
-      
-      const data = await this.storageService.loadData();
-      
-      for (const feed of feedOutlines) {
-        try {
-          const xmlUrl = feed.xmlUrl;
-          const feedTitle = feed.title || feed.text || xmlUrl;
-          
-          // Désanitizer l'URL si nécessaire
-          let feedUrl = xmlUrl;
-          if (xmlUrl.includes('%')) {
-            feedUrl = decodeURIComponent(xmlUrl);
-          }
-          
-          // Vérifier si le feed existe déjà
-          const feedExists = data.feeds.some(f => 
-            f.settings.url.toLowerCase() === feedUrl.toLowerCase()
-          );
-
-          if (feedExists) {
-            duplicateFeeds.push({
-              title: feedTitle,
-              url: feedUrl,
-              error: 'Feed déjà présent dans la liste'
-            });
-            continue;
-          }
-          
-          const response = await requestUrl({
-            url: feedUrl,
-            headers: {
-              'User-Agent': 'Mozilla/5.0',
-              'Accept': 'application/atom+xml,application/xml,text/xml,application/rss+xml,*/*',
-              'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8',
-              'Cache-Control': 'no-cache'
-            }
-          });
-
-          // Vérifier si la réponse est un feed valide
-          const contentType = response.headers?.['content-type'] || '';
-          const isValidFeed = contentType.includes('xml') || 
-                             response.text.includes('<rss') || 
-                             response.text.includes('<feed') ||
-                             response.text.includes('<?xml');
-
-          if (!isValidFeed) {
-            throw new Error('Le contenu ne semble pas être un feed RSS/Atom valide');
-          }
-
-          // Si on arrive ici, le feed est valide
-          data.feeds.push({
-            id: crypto.randomUUID(),
-            settings: {
-              title: feedTitle,
-              url: feedUrl,
-              type: feed.saveType || 'multiple',
-              status: feed.status || 'active',
-              summarize: feed.summarize === 'true',
-              transcribe: feed.transcribe === 'true',
-              category: feed.category || undefined,
-              folder: feed.category || 'RSS'
-            }
-          });
-          successCount++;
-
-        } catch (error) {
-          this.logService.error('Erreur lors de la vérification du feed', { 
-            feed: feed.title,
-            error 
-          });
-          
-          // Rendre les messages d'erreur plus compréhensibles
-          let errorMessage = error.message;
-          if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
-            errorMessage = "Le site web n'existe plus ou est inaccessible";
-          } else if (error.message.includes('CERT_')) {
-            errorMessage = 'Certificat SSL invalide';
-          } else if (error.message.includes('ECONNREFUSED')) {
-            errorMessage = 'Connexion refusée par le serveur';
-          } else if (error.message.includes('ETIMEDOUT')) {
-            errorMessage = 'Le serveur met trop de temps à répondre';
-          } else if (error.status === 404) {
-            errorMessage = 'Feed introuvable (404)';
-          } else if (error.status === 403) {
-            errorMessage = 'Accès refusé par le serveur';
-          }
-
-          errorFeeds.push({
-            title: feed.title || feed.xmlUrl,
-            url: feed.xmlUrl,
-            error: errorMessage
-          });
-        }
-      }
-
-      // Sauvegarder les settings après la boucle
-      if (successCount > 0) {
-        await this.storageService.saveData(data);
-        this.logService.info(`${successCount} feeds importés avec succès`);
-      }
-
-      // Afficher le résumé dans une modal
-      this.showImportSummary(feedOutlines.length, successCount, duplicateFeeds, errorFeeds);
-
-      return {
-        success: successCount > 0,
-        imported: successCount,
-        errors: errorFeeds,
-        duplicates: duplicateFeeds
-      };
-
-    } catch (error) {
-      this.logService.error('Erreur lors du parsing du fichier OPML', { error });
-      throw createOpmlError(OpmlErrorCode.IMPORT_FAILED, 'Erreur lors de l\'import OPML');
+      return encodeURI(decodeURI(url));
+    } catch {
+      return url;
     }
   }
 
@@ -227,10 +100,12 @@ export class OpmlService {
     xmlUrl: string;
     text?: string;
     category?: string;
-    saveType?: string;
-    status?: string;
+    saveType?: 'multiple' | 'single';
+    status?: 'active' | 'paused';
     summarize?: string;
     transcribe?: string;
+    description?: string;
+    htmlUrl?: string;
   }> {
     const outlines: any[] = [];
     
@@ -241,10 +116,12 @@ export class OpmlService {
           text: node['@_text'],
           xmlUrl: node['@_xmlUrl'],
           category: node['@_category'],
-          saveType: node['@_saveType'],
-          status: node['@_status'],
+          saveType: node['@_saveType'] as 'multiple' | 'single',
+          status: node['@_status'] as 'active' | 'paused',
           summarize: node['@_summarize'],
-          transcribe: node['@_transcribe']
+          transcribe: node['@_transcribe'],
+          description: node['@_description'],
+          htmlUrl: node['@_htmlUrl']
         });
       }
       
@@ -262,6 +139,204 @@ export class OpmlService {
     }
 
     return outlines;
+  }
+
+  async importOpml(fileContent: string): Promise<{
+    success: boolean;
+    imported: number;
+    errors: Array<{ title: string; url: string; error: string }>;
+    duplicates: Array<{ title: string; url: string; error: string }>;
+  }> {
+    try {
+      // 1. Nettoyer et valider le contenu XML
+      const cleanedContent = this.sanitizeXmlContent(fileContent);
+      
+      // 2. Parser le document OPML
+      const doc = this.parseOpmlDocument(cleanedContent);
+      
+      // 3. Extraire les feeds
+      const feedOutlines = this.extractFeedOutlines(doc);
+      
+      if (!feedOutlines.length) {
+        this.logService.warn('Aucun feed RSS trouvé dans le fichier OPML');
+        return {
+          success: false,
+          imported: 0,
+          errors: [],
+          duplicates: []
+        };
+      }
+
+      // 4. Charger les données existantes
+      const data = await this.storageService.loadData();
+      let successCount = 0;
+      const errorFeeds: Array<{ title: string; url: string; error: string }> = [];
+      const duplicateFeeds: Array<{ title: string; url: string; error: string }> = [];
+
+      // 5. Traiter chaque feed
+      for (const feed of feedOutlines) {
+        try {
+          const feedUrl = this.sanitizeUrl(feed.xmlUrl);
+          const feedTitle = feed.title || feed.text || feedUrl;
+          
+          // Vérifier si le feed existe déjà
+          const existingFeed = data.feeds.find(f => 
+            f.settings.url.toLowerCase() === feedUrl.toLowerCase()
+          );
+
+          if (existingFeed) {
+            duplicateFeeds.push({
+              title: feedTitle,
+              url: feedUrl,
+              error: 'Feed déjà présent dans la liste'
+            });
+            continue;
+          }
+
+          // Valider le feed en testant l'URL
+          const validationResult = await this.validateFeed(feedUrl);
+          if (!validationResult.isValid) {
+            errorFeeds.push({
+              title: feedTitle,
+              url: feedUrl,
+              error: validationResult.error || 'Feed invalide'
+            });
+            continue;
+          }
+
+          // Ajouter le nouveau feed
+          data.feeds.push({
+            id: crypto.randomUUID(),
+            settings: {
+              title: feedTitle,
+              url: feedUrl,
+              type: (feed.saveType || 'multiple') as 'multiple' | 'single',
+              status: (feed.status || 'active') as 'active' | 'paused',
+              summarize: feed.summarize === 'true',
+              transcribe: feed.transcribe === 'true',
+              category: feed.category,
+              folder: feed.category || 'RSS',
+              description: feed.description,
+              link: feed.htmlUrl
+            }
+          });
+          successCount++;
+
+        } catch (error) {
+          this.logService.error('Erreur lors du traitement du feed', { 
+            feed: feed.title,
+            error 
+          });
+          
+          errorFeeds.push({
+            title: feed.title || feed.xmlUrl,
+            url: feed.xmlUrl,
+            error: this.getReadableErrorMessage(error)
+          });
+        }
+      }
+
+      // 6. Sauvegarder les modifications si des feeds ont été importés
+      if (successCount > 0) {
+        await this.storageService.saveData(data);
+        this.logService.info(`${successCount} feeds importés avec succès`);
+      }
+
+      // 7. Afficher le résumé
+      this.showImportSummary(feedOutlines.length, successCount, duplicateFeeds, errorFeeds);
+
+      return {
+        success: successCount > 0,
+        imported: successCount,
+        errors: errorFeeds,
+        duplicates: duplicateFeeds
+      };
+
+    } catch (error) {
+      this.logService.error('Erreur lors du parsing du fichier OPML', { error });
+      throw createOpmlError(OpmlErrorCode.IMPORT_FAILED, 'Erreur lors de l\'import OPML');
+    }
+  }
+
+  private sanitizeXmlContent(content: string): string {
+    // 1. Nettoyer les caractères spéciaux dans les attributs
+    let cleaned = content.replace(
+      /(<outline[^>]*)(title="[^"]*"|category="[^"]*"|description="[^"]*")([^>]*>)/g,
+      (match, before, attribute, after) => {
+        return before + attribute.replace(/&(?!(amp|lt|gt|apos|quot);)/g, '&amp;') + after;
+      }
+    );
+    
+    // 2. Encoder les URLs
+    cleaned = cleaned.replace(
+      /xmlUrl="([^"]*)"/g,
+      (match, url) => `xmlUrl="${this.sanitizeUrl(url)}"`
+    );
+
+    return cleaned;
+  }
+
+  private parseOpmlDocument(content: string): any {
+    try {
+      return this.parser.parse(content);
+    } catch (error) {
+      throw createOpmlError(OpmlErrorCode.PARSE_FAILED, 'Erreur lors du parsing du document OPML');
+    }
+  }
+
+  private async validateFeed(url: string): Promise<{ isValid: boolean; error?: string }> {
+    try {
+      const response = await requestUrl({
+        url,
+        headers: {
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'application/atom+xml,application/xml,text/xml,application/rss+xml,*/*',
+          'Accept-Language': 'fr,fr-FR;q=0.9,en;q=0.8',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      const contentType = response.headers?.['content-type'] || '';
+      const isValidFeed = contentType.includes('xml') || 
+                         response.text.includes('<rss') || 
+                         response.text.includes('<feed') ||
+                         response.text.includes('<?xml');
+
+      return {
+        isValid: isValidFeed,
+        error: isValidFeed ? undefined : 'Le contenu ne semble pas être un feed RSS/Atom valide'
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        error: this.getReadableErrorMessage(error)
+      };
+    }
+  }
+
+  private getReadableErrorMessage(error: any): string {
+    const message = error.message || String(error);
+    
+    if (message.includes('ERR_NAME_NOT_RESOLVED')) {
+      return "Le site web n'existe plus ou est inaccessible";
+    }
+    if (message.includes('CERT_')) {
+      return 'Certificat SSL invalide';
+    }
+    if (message.includes('ECONNREFUSED')) {
+      return 'Connexion refusée par le serveur';
+    }
+    if (message.includes('ETIMEDOUT')) {
+      return 'Le serveur met trop de temps à répondre';
+    }
+    if (error.status === 404) {
+      return 'Feed introuvable (404)';
+    }
+    if (error.status === 403) {
+      return 'Accès refusé par le serveur';
+    }
+    
+    return message;
   }
 
   private showImportSummary(

@@ -21,6 +21,23 @@ export interface RSSItem {
   feedTitle?: string
 }
 
+export interface Article {
+  title: string
+  link: string
+  date: Date
+  content: string
+  feedUrl: string
+  feedTitle: string
+  path: string
+}
+
+export interface Feed {
+  url: string
+  title: string
+  type: 'multiple' | 'single' | 'uniqueFile'
+  group?: string
+}
+
 export interface FeedSettings {
   url: string
   folder: string
@@ -36,6 +53,9 @@ export interface FeedSettings {
   maxArticles?: number
   tags?: string[]
   updateInterval?: number
+  link?: string
+  description?: string
+  category?: string
 } 
 
 export interface FeedData {
@@ -54,4 +74,12 @@ export interface StorageData {
   settings: PluginSettings
   readArticles?: string[]
   lastReadArticle?: string | null
+  groups?: string[]
+  articleStates?: {
+    [key: string]: {
+      read?: boolean
+      deleted?: boolean
+      lastUpdate: number
+    }
+  }
 } 

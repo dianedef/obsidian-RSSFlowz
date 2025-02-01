@@ -4,14 +4,19 @@ import { StorageService } from './StorageService'
 import { LogService } from './LogService'
 import { FeedData, RSSItem, StorageData } from '../types'
 import { createSyncError, SyncErrorCode } from '../types/errors'
+import { ContentEnhancerService } from './ContentEnhancerService'
 
 export class SyncService {
+  private contentEnhancer: ContentEnhancerService;
+
   constructor(
     private plugin: Plugin,
     private rssService: RSSService,
     private storageService: StorageService,
     private logService: LogService
-  ) {}
+  ) {
+    this.contentEnhancer = new ContentEnhancerService(logService);
+  }
 
   async syncAllFeeds(): Promise<void> {
     try {
@@ -102,7 +107,40 @@ export class SyncService {
         continue;
       }
 
-      const content = this.renderTemplate(feed.settings.template || this.getDefaultTemplate(), item);
+      let enhancedItem = {
+        title: item.title,
+        link: item.link,
+        pubDate: new Date(item.pubDate || Date.now()),
+        content: item.content,
+        description: item.description,
+        feed: feed.settings.title,
+        isRead: false,
+        isFavorite: false,
+        author: item.author,
+        tags: item.categories
+      };
+
+      // N'utiliser Readability que si le contenu est vide ou trop court
+      const minContentLength = 500; // Minimum 500 caractères
+      const currentContent = item.content || item.description || '';
+      
+      if (currentContent.length < minContentLength) {
+        try {
+          this.logService.debug(`Récupération du contenu complet pour ${item.title}`);
+          enhancedItem = await this.contentEnhancer.enhanceArticleContent(enhancedItem);
+        } catch (error) {
+          this.logService.warn(
+            `Impossible de récupérer le contenu complet pour ${item.title}`,
+            { error }
+          );
+        }
+      }
+
+      const content = this.renderTemplate(
+        feed.settings.template || this.getDefaultTemplate(), 
+        enhancedItem
+      );
+      
       await this.plugin.app.vault.create(filePath, content);
     }
   }
@@ -126,12 +164,17 @@ export class SyncService {
     return await this.plugin.app.vault.adapter.exists(path)
   }
 
-  private renderTemplate(template: string, item: RSSItem): string {
+  private renderTemplate(template: string, item: any): string {
     return template
       .replace(/{{title}}/g, item.title)
       .replace(/{{description}}/g, item.description || '')
+      .replace(/{{content}}/g, item.content || item.description || '')
       .replace(/{{link}}/g, item.link)
       .replace(/{{pubDate}}/g, item.pubDate)
+      .replace(/{{author}}/g, item.author || '')
+      .replace(/{{readingTime}}/g, item.readingTime ? `Temps de lecture : ${item.readingTime} min` : '')
+      .replace(/{{siteName}}/g, item.siteName || '')
+      .replace(/{{excerpt}}/g, item.excerpt || '')
   }
 
   private sanitizeFileName(fileName: string): string {

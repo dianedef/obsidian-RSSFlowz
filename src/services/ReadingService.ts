@@ -162,47 +162,69 @@ export class ReadingService {
     }
   }
 
-  async navigateToArticle(file: TFile): Promise<void> {
+  async navigateToArticle(target: TFile | string): Promise<void> {
     try {
-      this.currentState.currentFile = file
-      this.currentState.lastFile = file
-      this.logService.debug('Navigation vers article', { path: file.path })
+      if (target instanceof TFile) {
+        // Cas d'un fichier TFile
+        this.currentState.currentFile = target;
+        this.currentState.lastFile = target;
+        this.logService.debug('Navigation vers article', { path: target.path });
+      } else {
+        // Cas d'un lien d'article
+        const settings = this.settingsService.getSettings();
+        const currentFeed = settings.currentFeed;
+        if (!currentFeed) return;
+
+        const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed);
+        if (!feed) return;
+
+        await this.settingsService.updateSettings({
+          ...settings,
+          lastReadArticle: target
+        });
+        await this.navigateArticles('current');
+      }
     } catch (error) {
-      this.logService.error('Erreur lors de la navigation vers l\'article', { error })
-      throw error
+      this.logService.error('Erreur lors de la navigation vers l\'article', { error });
+      throw error;
     }
   }
 
-  async navigateArticles(direction: 'next' | 'previous'): Promise<void> {
+  async navigateArticles(direction: 'next' | 'previous' | 'current'): Promise<void> {
     if (!this.currentState.isReading) {
-      this.logService.warn('Pas en mode lecture')
-      return
+      this.logService.warn('Pas en mode lecture');
+      return;
     }
 
-    const currentFile = this.currentState.currentFile
+    const currentFile = this.currentState.currentFile;
     if (!currentFile) {
-      this.logService.warn('Aucun article actif')
-      return
+      this.logService.warn('Aucun article actif');
+      return;
     }
 
-    const currentPath = currentFile.path
-    const feedFolder = currentPath.split('/')[1] // Exemple: RSS/tech/article.md -> tech
+    const currentPath = currentFile.path;
+    const feedFolder = currentPath.split('/')[1]; // Exemple: RSS/tech/article.md -> tech
     
     const files = this.plugin.app.vault.getFiles()
       .filter(file => file.path.startsWith(`RSS/${feedFolder}/`))
-      .sort((a, b) => b.stat.mtime - a.stat.mtime)
+      .sort((a, b) => b.stat.mtime - a.stat.mtime);
 
-    const currentIndex = files.findIndex(file => file.path === currentPath)
+    const currentIndex = files.findIndex(file => file.path === currentPath);
     if (currentIndex === -1) {
-      this.logService.warn('Article actuel non trouvé dans le feed')
-      return
+      this.logService.warn('Article actuel non trouvé dans le feed');
+      return;
+    }
+
+    if (direction === 'current') {
+      await this.navigateToArticle(files[currentIndex]);
+      return;
     }
 
     const nextIndex = direction === 'next'
       ? (currentIndex + 1) % files.length
-      : (currentIndex - 1 + files.length) % files.length
+      : (currentIndex - 1 + files.length) % files.length;
 
-    await this.navigateToArticle(files[nextIndex])
+    await this.navigateToArticle(files[nextIndex]);
   }
 
   async markCurrentArticleAsRead(): Promise<void> {
@@ -239,21 +261,22 @@ export class ReadingService {
       for (const file of files.files) {
         try {
           const stat = await this.plugin.app.vault.adapter.stat(file);
-          if (stat.mtime < cutoffDate) {
+          if (stat && stat.mtime < cutoffDate) {
             await this.plugin.app.vault.adapter.remove(file);
-            this.logService.debug('Article supprimé', { path: file });
+            this.logService.debug('Article supprimé', { error: new Error(file) });
           }
         } catch (error) {
-          this.logService.error('Erreur lors du nettoyage de l\'article', { 
-            path: file,
-            error
-          });
+          if (error instanceof Error) {
+            this.logService.error('Erreur lors du nettoyage de l\'article', { error });
+          }
         }
       }
       
       this.logService.info('Nettoyage des anciens articles terminé');
     } catch (error) {
-      this.logService.error('Erreur lors du nettoyage des anciens articles', { error });
+      if (error instanceof Error) {
+        this.logService.error('Erreur lors du nettoyage des anciens articles', { error });
+      }
       throw error;
     }
   }
@@ -308,7 +331,10 @@ export class ReadingService {
     // Convertir les images en Markdown
     doc.querySelectorAll('img').forEach(img => {
       const markdown = `![](${img.src})`;
-      img.replaceWith(parser.parseFromString(markdown, 'text/html').body.textContent);
+      const textNode = document.createTextNode(markdown);
+      if (img.parentNode) {
+        img.parentNode.replaceChild(textNode, img);
+      }
     });
     
     // Supprimer les styles des balises p
@@ -317,7 +343,8 @@ export class ReadingService {
     });
     
     // Récupérer le texte nettoyé
-    return doc.body.textContent
+    const cleanedText = doc.body?.textContent || '';
+    return cleanedText
       .replace(/\r?\n|\r/g, ' ')  // Remplace les sauts de ligne par des espaces
       .replace(/\s+/g, ' ')       // Normalise les espaces multiples
       .replace(/<img.*?src="(.*?)".*?>/g, '![]($1)') // Convertit les images HTML en Markdown
@@ -347,13 +374,14 @@ export class ReadingService {
         // Créer un seul fichier pour tous les articles
         const content = filteredArticles.map(article => {
           const articleId = this.getArticleId(feed.url, article.link);
-          const isRead = settings.articleStates?.[articleId]?.read || false;
-          return `# ${this.cleanText(article.title)}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLien: ${article.link}\n\n${this.cleanText(article.content)}`;
+          const state = settings.articleStates?.[articleId];
+          const readStatus = state?.read ? '✓ Lu' : '◯ Non lu';
+          return `# ${this.cleanText(article.title)}\n\nStatut: ${readStatus}\nDate: ${article.date}\nLien: ${article.link}\n\n${this.cleanText(article.content)}`;
         }).join('\n\n---\n\n');
         
         const filePath = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}.md`;
         await this.plugin.app.vault.adapter.write(filePath, content);
-        this.logService.debug('Articles sauvegardés dans un fichier unique', { path: filePath });
+        this.logService.debug('Articles sauvegardés dans un fichier unique', { error: new Error(filePath) });
       } else {
         // Créer un fichier par article
         const feedFolder = `${groupFolder}/${feed.title.replace(/[\\/:*?"<>|]/g, '_')}`;
@@ -365,24 +393,23 @@ export class ReadingService {
         
         for (const article of filteredArticles) {
           const articleId = this.getArticleId(feed.url, article.link);
-          const isRead = settings.articleStates?.[articleId]?.read || false;
+          const state = settings.articleStates?.[articleId];
+          const readStatus = state?.read ? '✓ Lu' : '◯ Non lu';
           const fileName = `${feedFolder}/${this.cleanText(article.title).replace(/[\\/:*?"<>|]/g, '_')}.md`;
-          const content = `# ${this.cleanText(article.title)}\n\nStatut: ${isRead ? '✓ Lu' : '◯ Non lu'}\nDate: ${article.date}\nLien: ${article.link}\n\n${this.cleanText(article.content)}`;
+          const content = `# ${this.cleanText(article.title)}\n\nStatut: ${readStatus}\nDate: ${article.date}\nLien: ${article.link}\n\n${this.cleanText(article.content)}`;
           
           await this.plugin.app.vault.adapter.write(fileName, content);
-          this.logService.debug('Article sauvegardé', { path: fileName });
+          this.logService.debug('Article sauvegardé', { error: new Error(fileName) });
         }
       }
       
       this.logService.info('Articles sauvegardés avec succès', { 
-        feed: feed.title,
-        count: filteredArticles.length 
+        error: new Error(`${feed.title} (${filteredArticles.length} articles)`)
       });
     } catch (error) {
-      this.logService.error('Erreur lors de la sauvegarde des articles', { 
-        feed: feed.title,
-        error 
-      });
+      if (error instanceof Error) {
+        this.logService.error('Erreur lors de la sauvegarde des articles', { error });
+      }
       throw error;
     }
   }
@@ -391,13 +418,27 @@ export class ReadingService {
    * Extrait les informations d'un article à partir d'un fichier
    */
   private async parseArticleFromFile(file: TFile): Promise<Article> {
-    const content = await this.plugin.app.vault.read(file)
-    const articles = content.split('\n---\n')
-    const article = articles[0] // ou sélectionner l'article actif basé sur une certaine logique
+    const content = await this.plugin.app.vault.read(file);
+    const articles = content.split('\n---\n');
+    const article = articles[0]; // ou sélectionner l'article actif basé sur une certaine logique
     
-    const titleMatch = article.match(/# (.*)/)
-    const linkMatch = article.match(/Lien: (.*)/)
-    const dateMatch = article.match(/Date: (.*)/)
+    const titleMatch = article.match(/# (.*)/);
+    const linkMatch = article.match(/Lien: (.*)/);
+    const dateMatch = article.match(/Date: (.*)/);
+
+    // Mettre à jour l'état de lecture dans les articleStates si nécessaire
+    if (content.includes('#read')) {
+      const settings = this.settingsService.getSettings();
+      const articleId = this.getArticleId(file.path, linkMatch ? linkMatch[1] : '');
+      if (settings.articleStates) {
+        settings.articleStates[articleId] = {
+          ...settings.articleStates[articleId],
+          read: true,
+          lastUpdate: Date.now()
+        };
+        await this.settingsService.updateSettings(settings);
+      }
+    }
 
     return {
       title: titleMatch ? titleMatch[1] : 'Sans titre',
@@ -406,41 +447,46 @@ export class ReadingService {
       content: article,
       feedUrl: file.path,
       feedTitle: titleMatch ? titleMatch[1] : 'Sans titre',
-      path: file.path,
-      isRead: content.includes('#read')
-    }
+      path: file.path
+    };
   }
 
   async deleteCurrentArticle(): Promise<void> {
     if (!this.currentState.currentFile) {
-      this.logService.warn('Aucun article actif')
-      return
+      this.logService.warn('Aucun article actif');
+      return;
     }
 
     try {
-      const settings = this.settingsService.getSettings()
-      const currentFeed = settings.currentFeed
-      const lastReadArticle = settings.lastReadArticle
+      const settings = this.settingsService.getSettings();
+      const currentFeed = settings.currentFeed;
+      const lastReadArticle = settings.lastReadArticle;
 
       if (currentFeed && lastReadArticle) {
-        await this.markArticleAsDeleted(currentFeed, lastReadArticle)
+        await this.markArticleAsDeleted(currentFeed, lastReadArticle);
       }
 
-      const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed)
+      const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed);
       if (feed && feed.type === 'single') {
-        const contentEl = this.plugin.app.workspace.activeLeaf?.view.contentEl
-        if (contentEl) {
-          contentEl.empty()
+        const leaf = this.plugin.app.workspace.activeLeaf;
+        if (leaf?.view) {
+          const view = leaf.view as any;
+          // Vider le contenu de la vue si possible
+          if (view.containerEl && view.containerEl.empty) {
+            view.containerEl.empty();
+          }
         }
       } else {
-        await this.plugin.app.vault.delete(this.currentState.currentFile)
+        await this.plugin.app.vault.delete(this.currentState.currentFile);
       }
 
-      this.logService.info('Article supprimé', { path: this.currentState.currentFile.path })
-      await this.navigateArticles('next')
+      this.logService.info('Article supprimé', { error: new Error(this.currentState.currentFile.path) });
+      await this.navigateArticles('next');
     } catch (error) {
-      this.logService.error('Erreur lors de la suppression de l\'article', { error })
-      throw error
+      if (error instanceof Error) {
+        this.logService.error('Erreur lors de la suppression de l\'article', { error });
+      }
+      throw error;
     }
   }
 
@@ -457,25 +503,13 @@ export class ReadingService {
   }
 
   async refreshCurrentArticle(): Promise<void> {
-    const leaf = this.plugin.app.workspace.activeLeaf
-    if (leaf && leaf.view) {
-      await leaf.view.load()
+    const leaf = this.plugin.app.workspace.activeLeaf;
+    if (leaf) {
+      const view = leaf.view as any; // Type assertion nécessaire car le type exact n'est pas disponible
+      if (view && typeof view.load === 'function') {
+        await view.load();
+      }
     }
-  }
-
-  async navigateToArticle(articleLink: string): Promise<void> {
-    const settings = this.settingsService.getSettings()
-    const currentFeed = settings.currentFeed
-    if (!currentFeed) return
-
-    const feed = settings.feeds.find((f: FeedSettings) => f.url === currentFeed)
-    if (!feed) return
-
-    await this.settingsService.updateSettings({
-      ...settings,
-      lastReadArticle: articleLink
-    })
-    await this.navigateArticles('current')
   }
 
   async markArticleAsRead(feedUrl: string, articleLink: string): Promise<void> {
@@ -510,10 +544,6 @@ export class ReadingService {
       ...settings,
       articleStates
     })
-  }
-
-  private getArticleId(feedUrl: string, articleLink: string): string {
-    return `${feedUrl}::${articleLink}`
   }
 
   async updateFeedSelect(selectElement: HTMLSelectElement, currentFolder: string): Promise<void> {

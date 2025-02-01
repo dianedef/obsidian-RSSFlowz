@@ -1,5 +1,14 @@
 export type FetchFrequency = 'startup' | 'daily' | 'hourly';
 
+export type DigestMode = 'disabled' | 'daily' | 'weekly';
+
+export interface DigestSettings {
+	enabled: boolean;
+	mode: DigestMode;
+	template: string;
+	folderPath: string;
+}
+
 export interface PluginSettings {
 	feeds: any[];
 	groups: string[];
@@ -15,6 +24,7 @@ export interface PluginSettings {
 	currentFolder: string | null;
 	articleStates: Record<string, any>;
 	template: string;
+	digest: DigestSettings;
 }
 export const DEFAULT_SETTINGS: PluginSettings = {
 	feeds: [],
@@ -30,5 +40,20 @@ export const DEFAULT_SETTINGS: PluginSettings = {
 	currentFeed: null,
 	currentFolder: null,
 	articleStates: {},
-	template: '# {{title}}\n\n{{description}}\n\n{{link}}'
+	template: `# {{title}}
+
+{{excerpt}}
+
+{{content}}
+
+---
+Source : [{{siteName}}]({{link}})
+Auteur : {{author}}
+{{readingTime}}`,
+	digest: {
+		enabled: false,
+		mode: 'disabled',
+		template: '',
+		folderPath: ''
+	}
 }; 
