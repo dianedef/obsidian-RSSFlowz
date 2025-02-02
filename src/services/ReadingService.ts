@@ -251,36 +251,6 @@ export class ReadingService {
     }
   }
 
-  async cleanOldArticles(): Promise<void> {
-    try {
-      const settings = this.settingsService.getSettings();
-      const folder = settings.rssFolder;
-      const files = await this.plugin.app.vault.adapter.list(folder);
-      const cutoffDate = Date.now() - (settings.retentionDays * 86400000); // 86400000 = 24h * 60m * 60s * 1000ms
-
-      for (const file of files.files) {
-        try {
-          const stat = await this.plugin.app.vault.adapter.stat(file);
-          if (stat && stat.mtime < cutoffDate) {
-            await this.plugin.app.vault.adapter.remove(file);
-            this.logService.debug('Article supprimé', { error: new Error(file) });
-          }
-        } catch (error) {
-          if (error instanceof Error) {
-            this.logService.error('Erreur lors du nettoyage de l\'article', { error });
-          }
-        }
-      }
-      
-      this.logService.info('Nettoyage des anciens articles terminé');
-    } catch (error) {
-      if (error instanceof Error) {
-        this.logService.error('Erreur lors du nettoyage des anciens articles', { error });
-      }
-      throw error;
-    }
-  }
-
   async getGroups(): Promise<string[]> {
     try {
       const data = await this.storageService.loadData();

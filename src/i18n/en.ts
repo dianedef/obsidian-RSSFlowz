@@ -11,7 +11,8 @@ export const en = {
     },
     rssFolder: {
       name: 'RSS Folder',
-      desc: 'Folder where articles will be saved'
+      desc: 'Folder where articles will be saved',
+      updated: 'RSS folder updated'
     },
     fetchFrequency: {
       name: 'Update Frequency',
@@ -63,8 +64,12 @@ export const en = {
       },
       delete: {
         button: 'Delete',
-        confirm: 'Are you sure you want to delete this group?',
-        success: 'Group deleted: {group}'
+        confirm: 'Delete Group',
+        confirmMessage: 'Are you sure you want to delete the group "{group}"?',
+        warning: 'Warning: All articles in this group will also be deleted!',
+        success: 'Group deleted: {group}',
+        error: 'Error deleting group',
+        cancel: 'Cancel'
       },
       none: 'No group'
     },
@@ -82,7 +87,9 @@ export const en = {
       },
       group: {
         name: 'Group',
-        none: 'No group',
+        desc: 'Choose a group for this feed',
+        noGroup: 'No group',
+        success: 'Feed moved to group: {group}',
         error: 'Error changing group'
       },
       summarize: {

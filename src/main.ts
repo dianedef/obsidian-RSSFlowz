@@ -93,11 +93,7 @@ export default class RSSReaderPlugin extends Plugin {
 			this.stylesService.register();
 
 			// Chargement des paramètres et initialisation des dossiers
-			await this.settingsService.loadSettings();
-			await this.fileService.initializeFolders(
-				this.settingsService.getSettings().rssFolder,
-				this.settingsService.getSettings().groups || []
-			);
+			await this.settingsService.loadSettings(true);
 
 			// Ajout des boutons dans la barre d'outils
 			this.addRibbonIcon('refresh-cw', this.t('ribbons.refresh.tooltip'), async () => {

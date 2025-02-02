@@ -63,16 +63,23 @@ export class SyncService {
       this.logService.debug(`Synchronisation du feed ${feed.settings.title}`);
       const rssFeed = await this.rssService.fetchFeed(feed.settings.url, feed);
       const data = await this.storageService.loadData();
-      const { maxItemsPerFeed } = data.settings;
+      const { maxArticles, retentionDays } = data.settings;
       
       const lastUpdate = new Date(feed.lastUpdate || 0);
       const newItems = feed.settings.filterDuplicates
         ? rssFeed.items.filter(item => new Date(item.pubDate) > lastUpdate)
         : rssFeed.items;
 
-      const itemsToProcess = newItems.slice(0, maxItemsPerFeed);
+      // Limiter le nombre d'articles selon le paramètre maxArticles
+      const itemsToProcess = newItems.slice(0, maxArticles);
       
+      // Traiter les nouveaux articles
       await this.processItems(itemsToProcess, feed);
+      
+      // Nettoyer les anciens articles si nécessaire
+      if (retentionDays > 0) {
+        await this.cleanOldArticles(feed, retentionDays);
+      }
       
       feed.lastUpdate = new Date().toISOString();
       feed.lastSuccessfulFetch = Date.now();
@@ -80,7 +87,7 @@ export class SyncService {
       
       await this.saveUpdatedFeed(feed);
       
-      this.logService.debug(`Feed ${feed.settings.title} synchronisé avec succès`);
+      this.logService.debug(`Feed ${feed.settings.title} synchronisé avec succès (${itemsToProcess.length} articles)`);
     } catch (error) {
       const syncError = error instanceof Error 
         ? createSyncError(SyncErrorCode.SYNC_FAILED, error.message, feed.id)
@@ -99,50 +106,83 @@ export class SyncService {
   private async processItems(items: RSSItem[], feed: FeedData): Promise<void> {
     await this.ensureFolder(feed.settings.folder);
 
-    for (const item of items) {
-      const fileName = this.sanitizeFileName(`${item.title}.md`);
-      const filePath = `${feed.settings.folder}/${fileName}`;
-
+    if (feed.settings.type === 'single') {
+      // Mode fichier unique : tous les articles dans un seul fichier
+      const filePath = `${feed.settings.folder}/${feed.settings.title}.md`;
+      let newContent = '';
+      
+      for (const item of items) {
+        let enhancedItem = await this.enhanceItem(item, feed);
+        newContent += this.renderTemplate(
+          feed.settings.template || this.getSingleFileTemplate(),
+          enhancedItem
+        ) + '\n\n---\n\n';
+      }
+      
       if (await this.fileExists(filePath)) {
-        continue;
+        // Récupérer le contenu existant et ajouter les nouveaux articles à la fin
+        const existingContent = await this.plugin.app.vault.adapter.read(filePath);
+        await this.plugin.app.vault.adapter.write(
+          filePath,
+          existingContent + newContent
+        );
+      } else {
+        // Créer le fichier avec un en-tête et les nouveaux articles
+        const content = `# ${feed.settings.title}\n\n${newContent}`;
+        await this.plugin.app.vault.create(filePath, content);
       }
+    } else {
+      // Mode fichiers multiples : un fichier par article
+      for (const item of items) {
+        const fileName = this.sanitizeFileName(`${item.title}.md`);
+        const filePath = `${feed.settings.folder}/${fileName}`;
 
-      let enhancedItem = {
-        title: item.title,
-        link: item.link,
-        pubDate: new Date(item.pubDate || Date.now()),
-        content: item.content,
-        description: item.description,
-        feed: feed.settings.title,
-        isRead: false,
-        isFavorite: false,
-        author: item.author,
-        tags: item.categories
-      };
-
-      // N'utiliser Readability que si le contenu est vide ou trop court
-      const minContentLength = 500; // Minimum 500 caractères
-      const currentContent = item.content || item.description || '';
-      
-      if (currentContent.length < minContentLength) {
-        try {
-          this.logService.debug(`Récupération du contenu complet pour ${item.title}`);
-          enhancedItem = await this.contentEnhancer.enhanceArticleContent(enhancedItem);
-        } catch (error) {
-          this.logService.warn(
-            `Impossible de récupérer le contenu complet pour ${item.title}`,
-            { error }
-          );
+        if (await this.fileExists(filePath)) {
+          continue;
         }
-      }
 
-      const content = this.renderTemplate(
-        feed.settings.template || this.getDefaultTemplate(), 
-        enhancedItem
-      );
-      
-      await this.plugin.app.vault.create(filePath, content);
+        let enhancedItem = await this.enhanceItem(item, feed);
+        const content = this.renderTemplate(
+          feed.settings.template || this.getDefaultTemplate(),
+          enhancedItem
+        );
+        
+        await this.plugin.app.vault.create(filePath, content);
+      }
     }
+  }
+
+  private async enhanceItem(item: RSSItem, feed: FeedData): Promise<any> {
+    let enhancedItem = {
+      title: item.title,
+      link: item.link,
+      pubDate: new Date(item.pubDate || Date.now()),
+      content: item.content,
+      description: item.description,
+      feed: feed.settings.title,
+      isRead: false,
+      isFavorite: false,
+      author: item.author,
+      tags: item.categories
+    };
+
+    // N'utiliser Readability que si le contenu est vide ou trop court
+    const minContentLength = 500; // Minimum 500 caractères
+    const currentContent = item.content || item.description || '';
+    
+    if (currentContent.length < minContentLength) {
+      try {
+        this.logService.debug(`Récupération du contenu complet pour ${item.title}`);
+        enhancedItem = await this.contentEnhancer.enhanceArticleContent(enhancedItem);
+      } catch (error) {
+        this.logService.warn(
+          `Impossible de récupérer le contenu complet pour ${item.title}`,
+          { error }
+        );
+      }
+    }
+
+    return enhancedItem;
   }
 
   private async saveUpdatedFeed(feed: FeedData): Promise<void> {
@@ -193,5 +233,42 @@ export class SyncService {
       'Source: {{link}}',
       'Date: {{pubDate}}'
     ].join('\n')
+  }
+
+  private getSingleFileTemplate(): string {
+    return [
+      '## {{title}}',
+      '',
+      '{{description}}',
+      '',
+      'Source: {{link}}',
+      'Date: {{pubDate}}'
+    ].join('\n')
+  }
+
+  private async cleanOldArticles(feed: FeedData, retentionDays: number): Promise<void> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+
+    const files = await this.plugin.app.vault.getFiles();
+    const feedPath = feed.settings.folder;
+
+    for (const file of files) {
+      // Vérifier si le fichier appartient à ce feed
+      if (!file.path.startsWith(feedPath)) continue;
+
+      const stat = await this.plugin.app.vault.adapter.stat(file.path);
+      if (!stat) continue;
+
+      const fileDate = new Date(stat.mtime);
+      if (fileDate < cutoffDate) {
+        try {
+          await this.plugin.app.vault.delete(file);
+          this.logService.debug(`Article supprimé car trop ancien : ${file.path}`);
+        } catch (error) {
+          this.logService.warn(`Impossible de supprimer l'article : ${file.path}`, { error });
+        }
+      }
+    }
   }
 } 

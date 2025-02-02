@@ -39,7 +39,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
       containerEl.empty();
 
       // Forcer le rechargement des données depuis le stockage
-      await this.plugin.settingsService.loadSettings();
+      await this.plugin.settingsService.loadSettings(false);
       
       // Récupérer les settings actuels
       const settings = this.plugin.settingsService.getSettings()
@@ -387,28 +387,37 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
               .setButtonText(this.plugin.t('settings.groups.delete.button'))
               .setWarning()
               .onClick(async () => {
-                try {
-                  const storageData = await this.plugin.loadData() as StorageData;
-                  const groupPath = `${settings.rssFolder}/${group}`;
+                const confirmation = await this.confirmDelete(group, true);
+                if (confirmation) {
+                  try {
+                    const storageData = await this.plugin.loadData() as StorageData;
+                    const groupPath = `${settings.rssFolder}/${group}`;
 
-                  // Déplacer les feeds de ce groupe vers "Sans groupe"
-                  storageData.feeds.forEach(feed => {
-                    if (feed.settings.group === group) {
-                      feed.settings.group = '';
+                    // Déplacer les feeds de ce groupe vers "Sans groupe"
+                    for (const feed of storageData.feeds) {
+                      if (feed.settings.group === group) {
+                        feed.settings.group = '';
+                        // Recréer le dossier du feed à la racine si nécessaire
+                        const newPath = `${settings.rssFolder}/${feed.settings.title}`;
+                        await this.plugin.fileService.ensureFolder(newPath);
+                      }
                     }
-                  });
 
-                  // Mettre à jour les paramètres
-                  settings.groups = settings.groups.filter(g => g !== group);
-                  await this.plugin.settingsService.updateSettings(settings);
-                  await this.plugin.saveData(storageData);
+                    // Supprimer le dossier du groupe
+                    await this.plugin.fileService.removeFolder(groupPath);
 
-                  // Rafraîchir l'affichage
-                  this.display();
-                  new Notice(this.plugin.t('settings.groups.delete.success').replace('{group}', group));
-                } catch (error) {
-                  console.error('Erreur lors de la suppression du groupe: ${group}', error);
-                  new Notice(this.plugin.t('settings.groups.delete.error'));
+                    // Mettre à jour les paramètres
+                    settings.groups = settings.groups.filter(g => g !== group);
+                    await this.plugin.settingsService.updateSettings(settings);
+                    await this.plugin.saveData(storageData);
+
+                    // Rafraîchir l'affichage
+                    this.display();
+                    new Notice(this.plugin.t('settings.groups.delete.success').replace('{group}', group));
+                  } catch (error) {
+                    console.error(`Erreur lors de la suppression du groupe: ${group}`, error);
+                    new Notice(this.plugin.t('settings.groups.delete.error'));
+                  }
                 }
               }))
         }
@@ -592,34 +601,55 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     }
   }
 
-  async confirmDelete(feedTitle: string): Promise<boolean> {
+  async confirmDelete(name: string, isGroup: boolean = false): Promise<boolean> {
     return new Promise((resolve) => {
-      const modal = new Modal(this.app)
-      modal.titleEl.setText(this.plugin.t('settings.feeds.delete.confirm'))
+      const modal = new Modal(this.app);
+      modal.titleEl.setText(
+        isGroup 
+          ? this.plugin.t('settings.groups.delete.confirm')
+          : this.plugin.t('settings.feeds.delete.confirm')
+      );
       
-      modal.contentEl.empty()
+      modal.contentEl.empty();
       modal.contentEl.createEl("p", { 
-        text: this.plugin.t('settings.feeds.delete.confirmMessage').replace('{feedTitle}', feedTitle) 
-      })
+        text: isGroup
+          ? this.plugin.t('settings.groups.delete.confirmMessage').replace('{group}', name)
+          : this.plugin.t('settings.feeds.delete.confirmMessage').replace('{feedTitle}', name)
+      });
+      
+      if (isGroup) {
+        modal.contentEl.createEl("p", {
+          text: this.plugin.t('settings.groups.delete.warning'),
+          cls: 'mod-warning'
+        });
+      }
       
       new Setting(modal.contentEl)
         .addButton(btn => btn
-          .setButtonText(this.plugin.t('settings.feeds.delete.cancel'))
+          .setButtonText(
+            isGroup
+              ? this.plugin.t('settings.groups.delete.cancel')
+              : this.plugin.t('settings.feeds.delete.cancel')
+          )
           .onClick(() => {
-          modal.close()
-          resolve(false)
+            modal.close();
+            resolve(false);
           }))
         .addButton(btn => btn
-          .setButtonText(this.plugin.t('settings.feeds.delete.confirm'))
+          .setButtonText(
+            isGroup
+              ? this.plugin.t('settings.groups.delete.confirm')
+              : this.plugin.t('settings.feeds.delete.confirm')
+          )
           .setWarning()
           .onClick(() => {
-          modal.close()
-          resolve(true)
-        })
-        )
+            modal.close();
+            resolve(true);
+          })
+        );
       
-      modal.open()
-    })
+      modal.open();
+    });
   }
 
   async createNewGroup(): Promise<string | null> {
@@ -674,11 +704,12 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     };
 
     // Créer le titre et l'URL
-    const titleEl = headerContainer.createEl('div', { 
+    const infoContainer = headerContainer.createDiv('rssflowz-feed-info');
+    const titleEl = infoContainer.createEl('div', { 
       text: feed.settings?.title || 'Sans titre',
       cls: 'rssflowz-feed-title'
     });
-    const urlEl = headerContainer.createEl('div', { 
+    const urlEl = infoContainer.createEl('div', { 
       text: feed.settings?.url || '',
       cls: 'rssflowz-feed-url'
     });
@@ -699,31 +730,8 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
   }
 
   private createFeedButtons(buttonContainer: HTMLElement, feed: FeedData): void {
+    // Ajouter le dropdown de groupe
     new Setting(buttonContainer)
-      .addExtraButton(button => {
-        button
-          .setIcon(feed.settings?.status === 'active' ? 'check-circle' : 'circle')
-          .setTooltip(feed.settings?.status === 'active' ? 'Actif' : 'Pausé')
-          .onClick(async () => {
-            const newStatus = feed.settings?.status === 'active' ? 'paused' : 'active';
-            await this.plugin.updateFeed(feed, { settings: { ...feed.settings, status: newStatus } });
-            button.setIcon(newStatus === 'active' ? 'check-circle' : 'circle');
-            new Notice(
-              this.plugin.t('notices.settings.aiToggled')
-                .replace('{feature}', this.plugin.t('settings.feeds.status.name'))
-                .replace('{status}', newStatus === 'active' ? '✅' : '❌')
-                .replace('{title}', feed.settings?.title || 'Sans titre')
-            );
-          });
-        return button;
-      });
-  }
-
-  private createFeedSettings(optionsContainer: HTMLElement, feed: FeedData): void {
-    // Sélection du groupe
-    const groupSetting = new Setting(optionsContainer)
-      .setName(this.plugin.t('settings.feeds.group.name'))
-      .setDesc(this.plugin.t('settings.feeds.group.desc'))
       .addDropdown(dropdown => {
         // Ajouter l'option "Sans groupe"
         dropdown.addOption('', this.plugin.t('settings.feeds.group.noGroup'));
@@ -748,6 +756,28 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
         });
       });
 
+    // Bouton d'activation/désactivation
+    new Setting(buttonContainer)
+      .addExtraButton(button => {
+        button
+          .setIcon(feed.settings?.status === 'active' ? 'check-circle' : 'circle')
+          .setTooltip(feed.settings?.status === 'active' ? 'Actif' : 'Pausé')
+          .onClick(async () => {
+            const newStatus = feed.settings?.status === 'active' ? 'paused' : 'active';
+            await this.plugin.updateFeed(feed, { settings: { ...feed.settings, status: newStatus } });
+            button.setIcon(newStatus === 'active' ? 'check-circle' : 'circle');
+            new Notice(
+              this.plugin.t('notices.settings.aiToggled')
+                .replace('{feature}', this.plugin.t('settings.feeds.status.name'))
+                .replace('{status}', newStatus === 'active' ? '✅' : '❌')
+                .replace('{title}', feed.settings?.title || 'Sans titre')
+            );
+          });
+        return button;
+      });
+  }
+
+  private createFeedSettings(optionsContainer: HTMLElement, feed: FeedData): void {
     // Paramètre Réécriture
     const rewriteSetting = new Setting(optionsContainer)
       .setName(this.plugin.t('settings.feeds.rewrite.name'))

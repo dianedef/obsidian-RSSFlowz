@@ -16,7 +16,7 @@ describe('StorageService', () => {
       settings: {
         defaultUpdateInterval: 60,
         defaultFolder: 'RSS',
-        maxItemsPerFeed: 50,
+        maxArticles: 50,
         template: '# {{title}}\n\n{{description}}\n\n{{link}}'
       }
     }))
@@ -56,7 +56,7 @@ describe('StorageService', () => {
         settings: {
           defaultUpdateInterval: 60,
           defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
+          maxArticles: 50,
           template: '# {{title}}\n\n{{description}}\n\n{{link}}'
         }
       })
@@ -75,7 +75,7 @@ describe('StorageService', () => {
         settings: {
           defaultUpdateInterval: 120,
           defaultFolder: 'Custom',
-          maxItemsPerFeed: 100,
+          maxArticles: 100,
           template: 'Custom template'
         }
       }
@@ -95,7 +95,7 @@ describe('StorageService', () => {
         settings: {
           defaultUpdateInterval: 60,
           defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
+          maxArticles: 50,
           template: 'Test template'
         }
       }

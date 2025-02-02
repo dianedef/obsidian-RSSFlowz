@@ -153,10 +153,15 @@ export class RegisterStyles {
                cursor: pointer;
                background: var(--background-primary);
                border-radius: 4px;
+               display: flex;
+               justify-content: space-between;
+               align-items: center;
+               flex-direction: row-reverse;
             }
 
-            .rssflowz-feed-header:hover {
-               background: var(--background-primary-alt);
+            .rssflowz-feed-info {
+               flex: 1;
+               text-align: left;
             }
 
             .rssflowz-feed-title {
@@ -177,7 +182,34 @@ export class RegisterStyles {
             }
 
             .rssflowz-feed-buttons {
-               float: right;
+               display: flex;
+               gap: 8px;
+               align-items: center;
+               margin-right: 12px;
+               margin-left: 0;
+            }
+
+            .rssflowz-feed-buttons .setting-item {
+               border: none;
+               padding: 0;
+               margin: 0;
+            }
+
+            .rssflowz-feed-buttons .setting-item-control {
+               padding: 0;
+            }
+
+            .rssflowz-feed-buttons select {
+               height: 24px;
+               padding: 0 4px;
+               border-radius: 4px;
+               background: var(--interactive-normal);
+               border: 1px solid var(--background-modifier-border);
+               color: var(--text-normal);
+            }
+
+            .rssflowz-feed-buttons select:hover {
+               background: var(--interactive-hover);
             }
 
             .rssflowz-feed-error-icon {

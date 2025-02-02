@@ -11,7 +11,8 @@ export const fr = {
     },
     rssFolder: {
       name: 'Dossier RSS',
-      desc: 'Dossier où seront sauvegardés les articles'
+      desc: 'Dossier où seront sauvegardés les articles',
+      updated: 'Dossier RSS mis à jour'
     },
     fetchFrequency: {
       name: 'Fréquence de mise à jour',
@@ -64,7 +65,11 @@ export const fr = {
       delete: {
         button: 'Supprimer',
         confirm: 'Êtes-vous sûr de vouloir supprimer ce groupe ?',
-        success: 'Groupe supprimé : {group}'
+        confirmMessage: 'Êtes-vous sûr de vouloir supprimer le groupe "{group}" ?',
+        warning: 'Attention : Tous les articles de ce groupe seront également supprimés !',
+        success: 'Groupe supprimé : {group}',
+        error: 'Erreur lors de la suppression du groupe',
+        cancel: 'Annuler'
       },
       none: 'Sans groupe'
     },
@@ -82,7 +87,9 @@ export const fr = {
       },
       group: {
         name: 'Groupe',
-        none: 'Sans groupe',
+        desc: 'Choisissez un groupe pour ce feed',
+        noGroup: 'Sans groupe',
+        success: 'Feed déplacé vers le groupe : {group}',
         error: 'Erreur lors du changement de groupe'
       },
       summarize: {

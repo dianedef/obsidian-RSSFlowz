@@ -35,7 +35,7 @@ describe("SchedulerService", () => {
 		settings: {
 			defaultUpdateInterval: 30,
 			defaultFolder: "RSS",
-			maxItemsPerFeed: 50,
+			maxArticles: 50,
 		},
 	};
 

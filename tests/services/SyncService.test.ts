@@ -150,7 +150,7 @@ describe('SyncService', () => {
         settings: {
           defaultUpdateInterval: 60,
           defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
+          maxArticles: 50,
           template: '# {{title}}\n\n{{description}}\n\n{{link}}'
         }
       })
@@ -179,7 +179,7 @@ describe('SyncService', () => {
         settings: {
           defaultUpdateInterval: 60,
           defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
+          maxArticles: 50,
           template: '# {{title}}\n\n{{description}}\n\n{{link}}'
         }
       })
@@ -206,7 +206,7 @@ describe('SyncService', () => {
         settings: {
           defaultUpdateInterval: 60,
           defaultFolder: 'RSS',
-          maxItemsPerFeed: 50,
+          maxArticles: 50,
           template: '# {{title}}\n\n{{description}}\n\n{{link}}'
         }
       })

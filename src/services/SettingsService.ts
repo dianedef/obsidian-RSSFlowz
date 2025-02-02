@@ -20,7 +20,14 @@ export class SettingsService {
       this.onReadingModeChange = handler;
    }
 
-   async loadSettings(): Promise<void> {
+   private sanitizeFileName(fileName: string): string {
+      return fileName
+         .replace(/[*"\\/<>:|?]/g, '-') // Remplacer les caractères interdits par des tirets
+         .replace(/\s+/g, ' ')          // Normaliser les espaces
+         .trim();                       // Supprimer les espaces en début et fin
+   }
+
+   async loadSettings(initializeFolders: boolean = false): Promise<void> {
       if (this.isLoading) return;
       
       try {
@@ -37,6 +44,53 @@ export class SettingsService {
          };
 
          this.logService.debug('Settings après fusion:', { settings: this.settings });
+
+         // Ne recréer les dossiers que si initializeFolders est true
+         if (initializeFolders) {
+            // Vérifier et recréer le dossier RSS s'il n'existe pas
+            const rssFolder = this.settings.rssFolder;
+            if (!(await this.plugin.app.vault.adapter.exists(rssFolder))) {
+               await this.plugin.app.vault.createFolder(rssFolder);
+               this.logService.info('Dossier RSS recréé:', { folder: rssFolder });
+            }
+
+            // Vérifier et recréer les dossiers des groupes
+            for (const group of this.settings.groups) {
+               const sanitizedGroup = this.sanitizeFileName(group);
+               const groupPath = `${rssFolder}/${sanitizedGroup}`;
+               if (!(await this.plugin.app.vault.adapter.exists(groupPath))) {
+                  await this.plugin.app.vault.createFolder(groupPath);
+                  this.logService.info('Dossier de groupe recréé:', { folder: groupPath });
+               }
+            }
+
+            // Vérifier et recréer les dossiers des feeds
+            if (savedData?.feeds) {
+               for (const feed of savedData.feeds) {
+                  const sanitizedTitle = this.sanitizeFileName(feed.settings.title);
+                  const sanitizedGroup = feed.settings.group ? this.sanitizeFileName(feed.settings.group) : '';
+                  
+                  if (feed.settings.type === 'multiple') {
+                     const feedPath = sanitizedGroup 
+                        ? `${rssFolder}/${sanitizedGroup}/${sanitizedTitle}` 
+                        : `${rssFolder}/${sanitizedTitle}`;
+                     if (!(await this.plugin.app.vault.adapter.exists(feedPath))) {
+                        await this.plugin.app.vault.createFolder(feedPath);
+                        this.logService.info('Dossier de feed recréé:', { folder: feedPath });
+                     }
+                  } else {
+                     // Pour les feeds en mode single, vérifier le fichier unique
+                     const filePath = sanitizedGroup 
+                        ? `${rssFolder}/${sanitizedGroup}/${sanitizedTitle}.md` 
+                        : `${rssFolder}/${sanitizedTitle}.md`;
+                     if (!(await this.plugin.app.vault.adapter.exists(filePath))) {
+                        await this.plugin.app.vault.create(filePath, `# ${feed.settings.title}\n\n`);
+                        this.logService.info('Fichier de feed recréé:', { file: filePath });
+                     }
+                  }
+               }
+            }
+         }
 
          // Mise à jour du mode lecture si nécessaire
          if (this.settings.readingMode && this.onReadingModeChange) {
