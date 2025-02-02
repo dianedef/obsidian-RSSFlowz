@@ -1,6 +1,6 @@
 import { Plugin, requestUrl, Notice } from 'obsidian'
 import { StorageData } from '../types'
-import { PluginSettings } from '../types/settings'
+import { PluginSettings, FeedSettings } from '../types/settings'
 
 export class StorageService {
   private static readonly STORAGE_KEY = 'obsidian-rss-reader'
@@ -8,17 +8,16 @@ export class StorageService {
   constructor(private plugin: Plugin) {}
 
   async loadData(): Promise<StorageData> {
-    const data = await this.plugin.loadData() as StorageData | null
-    return this.initializeData(data)
+    const rawData = await this.plugin.loadData() as StorageData | null;
+    return this.initializeData(rawData);
   }
 
   async saveData(data: StorageData): Promise<void> {
-    await this.plugin.saveData(data)
+    await this.plugin.saveData(data);
   }
 
   private initializeData(data: StorageData | null): StorageData {
     const defaultSettings: Partial<PluginSettings> = {
-      feeds: [],
       groups: ['Défaut'],
       openaiKey: '',
       rssFolder: 'RSS',
@@ -41,12 +40,14 @@ export class StorageService {
       }
     }
 
+    const settings = {
+      ...defaultSettings,
+      ...data.settings
+    } as PluginSettings;
+
     return {
       feeds: data.feeds || [],
-      settings: {
-        ...defaultSettings,
-        ...data.settings
-      } as PluginSettings
+      settings: settings
     }
   }
 

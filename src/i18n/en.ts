@@ -64,7 +64,7 @@ export const en = {
       delete: {
         button: 'Delete',
         confirm: 'Are you sure you want to delete this group?',
-        success: 'Group deleted:'
+        success: 'Group deleted: {group}'
       },
       none: 'No group'
     },
@@ -73,23 +73,55 @@ export const en = {
       search: {
         placeholder: 'Search for a feed...'
       },
+      options: {
+        saveType: 'Save Type',
+        saveTypes: {
+          multiple: 'One file per article',
+          single: 'All articles in one file'
+        }
+      },
+      group: {
+        name: 'Group',
+        none: 'No group',
+        error: 'Error changing group'
+      },
+      summarize: {
+        name: 'Summarize articles',
+        desc: 'Use AI to generate article summaries',
+        error: 'OpenAI API key required for summaries'
+      },
+      rewrite: {
+        name: 'Rewrite articles',
+        desc: 'Use AI to rewrite articles',
+        error: 'OpenAI API key required for rewriting'
+      },
+      transcribe: {
+        name: 'Transcribe audio/video',
+        desc: 'Use AI to transcribe audio/video content',
+        error: 'OpenAI API key required for transcription'
+      },
       add: {
-        name: 'Add a Feed',
-        desc: 'Enter the URL of an RSS feed',
+        name: 'Add a feed',
+        desc: 'Enter an RSS feed URL',
         placeholder: 'RSS feed URL',
-        success: 'Feed added: {title}'
+        success: 'Feed added: {title}',
+        error: 'Error adding feed',
+        sslError: 'SSL error while connecting to feed',
+        fetching: 'Fetching articles for',
+        fetchError: 'Error fetching articles for'
       },
       deleteAll: {
-        name: 'Delete all feeds',
-        desc: 'Delete all feeds from your list',
         button: 'Delete all feeds',
+        success: 'All feeds have been deleted',
+        error: 'Error deleting feeds',
         confirm: 'Are you sure you want to delete these feeds?',
-        confirmMessage: 'Are you sure you want to delete these feeds?',
-        success: 'Feeds deleted:'
+        confirmMessage: 'Are you sure you want to delete these feeds?'
       },
       delete: {
         button: 'Delete',
-        success: 'Feed deleted: {title}'
+        success: 'Feed deleted: {title}',
+        confirm: 'Are you sure you want to delete this feed?',
+        confirmMessage: 'Are you sure you want to delete this feed?'
       }
     }
   },
@@ -154,6 +186,12 @@ export const en = {
       fetchError: 'Error fetching feed {title}',
       fetchSuccess: '{count} articles fetched for {title}',
       noArticles: 'No articles found for {title}'
+    },
+    settings: {
+      feedTypeChanged: 'Save type changed for {title}',
+      feedDeleted: 'Feed deleted: {title}',
+      aiToggled: '{feature} {status} for {title}',
+      feedMoved: 'Feed {title} moved to {group}'
     }
   },
   errors: {

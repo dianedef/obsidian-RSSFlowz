@@ -136,6 +136,81 @@ export class RegisterStyles {
             .rssflowz-reading-mode-active a:hover {
                text-decoration: underline;
             }
+
+            /* Styles pour la section des feeds dans les paramètres */
+            .rssflowz-feeds-container {
+               margin-top: 20px;
+            }
+
+            .rssflowz-feed-container {
+               margin-bottom: 8px;
+               border: 1px solid var(--background-modifier-border);
+               border-radius: 4px;
+            }
+
+            .rssflowz-feed-header {
+               padding: 8px 12px;
+               cursor: pointer;
+               background: var(--background-primary);
+               border-radius: 4px;
+            }
+
+            .rssflowz-feed-header:hover {
+               background: var(--background-primary-alt);
+            }
+
+            .rssflowz-feed-title {
+               font-size: 14px;
+               font-weight: 600;
+               color: var(--text-normal);
+               margin-bottom: 4px;
+            }
+
+            .rssflowz-feed-url {
+               font-size: 12px;
+               color: var(--text-muted);
+            }
+
+            .rssflowz-feed-options {
+               padding: 8px 12px;
+               border-top: 1px solid var(--background-modifier-border);
+            }
+
+            .rssflowz-feed-buttons {
+               float: right;
+            }
+
+            .rssflowz-feed-error-icon {
+               color: var(--text-error);
+            }
+
+            .rssflowz-search-container {
+               margin-bottom: 16px;
+            }
+
+            .rssflowz-feed-search-input {
+               width: 100%;
+               padding: 8px 12px;
+               border-radius: 4px;
+               border: 1px solid var(--background-modifier-border);
+               background: var(--background-primary);
+               color: var(--text-normal);
+            }
+
+            .rssflowz-feed-search-input:focus {
+               border-color: var(--interactive-accent);
+               outline: none;
+            }
+
+            /* Style pour les boutons d'avertissement */
+            .setting-item button.mod-warning {
+               color: white !important;
+            }
+
+            /* Animation pour le toggle des feeds */
+            .rssflowz-feed-container.rssflowz-collapsed .rssflowz-feed-options {
+               display: none;
+            }
          `
       }));
    }

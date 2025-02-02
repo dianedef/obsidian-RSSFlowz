@@ -1,0 +1,24 @@
+name: obsidian-rss-flowz
+appmap_dir: tmp/appmap
+language: typescript
+packages:
+  - path: src
+    exclude:
+      - node_modules
+      - .yarn
+      - dist
+  - path: src/services
+    # Tracer tous les services
+recorder_methods:
+  - class: OpmlService
+    methods:
+      - importOpml
+      - exportOpml
+  - class: StorageService
+    methods:
+      - loadData
+      - saveData
+  - class: RSSService
+    methods:
+      - fetchFeed
+      - parseFeedData

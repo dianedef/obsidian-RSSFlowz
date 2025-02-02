@@ -1,0 +1,116 @@
+[
+  {
+    "name": "services",
+    "type": "package",
+    "children": [
+      {
+        "type": "class",
+        "name": "LogService",
+        "children": [
+          {
+            "type": "function",
+            "name": "constructor",
+            "static": false,
+            "location": "src\\services\\LogService.ts:12"
+          },
+          {
+            "type": "function",
+            "name": "info",
+            "static": false,
+            "location": "src\\services\\LogService.ts:18"
+          },
+          {
+            "type": "function",
+            "name": "log",
+            "static": false,
+            "location": "src\\services\\LogService.ts:30"
+          }
+        ]
+      },
+      {
+        "type": "class",
+        "name": "OpmlService",
+        "children": [
+          {
+            "type": "function",
+            "name": "processOutline",
+            "static": true,
+            "location": "src\\services\\OpmlService.ts:112"
+          },
+          {
+            "type": "function",
+            "name": "constructor",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:12"
+          },
+          {
+            "type": "function",
+            "name": "importOpml",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:144"
+          },
+          {
+            "type": "function",
+            "name": "sanitizeXmlContent",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:272"
+          },
+          {
+            "type": "function",
+            "name": "parseOpmlDocument",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:290"
+          },
+          {
+            "type": "function",
+            "name": "showImportSummary",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:353"
+          },
+          {
+            "type": "function",
+            "name": "sanitizeUrl",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:90"
+          },
+          {
+            "type": "function",
+            "name": "extractFeedOutlines",
+            "static": false,
+            "location": "src\\services\\OpmlService.ts:98"
+          }
+        ]
+      },
+      {
+        "type": "class",
+        "name": "StorageService",
+        "children": [
+          {
+            "type": "function",
+            "name": "loadData",
+            "static": false,
+            "location": "src\\services\\StorageService.ts:10"
+          },
+          {
+            "type": "function",
+            "name": "saveData",
+            "static": false,
+            "location": "src\\services\\StorageService.ts:20"
+          },
+          {
+            "type": "function",
+            "name": "initializeData",
+            "static": false,
+            "location": "src\\services\\StorageService.ts:29"
+          },
+          {
+            "type": "function",
+            "name": "constructor",
+            "static": false,
+            "location": "src\\services\\StorageService.ts:8"
+          }
+        ]
+      }
+    ]
+  }
+]

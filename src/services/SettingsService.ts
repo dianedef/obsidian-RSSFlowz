@@ -6,6 +6,7 @@ import { StorageService } from './StorageService';
 export class SettingsService {
    private settings: PluginSettings;
    private onReadingModeChange?: (isReading: boolean) => Promise<void>;
+   private isLoading: boolean = false;
 
    constructor(
       private plugin: Plugin,
@@ -20,7 +21,10 @@ export class SettingsService {
    }
 
    async loadSettings(): Promise<void> {
+      if (this.isLoading) return;
+      
       try {
+         this.isLoading = true;
          const savedData = await this.storageService.loadData();
          this.logService.debug('Données chargées:', { data: savedData });
          
@@ -41,21 +45,36 @@ export class SettingsService {
       } catch (error) {
          this.logService.error('Erreur lors du chargement des paramètres', { error: error as Error });
          this.settings = { ...DEFAULT_SETTINGS };
+      } finally {
+         this.isLoading = false;
       }
    }
 
    async saveSettings(): Promise<void> {
+      if (this.isLoading) return;
+      
       try {
+         this.isLoading = true;
          const data = await this.storageService.loadData();
-         data.settings = this.settings;
-         await this.storageService.saveData(data);
-         this.logService.debug('Paramètres sauvegardés', { settings: this.settings });
+         
+         // Ne sauvegarder que si les paramètres ont changé
+         if (JSON.stringify(data.settings) !== JSON.stringify(this.settings)) {
+            await this.storageService.saveData({
+               feeds: data.feeds,
+               settings: this.settings
+            });
+            this.logService.debug('Paramètres sauvegardés', { settings: this.settings });
+         }
       } catch (error) {
          this.logService.error('Erreur lors de la sauvegarde des paramètres', { error: error as Error });
+      } finally {
+         this.isLoading = false;
       }
    }
 
    async updateSettings(partialSettings: Partial<PluginSettings>): Promise<void> {
+      if (this.isLoading) return;
+      
       const oldReadingMode = this.settings.readingMode;
       this.settings = {
          ...this.settings,

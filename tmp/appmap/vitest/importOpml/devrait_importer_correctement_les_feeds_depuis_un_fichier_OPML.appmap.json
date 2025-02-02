@@ -1,0 +1,1913 @@
+{
+  "events": [
+    {
+      "event": "call",
+      "id": 1,
+      "thread_id": 0,
+      "method_id": "constructor",
+      "static": true,
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "loadData",
+              "class": "Function"
+            },
+            {
+              "name": "saveData",
+              "class": "Function"
+            }
+          ],
+          "value": "{\n  loadData: [Function: spy] {\n    getMockName: [Function (anonymous)],\n    mockName: [Function (anonymous)],\n    mockClear: [Function (anonymous)],\n    mockReset: [Function (anonymous)],\n    mockRestore: [Function (anonymous)],\n    getMockImplementation: [Function (anonymous)],\n    mockImplementation: [Function (anonymous)],\n    mockImplementationOnce: [Function (anonymous)],\n    withImplementation: [Function: withImplementation],\n    mockReturnThis: [Function (anonymous)],\n    mockReturnValue: [Function (anonymous)],\n    mockReturnValueOnce: [Function (anonymous)],\n    mockResolvedValue: [Function (anonymous)],\n    mockResolvedValueOnce: [Function (anonymous)],\n    mockRejectedValue: [Function (anonymous)],\n    mockRejectedValueOnce: [Function (anonymous)]\n  },\n  saveData: [Function: spy] {\n    getMockName: [Function (anonymous)],\n    mockName: [Function (anonymous)],\n    mockClear: [Function (anonymous)],\n    mockReset: [Function (anonymous)],\n    mockRestore: [Function (anonymous)],\n    getMockImplementation: [Function (anonymous)],\n    mockImplementation: [Function (anonymous)],\n    mockImplementationOnce: [Function (anonymous)],\n    withImplementation: [Function: withImplementation],\n    mockReturnThis: [Function (anonymous)],\n    mockReturnValue: [Function (anonymous)],\n    mockReturnValueOnce: [Function (anonymous)],\n    mockResolvedValue: [Function (anonymous)],\n    mockResolvedValueOnce: [Function (anonymous)],\n    mockRejectedValue: [Function (anonymous)],\n    mockRejectedValueOnce: [Function (anonymous)]\n  }\n}",
+          "object_id": 1,
+          "name": "plugin"
+        }
+      ],
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 8
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 2,
+      "parent_id": 1,
+      "elapsed": 0.00008879999950295314
+    },
+    {
+      "event": "call",
+      "id": 3,
+      "thread_id": 0,
+      "method_id": "constructor",
+      "static": true,
+      "parameters": [
+        {
+          "class": "Console",
+          "value": "Console [console] {\n  log: [Function: log],\n  warn: [Function: warn],\n  error: [Function: error],\n  dir: [Function: dir],\n  time: [Function: time],\n  timeEnd: [Function: timeEnd],\n  timeLog: [Function: timeLog],\n  trace: [Function: trace],\n  assert: [Function: assert],\n  clear: [Function: clear],\n  count: [Function: count],\n  countReset: [Function: countReset],\n  group: [Function: group],\n  groupEnd: [Function: groupEnd],\n  table: [Function: table],\n  debug: [Function: debug],\n  info: [Function: info],\n  dirxml: [Function: dirxml],\n  groupCollapsed: [Function: groupCollapsed],\n  Console: [Function: Console]\n}",
+          "object_id": 2,
+          "name": "console"
+        }
+      ],
+      "defined_class": "LogService",
+      "path": "src\\services\\LogService.ts",
+      "lineno": 12
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 4,
+      "parent_id": 3,
+      "elapsed": 0.00004289999924367294
+    },
+    {
+      "event": "call",
+      "id": 5,
+      "thread_id": 0,
+      "method_id": "constructor",
+      "static": true,
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "loadData",
+              "class": "Function"
+            },
+            {
+              "name": "saveData",
+              "class": "Function"
+            }
+          ],
+          "value": "{\n  loadData: [Function: spy] {\n    getMockName: [Function (anonymous)],\n    mockName: [Function (anonymous)],\n    mockClear: [Function (anonymous)],\n    mockReset: [Function (anonymous)],\n    mockRestore: [Function (anonymous)],\n    getMockImplementation: [Function (anonymous)],\n    mockImplementation: [Function (anonymous)],\n    mockImplementationOnce: [Function (anonymous)],\n    withImplementation: [Function: withImplementation],\n    mockReturnThis: [Function (anonymous)],\n    mockReturnValue: [Function (anonymous)],\n    mockReturnValueOnce: [Function (anonymous)],\n    mockResolvedValue: [Function (anonymous)],\n    mockResolvedValueOnce: [Function (anonymous)],\n    mockRejectedValue: [Function (anonymous)],\n    mockRejectedValueOnce: [Function (anonymous)]\n  },\n  saveData: [Function: spy] {\n    getMockName: [Function (anonymous)],\n    mockName: [Function (anonymous)],\n    mockClear: [Function (anonymous)],\n    mockReset: [Function (anonymous)],\n    mockRestore: [Function (anonymous)],\n    getMockImplementation: [Function (anonymous)],\n    mockImplementation: [Function (anonymous)],\n    mockImplementationOnce: [Function (anonymous)],\n    withImplementation: [Function: withImplementation],\n    mockReturnThis: [Function (anonymous)],\n    mockReturnValue: [Function (anonymous)],\n    mockReturnValueOnce: [Function (anonymous)],\n    mockResolvedValue: [Function (anonymous)],\n    mockResolvedValueOnce: [Function (anonymous)],\n    mockRejectedValue: [Function (anonymous)],\n    mockRejectedValueOnce: [Function (anonymous)]\n  }\n}",
+          "object_id": 1,
+          "name": "plugin"
+        },
+        {
+          "class": "StorageService",
+          "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+          "object_id": 3,
+          "name": "storageService"
+        },
+        {
+          "class": "LogService",
+          "value": "LogService {\n  console: Console [console] {\n    log: [Function: log],\n    warn: [Function: warn],\n    error: [Function: error],\n    dir: [Function: dir],\n    time: [Function: time],\n    timeEnd: [Function: timeEnd],\n    timeLog: [Function: timeLog],\n    trace: [Function: trace],\n    assert: [Function: assert],\n    clear: [Function: clear],\n    count: [Function: count],\n    countReset: [Function: countReset],\n    group: [Function: group],\n    groupEnd: [Function: groupEnd],\n    table: [Function: table],\n    debug: [Function: debug],\n    info: [Function: info],\n    dirxml: [Function: dirxml],\n    groupCollapsed: [Function: groupCollapsed],\n    Console: [Function: Console]\n  },\n  logs: [],\n  maxLogs: 1000\n}",
+          "object_id": 4,
+          "name": "logService"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 12
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 6,
+      "parent_id": 5,
+      "elapsed": 0.00036980000004405156
+    },
+    {
+      "event": "call",
+      "id": 7,
+      "thread_id": 0,
+      "method_id": "importOpml",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' +\n  '        <opml version=\"2.0\">\\n' +\n  '          <head>\\n' +\n  '            <title>RSS Feeds Export</title>\\n' +\n  '          </head>\\n' +\n  '          <body>\\n' +\n  '            <outline text=\"Feeds\">\\n' +\n  '              <outline text=\"Test Feed\" title=\"Test Feed\" type=\"rss\" \\n' +\n  '                xmlUrl=\"https://example.com/feed.xml\" htmlUrl=\"https://example.com\"\\n' +\n  '                description=\"Test description\" category=\"Test Category\"\\n' +\n  '                status=\"active\" saveType=\"multiple\" />\\n' +\n  '            </outline>\\n' +\n  '          </body>\\n' +\n  '        </opml>'",
+          "name": "fileContent"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 144
+    },
+    {
+      "event": "call",
+      "id": 8,
+      "thread_id": 0,
+      "method_id": "sanitizeXmlContent",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' +\n  '        <opml version=\"2.0\">\\n' +\n  '          <head>\\n' +\n  '            <title>RSS Feeds Export</title>\\n' +\n  '          </head>\\n' +\n  '          <body>\\n' +\n  '            <outline text=\"Feeds\">\\n' +\n  '              <outline text=\"Test Feed\" title=\"Test Feed\" type=\"rss\" \\n' +\n  '                xmlUrl=\"https://example.com/feed.xml\" htmlUrl=\"https://example.com\"\\n' +\n  '                description=\"Test description\" category=\"Test Category\"\\n' +\n  '                status=\"active\" saveType=\"multiple\" />\\n' +\n  '            </outline>\\n' +\n  '          </body>\\n' +\n  '        </opml>'",
+          "name": "content"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 272
+    },
+    {
+      "event": "call",
+      "id": 9,
+      "thread_id": 0,
+      "method_id": "sanitizeUrl",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'https://example.com/feed.xml'",
+          "name": "url"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 90
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 10,
+      "parent_id": 9,
+      "return_value": {
+        "class": "String",
+        "value": "'https://example.com/feed.xml'"
+      },
+      "elapsed": 0.00010620000102790073
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 11,
+      "parent_id": 8,
+      "return_value": {
+        "class": "String",
+        "value": "'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' +\n  '        <opml version=\"2.0\">\\n' +\n  '          <head>\\n' +\n  '            <title>RSS Feeds Export</title>\\n' +\n  '          </head>\\n' +\n  '          <body>\\n' +\n  '            <outline text=\"Feeds\">\\n' +\n  '              <outline text=\"Test Feed\" title=\"Test Feed\" type=\"rss\" \\n' +\n  '                xmlUrl=\"https://example.com/feed.xml\" htmlUrl=\"https://example.com\"\\n' +\n  '                description=\"Test description\" category=\"Test Category\"\\n' +\n  '                status=\"active\" saveType=\"multiple\" />\\n' +\n  '            </outline>\\n' +\n  '          </body>\\n' +\n  '        </opml>'"
+      },
+      "elapsed": 0.0009344999998575076
+    },
+    {
+      "event": "call",
+      "id": 12,
+      "thread_id": 0,
+      "method_id": "parseOpmlDocument",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\\n' +\n  '        <opml version=\"2.0\">\\n' +\n  '          <head>\\n' +\n  '            <title>RSS Feeds Export</title>\\n' +\n  '          </head>\\n' +\n  '          <body>\\n' +\n  '            <outline text=\"Feeds\">\\n' +\n  '              <outline text=\"Test Feed\" title=\"Test Feed\" type=\"rss\" \\n' +\n  '                xmlUrl=\"https://example.com/feed.xml\" htmlUrl=\"https://example.com\"\\n' +\n  '                description=\"Test description\" category=\"Test Category\"\\n' +\n  '                status=\"active\" saveType=\"multiple\" />\\n' +\n  '            </outline>\\n' +\n  '          </body>\\n' +\n  '        </opml>'",
+          "name": "content"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 290
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 13,
+      "parent_id": 12,
+      "return_value": {
+        "class": "Object",
+        "properties": [
+          {
+            "name": "?xml",
+            "class": "Object",
+            "properties": [
+              {
+                "name": "@_version",
+                "class": "String"
+              },
+              {
+                "name": "@_encoding",
+                "class": "String"
+              }
+            ]
+          },
+          {
+            "name": "opml",
+            "class": "Object",
+            "properties": [
+              {
+                "name": "head",
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "title",
+                    "class": "String"
+                  }
+                ]
+              },
+              {
+                "name": "body",
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "outline",
+                    "class": "Object",
+                    "properties": [
+                      {
+                        "name": "outline",
+                        "class": "Object",
+                        "properties": [
+                          {
+                            "name": "@_text",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_title",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_type",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_xmlUrl",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_htmlUrl",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_description",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_category",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_status",
+                            "class": "String"
+                          },
+                          {
+                            "name": "@_saveType",
+                            "class": "String"
+                          }
+                        ]
+                      },
+                      {
+                        "name": "@_text",
+                        "class": "String"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "@_version",
+                "class": "String"
+              }
+            ]
+          }
+        ],
+        "value": "{\n  '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },\n  opml: { head: [Object], body: [Object], '@_version': '2.0' }\n}",
+        "object_id": 6
+      },
+      "elapsed": 0.0029943999979877844
+    },
+    {
+      "event": "call",
+      "id": 14,
+      "thread_id": 0,
+      "method_id": "extractFeedOutlines",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "?xml",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "@_version",
+                  "class": "String"
+                },
+                {
+                  "name": "@_encoding",
+                  "class": "String"
+                }
+              ]
+            },
+            {
+              "name": "opml",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "head",
+                  "class": "Object",
+                  "properties": [
+                    {
+                      "name": "title",
+                      "class": "String"
+                    }
+                  ]
+                },
+                {
+                  "name": "body",
+                  "class": "Object",
+                  "properties": [
+                    {
+                      "name": "outline",
+                      "class": "Object",
+                      "properties": [
+                        {
+                          "name": "outline",
+                          "class": "Object",
+                          "properties": [
+                            {
+                              "name": "@_text",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_title",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_type",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_xmlUrl",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_htmlUrl",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_description",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_category",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_status",
+                              "class": "String"
+                            },
+                            {
+                              "name": "@_saveType",
+                              "class": "String"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "@_text",
+                          "class": "String"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "@_version",
+                  "class": "String"
+                }
+              ]
+            }
+          ],
+          "value": "{\n  '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },\n  opml: { head: [Object], body: [Object], '@_version': '2.0' }\n}",
+          "object_id": 6,
+          "name": "doc"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 98
+    },
+    {
+      "event": "call",
+      "id": 15,
+      "thread_id": 0,
+      "method_id": "processOutline",
+      "static": true,
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "outline",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "@_text",
+                  "class": "String"
+                },
+                {
+                  "name": "@_title",
+                  "class": "String"
+                },
+                {
+                  "name": "@_type",
+                  "class": "String"
+                },
+                {
+                  "name": "@_xmlUrl",
+                  "class": "String"
+                },
+                {
+                  "name": "@_htmlUrl",
+                  "class": "String"
+                },
+                {
+                  "name": "@_description",
+                  "class": "String"
+                },
+                {
+                  "name": "@_category",
+                  "class": "String"
+                },
+                {
+                  "name": "@_status",
+                  "class": "String"
+                },
+                {
+                  "name": "@_saveType",
+                  "class": "String"
+                }
+              ]
+            },
+            {
+              "name": "@_text",
+              "class": "String"
+            }
+          ],
+          "value": "{\n  outline: {\n    '@_text': 'Test Feed',\n    '@_title': 'Test Feed',\n    '@_type': 'rss',\n    '@_xmlUrl': 'https://example.com/feed.xml',\n    '@_htmlUrl': 'https://example.com',\n    '@_description': 'Test description',\n    '@_category': 'Test Category',\n    '@_status': 'active',\n    '@_saveType': 'multiple'\n  },\n  '@_text': 'Feeds'\n}",
+          "object_id": 7,
+          "name": "node"
+        },
+        {
+          "class": "Number",
+          "value": "0"
+        },
+        {
+          "class": "Array",
+          "items": {
+            "class": "Object",
+            "properties": [
+              {
+                "name": "outline",
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "@_text",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_title",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_type",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_xmlUrl",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_htmlUrl",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_description",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_category",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_status",
+                    "class": "String"
+                  },
+                  {
+                    "name": "@_saveType",
+                    "class": "String"
+                  }
+                ]
+              },
+              {
+                "name": "@_text",
+                "class": "String"
+              }
+            ]
+          },
+          "value": "[ { outline: [Object], '@_text': 'Feeds' } ]",
+          "size": 1,
+          "object_id": 8
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 112
+    },
+    {
+      "event": "call",
+      "id": 16,
+      "thread_id": 0,
+      "method_id": "processOutline",
+      "static": true,
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "@_text",
+              "class": "String"
+            },
+            {
+              "name": "@_title",
+              "class": "String"
+            },
+            {
+              "name": "@_type",
+              "class": "String"
+            },
+            {
+              "name": "@_xmlUrl",
+              "class": "String"
+            },
+            {
+              "name": "@_htmlUrl",
+              "class": "String"
+            },
+            {
+              "name": "@_description",
+              "class": "String"
+            },
+            {
+              "name": "@_category",
+              "class": "String"
+            },
+            {
+              "name": "@_status",
+              "class": "String"
+            },
+            {
+              "name": "@_saveType",
+              "class": "String"
+            }
+          ],
+          "value": "{\n  '@_text': 'Test Feed',\n  '@_title': 'Test Feed',\n  '@_type': 'rss',\n  '@_xmlUrl': 'https://example.com/feed.xml',\n  '@_htmlUrl': 'https://example.com',\n  '@_description': 'Test description',\n  '@_category': 'Test Category',\n  '@_status': 'active',\n  '@_saveType': 'multiple'\n}",
+          "object_id": 9,
+          "name": "node"
+        },
+        {
+          "class": "Number",
+          "value": "0"
+        },
+        {
+          "class": "Array",
+          "items": {
+            "class": "Object",
+            "properties": [
+              {
+                "name": "@_text",
+                "class": "String"
+              },
+              {
+                "name": "@_title",
+                "class": "String"
+              },
+              {
+                "name": "@_type",
+                "class": "String"
+              },
+              {
+                "name": "@_xmlUrl",
+                "class": "String"
+              },
+              {
+                "name": "@_htmlUrl",
+                "class": "String"
+              },
+              {
+                "name": "@_description",
+                "class": "String"
+              },
+              {
+                "name": "@_category",
+                "class": "String"
+              },
+              {
+                "name": "@_status",
+                "class": "String"
+              },
+              {
+                "name": "@_saveType",
+                "class": "String"
+              }
+            ]
+          },
+          "value": "[\n  {\n    '@_text': 'Test Feed',\n    '@_title': 'Test Feed',\n    '@_type': 'rss',\n    '@_xmlUrl': 'https://example.com/feed.xml',\n    '@_htmlUrl': 'https://example.com',\n    '@_description': 'Test description',\n    '@_category': 'Test Category',\n    '@_status': 'active',\n    '@_saveType': 'multiple'\n  }\n]",
+          "size": 1,
+          "object_id": 10
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 112
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 17,
+      "parent_id": 16,
+      "elapsed": 0.00003260000084992498
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 18,
+      "parent_id": 15,
+      "elapsed": 0.00029690000519622117
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 19,
+      "parent_id": 14,
+      "return_value": {
+        "class": "Array",
+        "items": {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "title",
+              "class": "String"
+            },
+            {
+              "name": "text",
+              "class": "String"
+            },
+            {
+              "name": "xmlUrl",
+              "class": "String"
+            },
+            {
+              "name": "category",
+              "class": "String"
+            },
+            {
+              "name": "saveType",
+              "class": "String"
+            },
+            {
+              "name": "status",
+              "class": "String"
+            },
+            {
+              "name": "summarize",
+              "class": "undefined"
+            },
+            {
+              "name": "transcribe",
+              "class": "undefined"
+            },
+            {
+              "name": "description",
+              "class": "String"
+            },
+            {
+              "name": "htmlUrl",
+              "class": "String"
+            }
+          ]
+        },
+        "value": "[\n  {\n    title: 'Test Feed',\n    text: 'Test Feed',\n    xmlUrl: 'https://example.com/feed.xml',\n    category: 'Test Category',\n    saveType: 'multiple',\n    status: 'active',\n    summarize: undefined,\n    transcribe: undefined,\n    description: 'Test description',\n    htmlUrl: 'https://example.com'\n  }\n]",
+        "size": 1,
+        "object_id": 11
+      },
+      "elapsed": 0.0009475000042584725
+    },
+    {
+      "event": "call",
+      "id": 20,
+      "thread_id": 0,
+      "method_id": "loadData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 10
+    },
+    {
+      "event": "call",
+      "id": 21,
+      "thread_id": 0,
+      "method_id": "initializeData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "feeds",
+              "class": "Array"
+            },
+            {
+              "name": "settings",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "feeds",
+                  "class": "Array"
+                },
+                {
+                  "name": "groups",
+                  "class": "Array",
+                  "items": {
+                    "class": "String"
+                  }
+                },
+                {
+                  "name": "rssFolder",
+                  "class": "String"
+                }
+              ]
+            }
+          ],
+          "value": "{\n  feeds: [],\n  settings: { feeds: [], groups: [Array], rssFolder: 'RSS' }\n}",
+          "object_id": 14,
+          "name": "data"
+        }
+      ],
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 29
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 22,
+      "parent_id": 21,
+      "return_value": {
+        "class": "Object",
+        "properties": [
+          {
+            "name": "feeds",
+            "class": "Array"
+          },
+          {
+            "name": "settings",
+            "class": "Object",
+            "properties": [
+              {
+                "name": "feeds",
+                "class": "Array"
+              },
+              {
+                "name": "groups",
+                "class": "Array",
+                "items": {
+                  "class": "String"
+                }
+              },
+              {
+                "name": "openaiKey",
+                "class": "String"
+              },
+              {
+                "name": "rssFolder",
+                "class": "String"
+              },
+              {
+                "name": "fetchFrequency",
+                "class": "String"
+              },
+              {
+                "name": "maxArticles",
+                "class": "Number"
+              },
+              {
+                "name": "retentionDays",
+                "class": "Number"
+              },
+              {
+                "name": "readingMode",
+                "class": "Boolean"
+              },
+              {
+                "name": "lastFetch",
+                "class": "Number"
+              },
+              {
+                "name": "lastReadArticle",
+                "class": "object"
+              },
+              {
+                "name": "currentFeed",
+                "class": "object"
+              },
+              {
+                "name": "currentFolder",
+                "class": "object"
+              },
+              {
+                "name": "articleStates",
+                "class": "Object",
+                "properties": []
+              },
+              {
+                "name": "template",
+                "class": "String"
+              }
+            ]
+          }
+        ],
+        "value": "{\n  feeds: [],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001019,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n}",
+        "object_id": 15
+      },
+      "elapsed": 0.0001692000005277805
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 23,
+      "parent_id": 20,
+      "return_value": {
+        "class": "Promise<Object>",
+        "value": "Promise { {\n  feeds: [],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001019,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n} }",
+        "object_id": 12
+      },
+      "elapsed": 0.0018681999936234206
+    },
+    {
+      "event": "call",
+      "id": 24,
+      "thread_id": 0,
+      "method_id": "sanitizeUrl",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService { console: [Console [console]], logs: [], maxLogs: 1000 },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'https://example.com/feed.xml'",
+          "name": "url"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 90
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 25,
+      "parent_id": 24,
+      "return_value": {
+        "class": "String",
+        "value": "'https://example.com/feed.xml'"
+      },
+      "elapsed": 0.00001049999991664663
+    },
+    {
+      "event": "call",
+      "id": 26,
+      "thread_id": 0,
+      "method_id": "saveData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "feeds",
+              "class": "Array",
+              "items": {
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "id",
+                    "class": "String"
+                  },
+                  {
+                    "name": "settings",
+                    "class": "Object",
+                    "properties": [
+                      {
+                        "name": "title",
+                        "class": "String"
+                      },
+                      {
+                        "name": "url",
+                        "class": "String"
+                      },
+                      {
+                        "name": "type",
+                        "class": "String"
+                      },
+                      {
+                        "name": "status",
+                        "class": "String"
+                      },
+                      {
+                        "name": "summarize",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "transcribe",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "category",
+                        "class": "String"
+                      },
+                      {
+                        "name": "folder",
+                        "class": "String"
+                      },
+                      {
+                        "name": "description",
+                        "class": "String"
+                      },
+                      {
+                        "name": "link",
+                        "class": "String"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "settings",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "feeds",
+                  "class": "Array"
+                },
+                {
+                  "name": "groups",
+                  "class": "Array",
+                  "items": {
+                    "class": "String"
+                  }
+                },
+                {
+                  "name": "openaiKey",
+                  "class": "String"
+                },
+                {
+                  "name": "rssFolder",
+                  "class": "String"
+                },
+                {
+                  "name": "fetchFrequency",
+                  "class": "String"
+                },
+                {
+                  "name": "maxArticles",
+                  "class": "Number"
+                },
+                {
+                  "name": "retentionDays",
+                  "class": "Number"
+                },
+                {
+                  "name": "readingMode",
+                  "class": "Boolean"
+                },
+                {
+                  "name": "lastFetch",
+                  "class": "Number"
+                },
+                {
+                  "name": "lastReadArticle",
+                  "class": "object"
+                },
+                {
+                  "name": "currentFeed",
+                  "class": "object"
+                },
+                {
+                  "name": "currentFolder",
+                  "class": "object"
+                },
+                {
+                  "name": "articleStates",
+                  "class": "Object",
+                  "properties": []
+                },
+                {
+                  "name": "template",
+                  "class": "String"
+                }
+              ]
+            }
+          ],
+          "value": "{\n  feeds: [ [Object] ],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001019,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n}",
+          "object_id": 15,
+          "name": "data"
+        }
+      ],
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 20
+    },
+    {
+      "event": "call",
+      "id": 27,
+      "thread_id": 0,
+      "method_id": "loadData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 10
+    },
+    {
+      "event": "call",
+      "id": 28,
+      "thread_id": 0,
+      "method_id": "initializeData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "feeds",
+              "class": "Array",
+              "items": {
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "id",
+                    "class": "String"
+                  },
+                  {
+                    "name": "settings",
+                    "class": "Object",
+                    "properties": [
+                      {
+                        "name": "title",
+                        "class": "String"
+                      },
+                      {
+                        "name": "url",
+                        "class": "String"
+                      },
+                      {
+                        "name": "type",
+                        "class": "String"
+                      },
+                      {
+                        "name": "status",
+                        "class": "String"
+                      },
+                      {
+                        "name": "summarize",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "transcribe",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "category",
+                        "class": "String"
+                      },
+                      {
+                        "name": "folder",
+                        "class": "String"
+                      },
+                      {
+                        "name": "description",
+                        "class": "String"
+                      },
+                      {
+                        "name": "link",
+                        "class": "String"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "settings",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "feeds",
+                  "class": "Array"
+                },
+                {
+                  "name": "groups",
+                  "class": "Array",
+                  "items": {
+                    "class": "String"
+                  }
+                },
+                {
+                  "name": "rssFolder",
+                  "class": "String"
+                }
+              ]
+            }
+          ],
+          "value": "{\n  feeds: [ [Object] ],\n  settings: { feeds: [], groups: [Array], rssFolder: 'RSS' }\n}",
+          "object_id": 14,
+          "name": "data"
+        }
+      ],
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 29
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 29,
+      "parent_id": 28,
+      "return_value": {
+        "class": "Object",
+        "properties": [
+          {
+            "name": "feeds",
+            "class": "Array",
+            "items": {
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "id",
+                  "class": "String"
+                },
+                {
+                  "name": "settings",
+                  "class": "Object",
+                  "properties": [
+                    {
+                      "name": "title",
+                      "class": "String"
+                    },
+                    {
+                      "name": "url",
+                      "class": "String"
+                    },
+                    {
+                      "name": "type",
+                      "class": "String"
+                    },
+                    {
+                      "name": "status",
+                      "class": "String"
+                    },
+                    {
+                      "name": "summarize",
+                      "class": "Boolean"
+                    },
+                    {
+                      "name": "transcribe",
+                      "class": "Boolean"
+                    },
+                    {
+                      "name": "category",
+                      "class": "String"
+                    },
+                    {
+                      "name": "folder",
+                      "class": "String"
+                    },
+                    {
+                      "name": "description",
+                      "class": "String"
+                    },
+                    {
+                      "name": "link",
+                      "class": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "settings",
+            "class": "Object",
+            "properties": [
+              {
+                "name": "feeds",
+                "class": "Array"
+              },
+              {
+                "name": "groups",
+                "class": "Array",
+                "items": {
+                  "class": "String"
+                }
+              },
+              {
+                "name": "openaiKey",
+                "class": "String"
+              },
+              {
+                "name": "rssFolder",
+                "class": "String"
+              },
+              {
+                "name": "fetchFrequency",
+                "class": "String"
+              },
+              {
+                "name": "maxArticles",
+                "class": "Number"
+              },
+              {
+                "name": "retentionDays",
+                "class": "Number"
+              },
+              {
+                "name": "readingMode",
+                "class": "Boolean"
+              },
+              {
+                "name": "lastFetch",
+                "class": "Number"
+              },
+              {
+                "name": "lastReadArticle",
+                "class": "object"
+              },
+              {
+                "name": "currentFeed",
+                "class": "object"
+              },
+              {
+                "name": "currentFolder",
+                "class": "object"
+              },
+              {
+                "name": "articleStates",
+                "class": "Object",
+                "properties": []
+              },
+              {
+                "name": "template",
+                "class": "String"
+              }
+            ]
+          }
+        ],
+        "value": "{\n  feeds: [ [Object] ],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001022,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n}",
+        "object_id": 18
+      },
+      "elapsed": 0.000018799997633323073
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 30,
+      "parent_id": 27,
+      "return_value": {
+        "class": "Promise<Object>",
+        "value": "Promise { {\n  feeds: [ [Object] ],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001022,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n} }",
+        "object_id": 17
+      },
+      "elapsed": 0.0005575000031967647
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 31,
+      "parent_id": 26,
+      "return_value": {
+        "class": "Promise<undefined>",
+        "value": "Promise { undefined }",
+        "object_id": 16
+      },
+      "elapsed": 0.0012233000015839934
+    },
+    {
+      "event": "call",
+      "id": 32,
+      "thread_id": 0,
+      "method_id": "loadData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 10
+    },
+    {
+      "event": "call",
+      "id": 33,
+      "thread_id": 0,
+      "method_id": "initializeData",
+      "static": false,
+      "receiver": {
+        "class": "StorageService",
+        "value": "StorageService {\n  plugin: { loadData: [Function], saveData: [Function] }\n}",
+        "object_id": 3
+      },
+      "parameters": [
+        {
+          "class": "Object",
+          "properties": [
+            {
+              "name": "feeds",
+              "class": "Array",
+              "items": {
+                "class": "Object",
+                "properties": [
+                  {
+                    "name": "id",
+                    "class": "String"
+                  },
+                  {
+                    "name": "settings",
+                    "class": "Object",
+                    "properties": [
+                      {
+                        "name": "title",
+                        "class": "String"
+                      },
+                      {
+                        "name": "url",
+                        "class": "String"
+                      },
+                      {
+                        "name": "type",
+                        "class": "String"
+                      },
+                      {
+                        "name": "status",
+                        "class": "String"
+                      },
+                      {
+                        "name": "summarize",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "transcribe",
+                        "class": "Boolean"
+                      },
+                      {
+                        "name": "category",
+                        "class": "String"
+                      },
+                      {
+                        "name": "folder",
+                        "class": "String"
+                      },
+                      {
+                        "name": "description",
+                        "class": "String"
+                      },
+                      {
+                        "name": "link",
+                        "class": "String"
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "name": "settings",
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "feeds",
+                  "class": "Array"
+                },
+                {
+                  "name": "groups",
+                  "class": "Array",
+                  "items": {
+                    "class": "String"
+                  }
+                },
+                {
+                  "name": "rssFolder",
+                  "class": "String"
+                }
+              ]
+            }
+          ],
+          "value": "{\n  feeds: [ [Object] ],\n  settings: { feeds: [], groups: [Array], rssFolder: 'RSS' }\n}",
+          "object_id": 14,
+          "name": "data"
+        }
+      ],
+      "defined_class": "StorageService",
+      "path": "src\\services\\StorageService.ts",
+      "lineno": 29
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 34,
+      "parent_id": 33,
+      "return_value": {
+        "class": "Object",
+        "properties": [
+          {
+            "name": "feeds",
+            "class": "Array",
+            "items": {
+              "class": "Object",
+              "properties": [
+                {
+                  "name": "id",
+                  "class": "String"
+                },
+                {
+                  "name": "settings",
+                  "class": "Object",
+                  "properties": [
+                    {
+                      "name": "title",
+                      "class": "String"
+                    },
+                    {
+                      "name": "url",
+                      "class": "String"
+                    },
+                    {
+                      "name": "type",
+                      "class": "String"
+                    },
+                    {
+                      "name": "status",
+                      "class": "String"
+                    },
+                    {
+                      "name": "summarize",
+                      "class": "Boolean"
+                    },
+                    {
+                      "name": "transcribe",
+                      "class": "Boolean"
+                    },
+                    {
+                      "name": "category",
+                      "class": "String"
+                    },
+                    {
+                      "name": "folder",
+                      "class": "String"
+                    },
+                    {
+                      "name": "description",
+                      "class": "String"
+                    },
+                    {
+                      "name": "link",
+                      "class": "String"
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "name": "settings",
+            "class": "Object",
+            "properties": [
+              {
+                "name": "feeds",
+                "class": "Array"
+              },
+              {
+                "name": "groups",
+                "class": "Array",
+                "items": {
+                  "class": "String"
+                }
+              },
+              {
+                "name": "openaiKey",
+                "class": "String"
+              },
+              {
+                "name": "rssFolder",
+                "class": "String"
+              },
+              {
+                "name": "fetchFrequency",
+                "class": "String"
+              },
+              {
+                "name": "maxArticles",
+                "class": "Number"
+              },
+              {
+                "name": "retentionDays",
+                "class": "Number"
+              },
+              {
+                "name": "readingMode",
+                "class": "Boolean"
+              },
+              {
+                "name": "lastFetch",
+                "class": "Number"
+              },
+              {
+                "name": "lastReadArticle",
+                "class": "object"
+              },
+              {
+                "name": "currentFeed",
+                "class": "object"
+              },
+              {
+                "name": "currentFolder",
+                "class": "object"
+              },
+              {
+                "name": "articleStates",
+                "class": "Object",
+                "properties": []
+              },
+              {
+                "name": "template",
+                "class": "String"
+              }
+            ]
+          }
+        ],
+        "value": "{\n  feeds: [ [Object] ],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001023,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n}",
+        "object_id": 20
+      },
+      "elapsed": 0.00001670000347075984
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 35,
+      "parent_id": 32,
+      "return_value": {
+        "class": "Promise<Object>",
+        "value": "Promise { {\n  feeds: [ [Object] ],\n  settings: {\n    feeds: [],\n    groups: [Array],\n    openaiKey: '',\n    rssFolder: 'RSS',\n    fetchFrequency: 'startup',\n    maxArticles: 50,\n    retentionDays: 30,\n    readingMode: false,\n    lastFetch: 1738451001023,\n    lastReadArticle: null,\n    currentFeed: null,\n    currentFolder: null,\n    articleStates: {},\n    template: '# {{title}}\\n\\n{{description}}\\n\\n{{link}}'\n  }\n} }",
+        "object_id": 19
+      },
+      "elapsed": 0.0005402999959187582
+    },
+    {
+      "event": "call",
+      "id": 36,
+      "thread_id": 0,
+      "method_id": "info",
+      "static": false,
+      "receiver": {
+        "class": "LogService",
+        "value": "LogService {\n  console: Console [console] {\n    log: [Function: log],\n    warn: [Function: warn],\n    error: [Function: error],\n    dir: [Function: dir],\n    time: [Function: time],\n    timeEnd: [Function: timeEnd],\n    timeLog: [Function: timeLog],\n    trace: [Function: trace],\n    assert: [Function: assert],\n    clear: [Function: clear],\n    count: [Function: count],\n    countReset: [Function: countReset],\n    group: [Function: group],\n    groupEnd: [Function: groupEnd],\n    table: [Function: table],\n    debug: [Function: debug],\n    info: [Function: info],\n    dirxml: [Function: dirxml],\n    groupCollapsed: [Function: groupCollapsed],\n    Console: [Function: Console]\n  },\n  logs: [],\n  maxLogs: 1000\n}",
+        "object_id": 4
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'1 feeds importés avec succès'",
+          "name": "message"
+        }
+      ],
+      "defined_class": "LogService",
+      "path": "src\\services\\LogService.ts",
+      "lineno": 18
+    },
+    {
+      "event": "call",
+      "id": 37,
+      "thread_id": 0,
+      "method_id": "log",
+      "static": false,
+      "receiver": {
+        "class": "LogService",
+        "value": "LogService {\n  console: Console [console] {\n    log: [Function: log],\n    warn: [Function: warn],\n    error: [Function: error],\n    dir: [Function: dir],\n    time: [Function: time],\n    timeEnd: [Function: timeEnd],\n    timeLog: [Function: timeLog],\n    trace: [Function: trace],\n    assert: [Function: assert],\n    clear: [Function: clear],\n    count: [Function: count],\n    countReset: [Function: countReset],\n    group: [Function: group],\n    groupEnd: [Function: groupEnd],\n    table: [Function: table],\n    debug: [Function: debug],\n    info: [Function: info],\n    dirxml: [Function: dirxml],\n    groupCollapsed: [Function: groupCollapsed],\n    Console: [Function: Console]\n  },\n  logs: [],\n  maxLogs: 1000\n}",
+        "object_id": 4
+      },
+      "parameters": [
+        {
+          "class": "String",
+          "value": "'INFO'",
+          "name": "level"
+        },
+        {
+          "class": "String",
+          "value": "'1 feeds importés avec succès'",
+          "name": "message"
+        },
+        {
+          "class": "undefined",
+          "value": "undefined",
+          "name": "context"
+        }
+      ],
+      "defined_class": "LogService",
+      "path": "src\\services\\LogService.ts",
+      "lineno": 30
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 38,
+      "parent_id": 37,
+      "elapsed": 0.0001415999940945767
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 39,
+      "parent_id": 36,
+      "elapsed": 0.0004225000011501834
+    },
+    {
+      "event": "call",
+      "id": 40,
+      "thread_id": 0,
+      "method_id": "showImportSummary",
+      "static": false,
+      "receiver": {
+        "class": "OpmlService",
+        "value": "OpmlService {\n  plugin: { loadData: [Function], saveData: [Function] },\n  storageService: StorageService { plugin: [Object] },\n  logService: LogService {\n    console: [Console [console]],\n    logs: [Array],\n    maxLogs: 1000\n  },\n  parser: XMLParser { externalEntities: {}, options: [Object] },\n  builder: Builder {\n    options: [Object],\n    ignoreAttributesFn: [Function (anonymous)],\n    attrPrefixLen: 1,\n    isAttribute: [Function: isAttribute],\n    processTextOrObjNode: [Function: processTextOrObjNode],\n    indentate: [Function: indentate],\n    tagEndChar: '>\\n',\n    newLine: '\\n'\n  }\n}",
+        "object_id": 5
+      },
+      "parameters": [
+        {
+          "class": "Number",
+          "value": "1",
+          "name": "total"
+        },
+        {
+          "class": "Number",
+          "value": "1",
+          "name": "successCount"
+        },
+        {
+          "class": "Array",
+          "value": "[]",
+          "size": 0,
+          "object_id": 21,
+          "name": "duplicateFeeds"
+        },
+        {
+          "class": "Array",
+          "value": "[]",
+          "size": 0,
+          "object_id": 22,
+          "name": "errorFeeds"
+        }
+      ],
+      "defined_class": "OpmlService",
+      "path": "src\\services\\OpmlService.ts",
+      "lineno": 353
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 41,
+      "parent_id": 40,
+      "elapsed": 0.0007585999992443249
+    },
+    {
+      "event": "return",
+      "thread_id": 0,
+      "id": 42,
+      "parent_id": 7,
+      "return_value": {
+        "class": "Promise<Object>",
+        "value": "Promise { { success: true, imported: 1, errors: [], duplicates: [] } }",
+        "object_id": 13
+      },
+      "elapsed": 0.01718589999654796
+    }
+  ],
+  "version": "1.12",
+  "metadata": {
+    "client": {
+      "name": "appmap-node",
+      "version": "2.24.3",
+      "url": "https://github.com/getappmap/appmap-node"
+    },
+    "language": {
+      "name": "javascript",
+      "engine": "Node.js",
+      "version": "v22.9.0"
+    },
+    "app": "obsidian-rss-flowz",
+    "recorder": {
+      "type": "tests",
+      "name": "vitest"
+    },
+    "name": "importOpml devrait importer correctement les feeds depuis un fichier OPML",
+    "source_location": "src\\services\\__tests__\\OpmlService.test.ts",
+    "test_status": "succeeded"
+  },
+  "classMap": [
+    {
+      "name": "services",
+      "type": "package",
+      "children": [
+        {
+          "type": "class",
+          "name": "LogService",
+          "children": [
+            {
+              "type": "function",
+              "name": "constructor",
+              "static": false,
+              "location": "src\\services\\LogService.ts:12"
+            },
+            {
+              "type": "function",
+              "name": "info",
+              "static": false,
+              "location": "src\\services\\LogService.ts:18"
+            },
+            {
+              "type": "function",
+              "name": "log",
+              "static": false,
+              "location": "src\\services\\LogService.ts:30"
+            }
+          ]
+        },
+        {
+          "type": "class",
+          "name": "OpmlService",
+          "children": [
+            {
+              "type": "function",
+              "name": "processOutline",
+              "static": true,
+              "location": "src\\services\\OpmlService.ts:112"
+            },
+            {
+              "type": "function",
+              "name": "constructor",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:12"
+            },
+            {
+              "type": "function",
+              "name": "importOpml",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:144"
+            },
+            {
+              "type": "function",
+              "name": "sanitizeXmlContent",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:272"
+            },
+            {
+              "type": "function",
+              "name": "parseOpmlDocument",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:290"
+            },
+            {
+              "type": "function",
+              "name": "showImportSummary",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:353"
+            },
+            {
+              "type": "function",
+              "name": "sanitizeUrl",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:90"
+            },
+            {
+              "type": "function",
+              "name": "extractFeedOutlines",
+              "static": false,
+              "location": "src\\services\\OpmlService.ts:98"
+            }
+          ]
+        },
+        {
+          "type": "class",
+          "name": "StorageService",
+          "children": [
+            {
+              "type": "function",
+              "name": "loadData",
+              "static": false,
+              "location": "src\\services\\StorageService.ts:10"
+            },
+            {
+              "type": "function",
+              "name": "saveData",
+              "static": false,
+              "location": "src\\services\\StorageService.ts:20"
+            },
+            {
+              "type": "function",
+              "name": "initializeData",
+              "static": false,
+              "location": "src\\services\\StorageService.ts:29"
+            },
+            {
+              "type": "function",
+              "name": "constructor",
+              "static": false,
+              "location": "src\\services\\StorageService.ts:8"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

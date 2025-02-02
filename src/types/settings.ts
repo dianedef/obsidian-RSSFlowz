@@ -10,7 +10,6 @@ export interface DigestSettings {
 }
 
 export interface PluginSettings {
-	feeds: any[];
 	groups: string[];
 	openaiKey: string;
 	rssFolder: string;
@@ -45,7 +44,6 @@ export interface FeedSettings {
 }
 
 export const DEFAULT_SETTINGS: PluginSettings = {
-	feeds: [],
 	groups: ['Défaut'],
 	openaiKey: '',
 	rssFolder: 'RSS',

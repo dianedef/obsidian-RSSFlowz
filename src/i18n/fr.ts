@@ -64,7 +64,7 @@ export const fr = {
       delete: {
         button: 'Supprimer',
         confirm: 'Êtes-vous sûr de vouloir supprimer ce groupe ?',
-        success: 'Groupe supprimé :'
+        success: 'Groupe supprimé : {group}'
       },
       none: 'Sans groupe'
     },
@@ -73,23 +73,55 @@ export const fr = {
       search: {
         placeholder: 'Rechercher un feed...'
       },
+      options: {
+        saveType: 'Type de sauvegarde',
+        saveTypes: {
+          multiple: 'Un fichier par article',
+          single: 'Tous les articles dans un fichier'
+        }
+      },
+      group: {
+        name: 'Groupe',
+        none: 'Sans groupe',
+        error: 'Erreur lors du changement de groupe'
+      },
+      summarize: {
+        name: 'Résumer les articles',
+        desc: 'Utiliser l\'IA pour générer un résumé des articles',
+        error: 'Clé API OpenAI requise pour les résumés'
+      },
+      rewrite: {
+        name: 'Réécrire les articles',
+        desc: 'Utiliser l\'IA pour réécrire les articles',
+        error: 'Clé API OpenAI requise pour la réécriture'
+      },
+      transcribe: {
+        name: 'Transcrire l\'audio/vidéo',
+        desc: 'Utiliser l\'IA pour transcrire le contenu audio/vidéo',
+        error: 'Clé API OpenAI requise pour la transcription'
+      },
       add: {
         name: 'Ajouter un feed',
         desc: 'Entrez l\'URL d\'un flux RSS',
         placeholder: 'URL du feed RSS',
-        success: 'Feed ajouté : {title}'
+        success: 'Feed ajouté : {title}',
+        error: 'Erreur lors de l\'ajout du feed',
+        sslError: 'Erreur SSL lors de la connexion au feed',
+        fetching: 'Récupération des articles pour',
+        fetchError: 'Erreur lors de la récupération des articles pour'
       },
       deleteAll: {
-        name: 'Supprimer tous les feeds',
-        desc: 'Supprimer tous les feeds de votre liste',
         button: 'Supprimer tous les feeds',
+        success: 'Tous les feeds ont été supprimés',
+        error: 'Erreur lors de la suppression des feeds',
         confirm: 'Êtes-vous sûr de vouloir supprimer ces feeds ?',
-        confirmMessage: 'Êtes-vous sûr de vouloir supprimer ces feeds ?',
-        success: 'Feeds supprimés :'
+        confirmMessage: 'Êtes-vous sûr de vouloir supprimer ces feeds ?'
       },
       delete: {
         button: 'Supprimer',
-        success: 'Feed supprimé : {title}'
+        success: 'Feed supprimé : {title}',
+        confirm: 'Êtes-vous sûr de vouloir supprimer ce feed ?',
+        confirmMessage: 'Êtes-vous sûr de vouloir supprimer ce feed ?'
       }
     }
   },
@@ -154,6 +186,12 @@ export const fr = {
       fetchError: 'Erreur lors de la récupération du feed {title}',
       fetchSuccess: '{count} articles récupérés pour {title}',
       noArticles: 'Aucun article trouvé pour {title}'
+    },
+    settings: {
+      feedTypeChanged: 'Type de sauvegarde modifié pour {title}',
+      feedDeleted: 'Feed supprimé : {title}',
+      aiToggled: '{feature} {status} pour {title}',
+      feedMoved: 'Feed {title} déplacé vers {group}'
     }
   },
   errors: {

@@ -150,12 +150,15 @@ export class OpmlService {
     try {
       // 1. Nettoyer et valider le contenu XML
       const cleanedContent = this.sanitizeXmlContent(fileContent);
+      console.log('Contenu XML nettoyé:', cleanedContent.substring(0, 200) + '...');
       
       // 2. Parser le document OPML
       const doc = this.parseOpmlDocument(cleanedContent);
+      console.log('Document OPML parsé:', doc);
       
       // 3. Extraire les feeds
       const feedOutlines = this.extractFeedOutlines(doc);
+      console.log('Feeds extraits du fichier OPML:', feedOutlines);
       
       if (!feedOutlines.length) {
         this.logService.warn('Aucun feed RSS trouvé dans le fichier OPML');
@@ -169,6 +172,13 @@ export class OpmlService {
 
       // 4. Charger les données existantes
       const data = await this.storageService.loadData();
+      console.log('Données existantes avant import:', data);
+
+      // Initialiser data.feeds s'il n'existe pas
+      if (!data.feeds) {
+        data.feeds = [];
+      }
+
       let successCount = 0;
       const errorFeeds: Array<{ title: string; url: string; error: string }> = [];
       const duplicateFeeds: Array<{ title: string; url: string; error: string }> = [];
@@ -179,12 +189,15 @@ export class OpmlService {
           const feedUrl = this.sanitizeUrl(feed.xmlUrl);
           const feedTitle = feed.title || feed.text || feedUrl;
           
+          console.log('Traitement du feed:', { title: feedTitle, url: feedUrl });
+          
           // Vérifier si le feed existe déjà
           const existingFeed = data.feeds.find(f => 
             f.settings.url.toLowerCase() === feedUrl.toLowerCase()
           );
 
           if (existingFeed) {
+            console.log('Feed déjà existant:', existingFeed);
             duplicateFeeds.push({
               title: feedTitle,
               url: feedUrl,
@@ -193,19 +206,8 @@ export class OpmlService {
             continue;
           }
 
-          // Valider le feed en testant l'URL
-          const validationResult = await this.validateFeed(feedUrl);
-          if (!validationResult.isValid) {
-            errorFeeds.push({
-              title: feedTitle,
-              url: feedUrl,
-              error: validationResult.error || 'Feed invalide'
-            });
-            continue;
-          }
-
-          // Ajouter le nouveau feed
-          data.feeds.push({
+          // Créer le nouveau feed
+          const newFeed = {
             id: crypto.randomUUID(),
             settings: {
               title: feedTitle,
@@ -219,11 +221,14 @@ export class OpmlService {
               description: feed.description,
               link: feed.htmlUrl
             }
-          });
+          };
+          
+          data.feeds.push(newFeed);
+          console.log('Nouveau feed ajouté:', newFeed);
           successCount++;
 
         } catch (error) {
-          this.logService.error('Erreur lors du traitement du feed', { 
+          console.error('Erreur lors du traitement du feed:', { 
             feed: feed.title,
             error 
           });
@@ -238,7 +243,13 @@ export class OpmlService {
 
       // 6. Sauvegarder les modifications si des feeds ont été importés
       if (successCount > 0) {
+        console.log('Données à sauvegarder:', data);
         await this.storageService.saveData(data);
+        
+        // Vérifier que les données ont été sauvegardées
+        const savedData = await this.storageService.loadData();
+        console.log('Données après sauvegarde:', savedData);
+        
         this.logService.info(`${successCount} feeds importés avec succès`);
       }
 

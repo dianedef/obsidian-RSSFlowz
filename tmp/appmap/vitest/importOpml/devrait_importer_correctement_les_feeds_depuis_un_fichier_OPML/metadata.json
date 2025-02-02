@@ -1,0 +1,20 @@
+{
+  "client": {
+    "name": "appmap-node",
+    "version": "2.24.3",
+    "url": "https://github.com/getappmap/appmap-node"
+  },
+  "language": {
+    "name": "javascript",
+    "engine": "Node.js",
+    "version": "v22.9.0"
+  },
+  "app": "obsidian-rss-flowz",
+  "recorder": {
+    "type": "tests",
+    "name": "vitest"
+  },
+  "name": "importOpml devrait importer correctement les feeds depuis un fichier OPML",
+  "source_location": "src\\services\\__tests__\\OpmlService.test.ts",
+  "test_status": "succeeded"
+}

@@ -15,6 +15,9 @@ import {
 } from "./services";
 import { FeedData } from "./types";
 import { PluginSettings } from "./types/settings";
+import { Notice } from "obsidian";
+import { PluginData } from "./types/pluginData";
+
 export default class RSSReaderPlugin extends Plugin {
 	// Services
 	private storageService!: StorageService;
@@ -248,16 +251,36 @@ export default class RSSReaderPlugin extends Plugin {
 		}
 	}
 
-	async updateFeed(feedData: FeedData) {
-		const settings = this.settingsService.getSettings();
-		const index = settings.feeds.findIndex((f) => f.id === feedData.id);
-		if (index !== -1) {
-			settings.feeds[index] = feedData;
-			await this.settingsService.updateSettings(settings);
-			this.schedulerService.scheduleFeed(feedData);
-			this.logService.info(
-				this.i18nService.t("feeds.updated", { url: feedData.settings.url })
-			);
+	async updateFeed(feed: FeedData, updates?: Partial<FeedData>): Promise<void> {
+		const storageData = await this.getData();
+		const feedIndex = storageData.feeds.findIndex(f => f.id === feed.id);
+		
+		if (feedIndex !== -1) {
+			storageData.feeds[feedIndex] = {
+				...storageData.feeds[feedIndex],
+				...updates
+			};
+			await this.saveData(storageData);
+		}
+	}
+
+	async deleteFeed(feed: FeedData): Promise<void> {
+		const storageData = await this.getData();
+		const feedIndex = storageData.feeds.findIndex(f => f.id === feed.id);
+		
+		if (feedIndex !== -1) {
+			// Supprimer le dossier du feed si nécessaire
+			const settings = this.settingsService.getSettings();
+			const feedPath = feed.settings.group 
+				? `${settings.rssFolder}/${feed.settings.group}/${feed.settings.title}`
+				: `${settings.rssFolder}/${feed.settings.title}`;
+			await this.fileService.removeFolder(feedPath);
+			
+			// Supprimer le feed des données
+			storageData.feeds.splice(feedIndex, 1);
+			await this.saveData(storageData);
+			
+			new Notice(this.t('notices.settings.feedDeleted').replace('{title}', feed.settings.title));
 		}
 	}
 
@@ -273,5 +296,13 @@ export default class RSSReaderPlugin extends Plugin {
 
 	async exportOpml() {
 		return await this.opmlService.exportOpml();
+	}
+
+	async getData(): Promise<PluginData> {
+		const data = await this.loadData() || { feeds: [], settings: this.settingsService.getSettings() };
+		return {
+			feeds: data.feeds || [],
+			settings: data.settings || this.settingsService.getSettings()
+		};
 	}
 }

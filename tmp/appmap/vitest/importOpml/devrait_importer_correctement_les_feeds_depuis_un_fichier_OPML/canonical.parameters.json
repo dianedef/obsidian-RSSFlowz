@@ -1,0 +1,19 @@
+[
+  "console",
+  "content",
+  "context",
+  "data",
+  "doc",
+  "duplicateFeeds",
+  "errorFeeds",
+  "fileContent",
+  "level",
+  "logService",
+  "message",
+  "node",
+  "plugin",
+  "storageService",
+  "successCount",
+  "total",
+  "url"
+]
