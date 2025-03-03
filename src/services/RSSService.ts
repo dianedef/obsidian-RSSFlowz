@@ -1,7 +1,7 @@
 import { Plugin, requestUrl } from 'obsidian'
 import { createRSSError, RSSErrorCode } from '../types/errors'
 import { LogService } from './LogService'
-import { RSSFeed, RSSItem, FeedData } from '../types'
+import { Feed, RSSFeed, RSSItem } from '../types'
 import { XMLParser } from 'fast-xml-parser'
 
 export class RSSService {
@@ -28,7 +28,7 @@ export class RSSService {
       .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
   }
 
-  async fetchFeed(url: string, feedData: FeedData): Promise<RSSFeed> {
+  async fetchFeed(url: string, feed: Feed): Promise<RSSFeed> {
     try {
       this.logService.debug({
         message: 'Récupération du flux RSS',
@@ -65,7 +65,7 @@ export class RSSService {
           )
         }
 
-        return this.parseFeedData(parsed, url, feedData)
+        return this.parseFeedData(parsed, url, feed)
       } catch (parseError) {
         throw createRSSError(
           RSSErrorCode.PARSE_ERROR,
@@ -84,11 +84,11 @@ export class RSSService {
     }
   }
 
-  private parseFeedData(data: Record<string, any>, url: string, feedData: FeedData): RSSFeed {
+  private parseFeedData(data: Record<string, any>, url: string, feed: Feed): RSSFeed {
     if (data.rss?.channel) {
-      return this.parseRSSFeed(data.rss.channel, feedData, url)
+      return this.parseRSSFeed(data.rss.channel, feed, url)
     } else if (data.feed) {
-      return this.parseAtomFeed(data.feed, feedData, url)
+      return this.parseAtomFeed(data.feed, feed, url)
     }
 
     throw createRSSError(
@@ -98,9 +98,9 @@ export class RSSService {
     )
   }
 
-  private parseRSSFeed(channel: Record<string, any>, feedData: FeedData, feedUrl: string): RSSFeed {
-    const feed: RSSFeed = {
-      title: channel.title?._text || feedData.settings.title || '',
+  private parseRSSFeed(channel: Record<string, any>, feed: Feed, feedUrl: string): RSSFeed {
+    const rssFeed: RSSFeed = {
+      title: channel.title?._text || feed.settings.title || '',
       description: channel.description?._text || '',
       link: channel.link?._text || '',
       items: [],
@@ -110,15 +110,15 @@ export class RSSService {
 
     if (channel.item) {
       const items = Array.isArray(channel.item) ? channel.item : [channel.item]
-      feed.items = items
-        .slice(0, feedData.settings.maxArticles || 50)
-        .map((item: Record<string, any>) => this.parseRSSItem(item, feedData))
+      rssFeed.items = items
+        .slice(0, feed.settings.maxArticles || 50)
+        .map((item: Record<string, any>) => this.parseRSSItem(item, feed))
     }
 
-    return feed
+    return rssFeed
   }
 
-  private parseRSSItem(item: Record<string, any>, feedData: FeedData): RSSItem {
+  private parseRSSItem(item: Record<string, any>, feed: Feed): RSSItem {
     const content = 
       item['content:encoded']?._text?.trim() || 
       item.encoded?._text?.trim() ||
@@ -132,33 +132,33 @@ export class RSSService {
       link: item.link?._text?.trim() || '',
       pubDate: item.pubDate?._text ? new Date(item.pubDate._text) : new Date(),
       guid: item.guid?._text || item.link?._text || '',
-      categories: feedData.settings.tags || [],
+      categories: feed.settings.tags || [],
       author: item.author?._text || item.creator?._text || '',
-      feedTitle: feedData.settings.title
+      feedTitle: feed.settings.title
     }
   }
 
-  private parseAtomFeed(feed: Record<string, any>, feedData: FeedData, feedUrl: string): RSSFeed {
+  private parseAtomFeed(atomData: Record<string, any>, feed: Feed, feedUrl: string): RSSFeed {
     const atomFeed: RSSFeed = {
-      title: feed.title?._text || feedData.settings.title || '',
-      description: feed.subtitle?._text || '',
-      link: this.getAtomLink(feed.link) || '',
+      title: atomData.title?._text || feed.settings.title || '',
+      description: atomData.subtitle?._text || '',
+      link: this.getAtomLink(atomData.link) || '',
       items: [],
       feedUrl,
       lastUpdate: new Date()
     }
 
-    if (feed.entry) {
-      const entries = Array.isArray(feed.entry) ? feed.entry : [feed.entry]
+    if (atomData.entry) {
+      const entries = Array.isArray(atomData.entry) ? atomData.entry : [atomData.entry]
       atomFeed.items = entries
-        .slice(0, feedData.settings.maxArticles || 50)
-        .map((entry: Record<string, any>) => this.parseAtomEntry(entry, feedData))
+        .slice(0, feed.settings.maxArticles || 50)
+        .map((entry: Record<string, any>) => this.parseAtomEntry(entry, feed))
     }
 
     return atomFeed
   }
 
-  private parseAtomEntry(entry: Record<string, any>, feedData: FeedData): RSSItem {
+  private parseAtomEntry(entry: Record<string, any>, feed: Feed): RSSItem {
     const content = 
       entry.content?._text?.trim() || 
       entry.summary?._text?.trim() || 
@@ -172,9 +172,9 @@ export class RSSService {
       pubDate: entry.updated?._text ? new Date(entry.updated._text) : 
                entry.published?._text ? new Date(entry.published._text) : new Date(),
       guid: entry.id?._text || this.getAtomLink(entry.link),
-      categories: feedData.settings.tags || [],
+      categories: feed.settings.tags || [],
       author: entry.author?.name?._text || '',
-      feedTitle: feedData.settings.title
+      feedTitle: feed.settings.title
     }
   }
 
@@ -193,5 +193,16 @@ export class RSSService {
     }
 
     return link['@_href'] || ''
+  }
+
+  async cleanup(): Promise<void> {
+    try {
+      // Annuler toutes les requêtes en cours si nécessaire
+      // Nettoyer le cache si existant
+      this.logService.debug('RSSService nettoyé avec succès');
+    } catch (error) {
+      this.logService.error('Erreur lors du nettoyage du RSSService', { error: error as Error });
+      throw error;
+    }
   }
 } 

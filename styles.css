@@ -1,0 +1,29 @@
+/* Styles pour les dropdowns */
+.rssflowz-settings-container .dropdown {
+  background-image: none !important;  /* Supprime les flèches en filigrane */
+}
+
+.rssflowz-settings-container .dropdown::after {
+  content: "▼";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+/* S'assurer que le dropdown n'a qu'une seule flèche */
+.rssflowz-settings-container select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none !important;
+  padding-right: 24px;  /* Espace pour la flèche */
+}
+
+/* Supprimer la flèche native sur IE */
+.rssflowz-settings-container select::-ms-expand {
+  display: none;
+} 

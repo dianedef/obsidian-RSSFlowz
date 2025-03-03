@@ -1,3 +1,6 @@
+import { ArticleState } from './article';
+import { Feed } from './rss';
+
 export type FetchFrequency = 'startup' | 'daily' | 'hourly';
 
 export type DigestMode = 'disabled' | 'daily' | 'weekly';
@@ -21,30 +24,13 @@ export interface PluginSettings {
 	lastReadArticle: string | null;
 	currentFeed: string | null;
 	currentFolder: string | null;
-	articleStates: Record<string, any>;
+	articleStates: Record<string, ArticleState>;
 	template: string;
 	digest: DigestSettings;
 }
 
-export interface FeedSettings {
-	title: string;
-	url: string;
-	type: 'multiple' | 'single';
-	status: 'active' | 'paused';
-	summarize: boolean;
-	transcribe: boolean;
-	rewrite: boolean;
-	group?: string;
-	folder?: string;
-	lastError?: {
-		message: string;
-		timestamp: number;
-	};
-	lastSuccessfulFetch?: number;
-}
-
 export const DEFAULT_SETTINGS: PluginSettings = {
-	groups: ['Défaut'],
+	groups: [],
 	openaiKey: '',
 	rssFolder: 'RSS',
 	fetchFrequency: 'startup',

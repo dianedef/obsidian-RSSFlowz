@@ -40,7 +40,9 @@ export class SettingsService {
                ...DEFAULT_SETTINGS,
                ...savedData?.settings,
                // Mise à jour des timestamps si nécessaire
-               lastFetch: savedData?.settings?.lastFetch || Date.now()
+               lastFetch: savedData?.settings?.lastFetch || Date.now(),
+               // Forcer le mode lecture à false au démarrage
+               readingMode: false
          };
 
          this.logService.debug('Settings après fusion:', { settings: this.settings });

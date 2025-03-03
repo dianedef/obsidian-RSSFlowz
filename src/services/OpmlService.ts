@@ -3,8 +3,7 @@ import { XMLParser, XMLBuilder } from 'fast-xml-parser'
 import { StorageService } from './StorageService'
 import { LogService } from './LogService'
 import { createOpmlError, OpmlErrorCode } from '../types/errors'
-import { FeedData, FeedSettings } from '../types'
-
+import { Feed } from '../types'
 export class OpmlService {
   private parser: XMLParser
   private builder: XMLBuilder

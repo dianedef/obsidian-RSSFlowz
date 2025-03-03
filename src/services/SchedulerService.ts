@@ -2,7 +2,7 @@ import { Plugin } from 'obsidian'
 import { StorageService } from './StorageService'
 import { SyncService } from './SyncService'
 import { LogService } from './LogService'
-import { FeedData } from '../types'
+import { Feed } from '../types/rss'
 import { PluginSettings, FetchFrequency } from '../types/settings'
 
 export class SchedulerService {
@@ -30,7 +30,7 @@ export class SchedulerService {
 
       this.logService.debug('Démarrage du planificateur', {
         fetchFrequency: data.settings.fetchFrequency,
-        feedCount: data.settings.feeds?.length || 0
+        feedCount: data.feeds?.length || 0
       })
       
       // Si la fréquence est 'startup', synchroniser immédiatement
@@ -70,14 +70,14 @@ export class SchedulerService {
       this.plugin.registerInterval(this.mainInterval)
       
       // Démarrer les intervalles individuels pour chaque feed actif
-      const activeFeeds = data.settings.feeds.filter(feed => feed.settings.status === 'active')
+      const activeFeeds = data.feeds?.filter(feed => feed.settings.status === 'active') || [];
       this.logService.info('Démarrage des intervalles individuels', {
         activeFeedCount: activeFeeds.length
       })
 
       for (const feed of activeFeeds) {
         try {
-          await this.scheduleFeed(feed)
+          await this.scheduleFeed(feed as Feed)
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err))
           this.logService.error(`Erreur lors de la planification du feed ${feed.settings.title}`, { error })
@@ -130,7 +130,7 @@ export class SchedulerService {
     }
   }
 
-  async scheduleFeed(feed: FeedData): Promise<void> {
+  async scheduleFeed(feed: Feed): Promise<void> {
     try {
       if (!feed || !feed.settings) {
         throw new Error('Feed invalide ou paramètres manquants')
@@ -150,7 +150,7 @@ export class SchedulerService {
 
       // Créer un nouvel intervalle si le feed est actif
       if (feed.settings.status === 'active') {
-        const updateInterval = feed.settings.updateInterval || 3600000
+        const updateInterval = 3600000 // Intervalle par défaut d'une heure
         const interval = window.setInterval(async () => {
           try {
             this.logService.debug('Exécution de la synchronisation planifiée', { 

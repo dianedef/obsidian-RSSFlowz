@@ -1,19 +1,54 @@
-// Codes d'erreur pour les flux RSS
+// Types d'erreurs
 export enum RSSErrorCode {
-  FETCH_ERROR = 'FETCH_ERROR',
-  PARSE_ERROR = 'PARSE_ERROR',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  INVALID_FORMAT = 'INVALID_FORMAT',
-  MISSING_TITLE = 'MISSING_TITLE'
+    FETCH_ERROR = 'FETCH_ERROR',
+    PARSE_ERROR = 'PARSE_ERROR',
+    VALIDATION_ERROR = 'VALIDATION_ERROR',
+    SAVE_ERROR = 'SAVE_ERROR',
+    UNKNOWN_ERROR = 'UNKNOWN_ERROR'
 }
 
-// Codes d'erreur pour la synchronisation
 export enum SyncErrorCode {
-  FEED_NOT_FOUND = 'FEED_NOT_FOUND',
-  FOLDER_CREATE_FAILED = 'FOLDER_CREATE_FAILED',
-  FILE_CREATE_FAILED = 'FILE_CREATE_FAILED',
-  DUPLICATE_ENTRY = 'DUPLICATE_ENTRY',
-  SYNC_FAILED = 'SYNC_FAILED'
+    SYNC_FAILED = 'SYNC_FAILED',
+    FEED_NOT_FOUND = 'FEED_NOT_FOUND',
+    INVALID_FEED = 'INVALID_FEED'
+}
+
+// Classes d'erreurs de base
+export class BaseError extends Error {
+    constructor(
+        message: string,
+        public code: string,
+        public details?: any
+    ) {
+        super(message);
+        this.name = this.constructor.name;
+        Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+// Erreurs spécifiques
+export class RSSError extends BaseError {
+    constructor(
+        code: RSSErrorCode,
+        message: string,
+        public feedUrl: string,
+        public originalError?: Error
+    ) {
+        super(message, code);
+        this.name = 'RSSError';
+    }
+}
+
+export class SyncError extends BaseError {
+    constructor(
+        code: SyncErrorCode,
+        message: string,
+        public feedId: string,
+        public details?: any
+    ) {
+        super(message, code);
+        this.name = 'SyncError';
+    }
 }
 
 // Codes d'erreur pour le stockage
@@ -31,28 +66,6 @@ export enum OpmlErrorCode {
   EXPORT_FAILED = 'EXPORT_FAILED',
   MISSING_REQUIRED = 'MISSING_REQUIRED',
   IMPORT_FAILED = 'IMPORT_FAILED'
-}
-
-// Interface de base pour toutes les erreurs
-interface BaseError extends Error {
-  timestamp: number;
-  code: string;
-}
-
-// Erreur RSS
-export interface RSSError extends BaseError {
-  name: 'RSSError';
-  code: RSSErrorCode;
-  feedUrl: string;
-  response?: Response;
-}
-
-// Erreur de synchronisation
-export interface SyncError extends BaseError {
-  name: 'SyncError';
-  code: SyncErrorCode;
-  feedId: string;
-  path?: string;
 }
 
 // Erreur de stockage
@@ -116,35 +129,23 @@ export function isOpmlError(error: unknown): error is OpmlError {
   )
 }
 
-// Constructeurs d'erreurs
+// Fonctions de création d'erreurs
 export function createRSSError(
-  code: RSSErrorCode,
-  message: string,
-  feedUrl: string,
-  response?: Response
+    code: RSSErrorCode,
+    message: string,
+    feedUrl: string,
+    originalError?: Error
 ): RSSError {
-  return {
-    name: 'RSSError',
-    message,
-    code,
-    timestamp: Date.now(),
-    feedUrl,
-    response
-  }
+    return new RSSError(code, message, feedUrl, originalError);
 }
 
 export function createSyncError(
-  code: SyncErrorCode,
-  message: string,
-  feedId: string
+    code: SyncErrorCode,
+    message: string,
+    feedId: string,
+    details?: any
 ): SyncError {
-  return {
-    name: 'SyncError',
-    message,
-    code,
-    timestamp: Date.now(),
-    feedId
-  }
+    return new SyncError(code, message, feedId, details);
 }
 
 export function createStorageError(

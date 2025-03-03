@@ -28,7 +28,7 @@ describe('OpmlService', () => {
         feeds: [],
         settings: {
           feeds: [],
-          groups: ['Défaut'],
+          groups: [],
           rssFolder: 'RSS'
         }
       });

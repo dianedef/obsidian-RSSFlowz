@@ -1,0 +1,38 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["warn", { 
+      "args": "none",
+      "varsIgnorePattern": "^_",
+      "argsIgnorePattern": "^_"
+    }],
+    "@typescript-eslint/ban-ts-comment": "off",
+    "no-prototype-builtins": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "@typescript-eslint/no-explicit-any": ["warn", {
+      "ignoreRestArgs": true,
+      "fixToUnknown": false
+    }],
+    "no-control-regex": "off"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.ts", "tests/**/*.d.ts", "**/*.test.ts", "**/*.mock.ts", "**/*.mock.d.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unused-vars": "off"
+      }
+    }
+  ]
+} 

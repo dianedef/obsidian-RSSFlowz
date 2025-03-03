@@ -1,6 +1,6 @@
 import { Plugin, requestUrl, Notice } from 'obsidian'
 import { StorageData } from '../types'
-import { PluginSettings, FeedSettings } from '../types/settings'
+import { PluginSettings, FeedSettings, DEFAULT_SETTINGS } from '../types/settings'
 
 export class StorageService {
   private static readonly STORAGE_KEY = 'obsidian-rss-reader'
@@ -8,47 +8,64 @@ export class StorageService {
   constructor(private plugin: Plugin) {}
 
   async loadData(): Promise<StorageData> {
-    const rawData = await this.plugin.loadData() as StorageData | null;
-    return this.initializeData(rawData);
+    const data = await this.plugin.loadData();
+    if (!data) {
+      // Initialiser avec les paramètres par défaut
+      const defaultData: StorageData = {
+        feeds: [],
+        settings: DEFAULT_SETTINGS
+      };
+      await this.saveData(defaultData);
+      return defaultData;
+    }
+
+    // Si les données existent mais sont incomplètes
+    if (!data.settings) {
+      data.settings = {}
+    }
+
+    // Initialiser les paramètres manquants
+    const defaultSettings: Partial<PluginSettings> = {
+      groups: [],
+      rssFolder: data.settings.rssFolder || 'RSS',
+      openaiKey: data.settings.openaiKey || '',
+      fetchFrequency: data.settings.fetchFrequency || 'startup',
+      maxArticles: data.settings.maxArticles || 50,
+      retentionDays: data.settings.retentionDays || 30,
+      readingMode: data.settings.readingMode || false,
+      lastFetch: data.settings.lastFetch || 0,
+      template: data.settings.template || '',
+      digest: data.settings.digest || {
+        enabled: false,
+        mode: 'disabled',
+        template: '',
+        folderPath: ''
+      }
+    }
+
+    // Si aucun feed n'existe, initialiser un tableau vide
+    if (!data.feeds) {
+      data.feeds = []
+    }
+
+    // Sauvegarder les données mises à jour
+    const updatedData: StorageData = {
+      feeds: data.feeds,
+      settings: defaultSettings as PluginSettings
+    }
+
+    // Fusionner les paramètres existants avec les valeurs par défaut
+    updatedData.settings = {
+      ...defaultSettings,
+      ...data.settings
+    }
+
+    await this.saveData(updatedData)
+    return updatedData
   }
 
   async saveData(data: StorageData): Promise<void> {
     await this.plugin.saveData(data);
-  }
-
-  private initializeData(data: StorageData | null): StorageData {
-    const defaultSettings: Partial<PluginSettings> = {
-      groups: ['Défaut'],
-      openaiKey: '',
-      rssFolder: 'RSS',
-      fetchFrequency: 'startup',
-      maxArticles: 50,
-      retentionDays: 30,
-      readingMode: false,
-      lastFetch: Date.now(),
-      lastReadArticle: null,
-      currentFeed: null,
-      currentFolder: null,
-      articleStates: {},
-      template: '# {{title}}\n\n{{description}}\n\n{{link}}'
-    }
-
-    if (!data) {
-      return {
-        feeds: [],
-        settings: defaultSettings as PluginSettings
-      }
-    }
-
-    const settings = {
-      ...defaultSettings,
-      ...data.settings
-    } as PluginSettings;
-
-    return {
-      feeds: data.feeds || [],
-      settings: settings
-    }
   }
 
   /**

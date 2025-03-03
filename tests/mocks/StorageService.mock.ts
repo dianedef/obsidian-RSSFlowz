@@ -4,20 +4,19 @@ import type { StorageData } from '../../src/types/storage'
 export const defaultStorageData: StorageData = {
     feeds: [],
     settings: {
-        rssFolder: "RSS",
+        groups: [],
+        openaiKey: '',
+        rssFolder: 'RSS',
+        fetchFrequency: 'startup',
         maxArticles: 50,
         retentionDays: 30,
-        template: "# {{title}}\n\n{{description}}\n\n{{link}}",
-        fetchFrequency: "startup",
-        groups: ["Défaut"],
-        currentFolder: null,
-        currentFeed: null,
-        lastReadArticle: null,
         readingMode: false,
-        lastFetch: Date.now() + 24 * 60 * 60 * 1000, // tomorrow
+        lastFetch: Date.now(),
+        lastReadArticle: null,
+        currentFeed: null,
+        currentFolder: null,
         articleStates: {},
-        feeds: [],
-        openaiKey: ""
+        template: ''
     }
 }
 

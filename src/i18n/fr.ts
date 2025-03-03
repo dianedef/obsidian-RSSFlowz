@@ -88,7 +88,7 @@ export const fr = {
       group: {
         name: 'Groupe',
         desc: 'Choisissez un groupe pour ce feed',
-        noGroup: 'Sans groupe',
+        noGroup: 'Aucun groupe',
         success: 'Feed déplacé vers le groupe : {group}',
         error: 'Erreur lors du changement de groupe'
       },

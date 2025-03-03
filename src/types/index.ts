@@ -1,23 +1,5 @@
 import { FetchFrequency, DigestMode } from './settings';
-
-// Interface pour un feed RSS
-export interface FeedData {
-  id: string;
-  title: string;
-  url: string;
-  type: 'multiple' | 'single';
-  status: 'active' | 'paused';
-  summarize: boolean;
-  transcribe: boolean;
-  rewrite: boolean;
-  group: string;
-  folder: string;
-  lastError?: {
-    message: string;
-    timestamp: number;
-  };
-  lastSuccessfulFetch?: number;
-}
+import { Feed } from './rss';
 
 // Interface pour les paramètres du digest
 export interface DigestSettings {
@@ -36,19 +18,40 @@ export interface PluginSettings {
   maxArticles: number;
   retentionDays: number;
   groups: string[];
+  feeds: Feed[];
   digest: DigestSettings;
+  readingMode: boolean;
+  lastFetch: number;
+  lastReadArticle: string | null;
+  currentFeed: string | null;
+  currentFolder: string | null;
+  articleStates: Record<string, any>;
 }
 
 // Interface pour les données stockées
 export interface StorageData {
-  feeds: FeedData[];
+  feeds: Feed[];
   settings: PluginSettings;
 }
 
-// Export des autres types
+// Export des types de base
+export * from './article';
+export * from './rss';
+export * from './settings';
+
+// Export des types d'erreurs
+export * from './errors';
+
+// Export des types de services
 export * from './reading';
 export * from './logs';
 export * from './scheduler';
 export * from './storage';
 export * from './sync';
-export * from './rss';
+export * from './i18n';
+export * from './file';
+
+// Interface pour les données du plugin
+export interface PluginData extends StorageData {
+    version?: string;
+}

@@ -5,6 +5,7 @@ import { StorageService } from './StorageService'
 import { SettingsService } from './SettingsService'
 import { Article, Feed, FeedSettings } from '../types'
 import { PluginSettings } from '../types/settings'
+import { VIEW_TYPE_READING } from '../ui/ReadingViewUI'
 
 export class ReadingService {
   private currentState: ReadingState = {
@@ -32,11 +33,46 @@ export class ReadingService {
       // Appliquer les styles CSS
       this.applyReadingModeStyles()
 
-      const lastFile = this.currentState.lastFile
-      if (lastFile) {
-        await this.navigateToArticle(lastFile)
+      // Récupérer la feuille active
+      const activeLeaf = this.plugin.app.workspace.activeLeaf
+      const activeFile = activeLeaf?.view && 'file' in activeLeaf.view ? (activeLeaf.view as any).file as TFile | null : null
+      const settings = this.settingsService.getSettings()
+      const rssFolder = settings.rssFolder || 'RSS'
+
+      if (activeFile && activeFile.path.startsWith(rssFolder)) {
+        // Si la feuille active est dans le dossier RSS, l'utiliser
+        await this.navigateToArticle(activeFile)
+      } else if (this.currentState.lastFile) {
+        // Sinon, utiliser le dernier article lu
+        await this.navigateToArticle(this.currentState.lastFile)
+      } else {
+        // Si aucun article n'est disponible, chercher le plus récent dans le dossier RSS
+        const files = this.plugin.app.vault.getFiles()
+          .filter(file => file.path.startsWith(rssFolder))
+          .sort((a, b) => b.stat.mtime - a.stat.mtime)
+
+        if (files.length > 0) {
+          await this.navigateToArticle(files[0])
+        } else {
+          this.logService.warn('Aucun article RSS disponible')
+          new Notice('Aucun article RSS disponible')
+          return
+        }
       }
 
+      // Ouvrir la vue de lecture
+      const leaf = this.plugin.app.workspace.getRightLeaf(false)
+      await leaf.setViewState({
+        type: VIEW_TYPE_READING,
+        active: true
+      })
+
+      // Récupérer la vue et mettre à jour la modale
+      const view = leaf.view as any
+      if (view && typeof view.updateModal === 'function') {
+        await view.updateModal()
+      }
+      
       this.currentState.isReading = true
       this.logService.info('Mode lecture activé')
     } catch (error) {
@@ -517,42 +553,42 @@ export class ReadingService {
   }
 
   async updateFeedSelect(selectElement: HTMLSelectElement, currentFolder: string): Promise<void> {
-    const settings = this.settingsService.getSettings()
+    const settings = this.settingsService.getSettings();
     
     // Vider le select
-    selectElement.innerHTML = ''
+    selectElement.innerHTML = '';
     
     // Filtrer les feeds du dossier sélectionné
     const feeds = settings.feeds.filter((feed: FeedSettings) => 
-      (currentFolder === 'Défaut' && !feed.group) || 
+      (!currentFolder && !feed.group) || 
       feed.group === currentFolder
-    )
+    );
 
-    // Ajouter une option par défaut
-    const defaultOption = document.createElement('option')
-    defaultOption.value = ''
-    defaultOption.text = 'Sélectionner un feed...'
-    selectElement.appendChild(defaultOption)
+    // Ajouter une option vide
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.text = 'Sélectionner un feed...';
+    selectElement.appendChild(defaultOption);
 
     // Ajouter une option pour chaque feed
     feeds.forEach((feed: FeedSettings) => {
-      const option = document.createElement('option')
-      option.value = feed.url
-      option.text = feed.title
+      const option = document.createElement('option');
+      option.value = feed.url;
+      option.text = feed.title;
       if (feed.url === settings.currentFeed) {
-        option.selected = true
+        option.selected = true;
       }
-      selectElement.appendChild(option)
-    })
+      selectElement.appendChild(option);
+    });
 
     // Ajouter l'événement de changement
     selectElement.addEventListener('change', async (e: Event) => {
-      const target = e.target as HTMLSelectElement
+      const target = e.target as HTMLSelectElement;
       await this.settingsService.updateSettings({
         ...settings,
         currentFeed: target.value
-      })
-    })
+      });
+    });
   }
 
   async selectFolder(folderName: string): Promise<void> {
@@ -585,5 +621,23 @@ export class ReadingService {
       ...settings,
       articleStates: newStates
     })
+  }
+
+  async cleanup(): Promise<void> {
+    try {
+      // Sortir du mode lecture si actif
+      if (this.isActive()) {
+        await this.exitReadingMode();
+      }
+      
+      // Nettoyage des états
+      this.currentState.currentFile = null;
+      this.currentState.lastFile = null;
+      
+      this.logService.debug('ReadingService nettoyé avec succès');
+    } catch (error) {
+      this.logService.error('Erreur lors du nettoyage du ReadingService', { error: error as Error });
+      throw error;
+    }
   }
 } 

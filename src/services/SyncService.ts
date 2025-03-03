@@ -2,7 +2,8 @@ import { Plugin } from 'obsidian'
 import { RSSService } from './RSSService'
 import { StorageService } from './StorageService'
 import { LogService } from './LogService'
-import { FeedData, RSSItem, StorageData } from '../types'
+import { RSSItem, StorageData } from '../types'
+import { Feed } from '../types/rss'
 import { createSyncError, SyncErrorCode } from '../types/errors'
 import { ContentEnhancerService } from './ContentEnhancerService'
 
@@ -58,7 +59,7 @@ export class SyncService {
     }
   }
 
-  async syncFeed(feed: FeedData): Promise<void> {
+  async syncFeed(feed: Feed): Promise<void> {
     try {
       this.logService.debug(`Synchronisation du feed ${feed.settings.title}`);
       const rssFeed = await this.rssService.fetchFeed(feed.settings.url, feed);
@@ -103,7 +104,7 @@ export class SyncService {
     }
   }
 
-  private async processItems(items: RSSItem[], feed: FeedData): Promise<void> {
+  private async processItems(items: RSSItem[], feed: Feed): Promise<void> {
     await this.ensureFolder(feed.settings.folder);
 
     if (feed.settings.type === 'single') {
@@ -112,7 +113,7 @@ export class SyncService {
       let newContent = '';
       
       for (const item of items) {
-        let enhancedItem = await this.enhanceItem(item, feed);
+        const enhancedItem = await this.enhanceItem(item, feed);
         newContent += this.renderTemplate(
           feed.settings.template || this.getSingleFileTemplate(),
           enhancedItem
@@ -141,7 +142,7 @@ export class SyncService {
           continue;
         }
 
-        let enhancedItem = await this.enhanceItem(item, feed);
+        const enhancedItem = await this.enhanceItem(item, feed);
         const content = this.renderTemplate(
           feed.settings.template || this.getDefaultTemplate(),
           enhancedItem
@@ -152,7 +153,7 @@ export class SyncService {
     }
   }
 
-  private async enhanceItem(item: RSSItem, feed: FeedData): Promise<any> {
+  private async enhanceItem(item: RSSItem, feed: Feed): Promise<any> {
     let enhancedItem = {
       title: item.title,
       link: item.link,
@@ -185,7 +186,7 @@ export class SyncService {
     return enhancedItem;
   }
 
-  private async saveUpdatedFeed(feed: FeedData): Promise<void> {
+  private async saveUpdatedFeed(feed: Feed): Promise<void> {
     const data = await this.storageService.loadData();
     const index = data.feeds.findIndex(f => f.id === feed.id);
     if (index !== -1) {
@@ -246,7 +247,7 @@ export class SyncService {
     ].join('\n')
   }
 
-  private async cleanOldArticles(feed: FeedData, retentionDays: number): Promise<void> {
+  private async cleanOldArticles(feed: Feed, retentionDays: number): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 

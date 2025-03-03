@@ -12,14 +12,19 @@
 	"author": "Votre nom",
 	"license": "MIT",
 	"dependencies": {
+		"@extractus/feed-extractor": "^7.1.3",
 		"@mozilla/readability": "^0.5.0",
+		"builtin-modules": "^4.0.0",
 		"fast-xml-parser": "^4.5.1",
 		"linkedom": "^0.18.7"
 	},
 	"devDependencies": {
 		"@types/node": "^20.17.16",
+		"@typescript-eslint/eslint-plugin": "7.0.1",
+		"@typescript-eslint/parser": "7.0.1",
 		"appmap-node": "^2.24.3",
 		"esbuild": "^0.24.2",
+		"eslint": "8.56.0",
 		"obsidian": "^1.7.2",
 		"typescript": "^5.7.3",
 		"vitest": "^2.1.8"
@@ -30,7 +35,9 @@
 		"test:appmap": "appmap-node vitest run",
 		"dev": "node --experimental-vm-modules esbuild.config.js",
 		"build": "node --experimental-vm-modules esbuild.config.js production",
-		"version": "node version-bump.mjs && git add manifest.json versions.json"
+		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"lint": "eslint . --ext .ts",
+		"lint:fix": "eslint . --ext .ts --fix"
 	},
 	"workspaces": {
 		"packages": [

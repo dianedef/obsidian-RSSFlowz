@@ -6,13 +6,14 @@ import {
   TextAreaComponent, 
   Notice, 
   Modal, 
-  requestUrl, 
+  requestUrl as _requestUrl, 
   DropdownComponent, 
   ButtonComponent 
 } from 'obsidian';
 import RSSReaderPlugin from '../main';
-import { FeedData, StorageData } from '../types';
-import { FetchFrequency, DigestMode } from '../types/settings';
+import { Feed } from '../types/rss';
+import { StorageData } from '../types';
+import { FetchFrequency as _FetchFrequency, DigestMode } from '../types/settings';
 
 export class RSSReaderSettingsTab extends PluginSettingTab {
   private isDisplaying = false;
@@ -93,7 +94,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           dropdown.addOption('daily', this.plugin.t('settings.fetchFrequency.options.daily'))
           dropdown.addOption('hourly', this.plugin.t('settings.fetchFrequency.options.hourly'))
           dropdown.setValue(settings.fetchFrequency)
-            .onChange(async (value: FetchFrequency) => {
+            .onChange(async (value: _FetchFrequency) => {
               await this.plugin.settingsService.updateSettings({ fetchFrequency: value })
             })
         })
@@ -303,16 +304,19 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                         window.URL.revokeObjectURL(backupUrl);
 
                         // Appliquer la nouvelle configuration
-                        await this.plugin.settingsService.updateSettings(config);
+                        await this.plugin.settingsService.updateSettings(config.settings);
 
                         // Recréer les dossiers nécessaires
                         const settings = this.plugin.settingsService.getSettings();
                         await this.plugin.fileService.initializeFolders(settings.rssFolder, settings.groups || []);
 
                         // Recréer les dossiers pour chaque feed non-unique
-                        for (const feed of settings.feeds) {
-                          if (feed.type !== 'uniqueFile') {
-                            const feedPath = `${settings.rssFolder}/${feed.group || ''}/${feed.title}`.replace(/\/+/g, '/');
+                        const storageData = await this.plugin.getData();
+                        for (const feed of storageData.feeds) {
+                          if (feed.settings.type === 'multiple') {
+                            const feedPath = feed.settings.group 
+                              ? `${settings.rssFolder}/${feed.settings.group}/${feed.settings.title}` 
+                              : `${settings.rssFolder}/${feed.settings.title}`;
                             await this.plugin.fileService.ensureFolder(feedPath);
                           }
                         }
@@ -472,7 +476,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
         }
 
         const storageData = await this.plugin.getData();
-        const filteredFeeds = storageData.feeds.filter(feed => {
+        const filteredFeeds = storageData.feeds.filter((feed: Feed) => {
           const title = feed.settings?.title || '';
           const url = feed.settings?.url || '';
           return title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -480,7 +484,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
         });
 
         const container = mainContainer.createDiv('rssflowz-feeds-container');
-        filteredFeeds.forEach(feed => this.createFeedElement(container, feed));
+        await this.displayFeeds(container, filteredFeeds);
       };
 
       // Initialiser l'affichage et configurer la recherche
@@ -498,7 +502,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           .onChange(async (value: string) => {
             if (value) {
               try {
-                const response = await requestUrl({
+                const response = await _requestUrl({
                   url: value,
                   headers: {
                     'User-Agent': 'Mozilla/5.0',
@@ -521,24 +525,23 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
                 const title = doc.querySelector('channel > title, feed > title')?.textContent || 'Nouveau feed';
 
                 // Créer le nouveau feed
-                const newFeed: FeedSettings = {
-                  title: title,
-                  url: value,
-                  type: 'multiple',
-                  status: 'active',
-                  summarize: false,
-                  transcribe: false,
-                  rewrite: false,
-                  group: '',
-                  folder: ''
+                const feedData: Feed = {
+                  id: Date.now().toString(),
+                  settings: {
+                    title: title,
+                    description: title,
+                    url: value,
+                    type: 'multiple' as const,
+                    status: 'active' as const,
+                    folder: '',
+                    summarize: false,
+                    transcribe: false,
+                    rewrite: false
+                  }
                 };
 
                 // Ajouter le feed aux settings
                 const storageData = await this.plugin.loadData() as StorageData;
-                const feedData: FeedData = {
-                  id: Date.now().toString(),
-                  settings: newFeed
-                };
                 storageData.feeds.push(feedData);
                 await this.plugin.saveData(storageData);
 
@@ -690,10 +693,13 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     })
   }
 
-  private createFeedElement(container: HTMLElement, feed: FeedData): void {
+  private async displayFeeds(container: HTMLElement, feeds: Feed[]): Promise<void> {
+    feeds.forEach(feed => this.createFeedElement(container, feed));
+  }
+
+  private async createFeedElement(container: HTMLElement, feed: Feed): Promise<void> {
     const feedContainer = container.createDiv('rssflowz-feed-container');
     const headerContainer = feedContainer.createDiv('rssflowz-feed-header');
-    const buttonContainer = headerContainer.createDiv('rssflowz-feed-buttons');
     const optionsContainer = feedContainer.createDiv('rssflowz-feed-options');
     optionsContainer.style.display = 'none';
 
@@ -703,24 +709,28 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
       optionsContainer.style.display = isVisible ? 'none' : 'block';
     };
 
-    // Créer le titre et l'URL
+    // Créer le conteneur d'info
     const infoContainer = headerContainer.createDiv('rssflowz-feed-info');
-    const titleEl = infoContainer.createEl('div', { 
+    
+    // Créer le groupe titre + URL
+    const titleGroup = infoContainer.createDiv('rssflowz-feed-title-group');
+    const titleEl = titleGroup.createEl('div', { 
       text: feed.settings?.title || 'Sans titre',
       cls: 'rssflowz-feed-title'
     });
-    const urlEl = infoContainer.createEl('div', { 
+    const urlEl = titleGroup.createEl('div', { 
       text: feed.settings?.url || '',
       cls: 'rssflowz-feed-url'
     });
 
-    // Ajouter les boutons dans leur conteneur
-    this.createFeedButtons(buttonContainer, feed);
+    // Créer le conteneur des contrôles
+    const controlsContainer = infoContainer.createDiv('rssflowz-feed-controls');
+    await this.createFeedButtons(controlsContainer, feed);
 
     // Rendre le header cliquable
     headerContainer.addEventListener('click', (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest('.rssflowz-feed-buttons')) {
+      if (!target.closest('.rssflowz-feed-controls')) {
         toggleFeed();
       }
     });
@@ -729,7 +739,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     this.createFeedSettings(optionsContainer, feed);
   }
 
-  private createFeedButtons(buttonContainer: HTMLElement, feed: FeedData): void {
+  private async createFeedButtons(buttonContainer: HTMLElement, feed: Feed): Promise<void> {
     // Ajouter le dropdown de groupe
     new Setting(buttonContainer)
       .addDropdown(dropdown => {
@@ -747,7 +757,8 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
 
         // Gérer le changement de groupe
         dropdown.onChange(async (value: string) => {
-          await this.plugin.updateFeed(feed, { settings: { ...feed.settings, group: value } });
+          const updatedFeed = { ...feed, settings: { ...feed.settings, group: value } };
+          await this.plugin.updateFeed(updatedFeed);
           new Notice(
             this.plugin.t('settings.feeds.group.success')
               .replace('{title}', feed.settings?.title || 'Sans titre')
@@ -777,7 +788,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
       });
   }
 
-  private createFeedSettings(optionsContainer: HTMLElement, feed: FeedData): void {
+  private createFeedSettings(optionsContainer: HTMLElement, feed: Feed): void {
     // Paramètre Réécriture
     const rewriteSetting = new Setting(optionsContainer)
       .setName(this.plugin.t('settings.feeds.rewrite.name'))
@@ -792,7 +803,8 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           toggle.setValue(false);
           return;
         }
-        await this.plugin.updateFeed(feed, { settings: { ...feed.settings, rewrite: value } });
+        const updatedFeed = { ...feed, settings: { ...feed.settings, rewrite: value } };
+        await this.plugin.updateFeed(updatedFeed);
         new Notice(
           this.plugin.t('notices.settings.aiToggled')
             .replace('{feature}', this.plugin.t('settings.feeds.rewrite.name'))
@@ -816,7 +828,8 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           toggle.setValue(false);
           return;
         }
-        await this.plugin.updateFeed(feed, { settings: { ...feed.settings, transcribe: value } });
+        const updatedFeed = { ...feed, settings: { ...feed.settings, transcribe: value } };
+        await this.plugin.updateFeed(updatedFeed);
         new Notice(
           this.plugin.t('notices.settings.aiToggled')
             .replace('{feature}', this.plugin.t('settings.feeds.transcribe.name'))

@@ -11,12 +11,14 @@ export class FileService {
    */
   async initializeFolders(rssFolder: string, groups: string[]): Promise<void> {
     try {
-      // Créer le dossier racine
+      // Créer le dossier racine s'il n'existe pas
       await this.ensureFolder(rssFolder);
 
       // Créer les dossiers des groupes
       for (const group of groups) {
-        await this.ensureFolder(`${rssFolder}/${group}`);
+        if (group) {
+          await this.ensureFolder(`${rssFolder}/${group}`);
+        }
       }
     } catch (error) {
       console.error('Erreur lors de l\'initialisation des dossiers:', error);
@@ -30,43 +32,79 @@ export class FileService {
    */
   async ensureFolder(path: string): Promise<void> {
     try {
-      if (!(await this.plugin.app.vault.adapter.exists(path))) {
-        await this.plugin.app.vault.createFolder(path)
+      const normalizedPath = this.normalizePath(path);
+      if (!(await this.plugin.app.vault.adapter.exists(normalizedPath))) {
+        await this.plugin.app.vault.createFolder(normalizedPath);
       }
     } catch (error) {
-      console.error(`Erreur lors de la création du dossier ${path}:`, error)
-      throw error
+      console.error(`Erreur lors de la création du dossier ${path}:`, error);
+      throw error;
     }
   }
 
   /**
-   * Supprime un dossier et son contenu
+   * Supprime un dossier et son contenu de manière sécurisée
    * @param path - Chemin du dossier à supprimer
+   * @param isRootFolder - Indique si c'est le dossier racine RSS
    */
-  async removeFolder(path: string): Promise<void> {
+  async removeFolder(path: string, isRootFolder: boolean = false): Promise<void> {
     try {
-      const exists = await this.plugin.app.vault.adapter.exists(path)
-      if (exists) {
-        // Récupérer la liste des fichiers et sous-dossiers
-        const listing = await this.plugin.app.vault.adapter.list(path)
-        
-        // Supprimer d'abord les fichiers
-        for (const file of listing.files) {
-          await this.plugin.app.vault.adapter.remove(file)
+      const normalizedPath = this.normalizePath(path);
+      const exists = await this.plugin.app.vault.adapter.exists(normalizedPath);
+      
+      if (!exists) {
+        return;
+      }
+
+      // Protection contre la suppression du dossier racine
+      if (isRootFolder) {
+        console.warn('Tentative de suppression du dossier racine RSS empêchée');
+        return;
+      }
+
+      // Vérifier que le chemin est bien dans le dossier RSS
+      if (!normalizedPath.startsWith('RSS/')) {
+        console.warn('Tentative de suppression d\'un dossier hors RSS empêchée');
+        return;
+      }
+
+      // Récupérer la liste des fichiers et sous-dossiers
+      const listing = await this.plugin.app.vault.adapter.list(normalizedPath);
+      
+      // Supprimer d'abord les fichiers
+      for (const file of listing.files) {
+        const abstractFile = this.plugin.app.vault.getAbstractFileByPath(file);
+        if (abstractFile) {
+          await this.plugin.app.vault.delete(abstractFile);
         }
-        
-        // Supprimer récursivement les sous-dossiers
-        for (const folder of listing.folders) {
-          await this.removeFolder(folder)
-        }
-        
-        // Enfin, supprimer le dossier lui-même
-        await this.plugin.app.vault.adapter.rmdir(path)
+      }
+      
+      // Supprimer récursivement les sous-dossiers
+      for (const folder of listing.folders) {
+        await this.removeFolder(folder, false);
+      }
+      
+      // Enfin, supprimer le dossier lui-même
+      const folderFile = this.plugin.app.vault.getAbstractFileByPath(normalizedPath);
+      if (folderFile) {
+        await this.plugin.app.vault.delete(folderFile);
       }
     } catch (error) {
-      console.error(`Erreur lors de la suppression du dossier ${path}:`, error)
-      throw error
+      console.error(`Erreur lors de la suppression du dossier ${path}:`, error);
+      throw error;
     }
+  }
+
+  /**
+   * Normalise un chemin de fichier/dossier
+   * @param path - Chemin à normaliser
+   */
+  private normalizePath(path: string): string {
+    return path
+      .replace(/\\/g, '/') // Remplacer les backslashes par des slashes
+      .replace(/\/+/g, '/') // Remplacer les slashes multiples par un seul
+      .replace(/^\/|\/$/g, '') // Supprimer les slashes en début et fin
+      .trim();
   }
 
   /**
