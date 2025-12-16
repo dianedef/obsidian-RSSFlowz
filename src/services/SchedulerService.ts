@@ -81,7 +81,11 @@ export class SchedulerService {
       }
 
       // Main interval: Check every minute if sync is due
-      // This approach handles sleep/wake and setting changes gracefully
+      // Why 60 seconds?
+      // - Responsive: User sees updates within a minute of expected time
+      // - Efficient: Low overhead (one check per minute)
+      // - Battery-friendly: Doesn't wake CPU constantly
+      // - Handles sleep: Resumes checking after computer wakes
       this.mainInterval = window.setInterval(async () => {
         try {
           const currentData = await this.storageService.loadData()

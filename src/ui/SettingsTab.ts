@@ -58,11 +58,13 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
    * 4. Set isDisplaying flag
    * 
    * Re-entrant protection: isDisplaying prevents overlapping renders
-   * This can happen if user switches tabs quickly
+   * Scenario: User rapidly switches between settings tabs before async operations complete
+   * Without protection: Multiple render operations create duplicate UI elements
+   * Result: Broken event handlers, memory leaks, and visual glitches
    */
   async display(): Promise<void> {
     if (this.isDisplaying) {
-      return;  // Prevent re-entrant calls
+      return;  // Prevent re-entrant calls from rapid tab switching
     }
     this.isDisplaying = true;
 

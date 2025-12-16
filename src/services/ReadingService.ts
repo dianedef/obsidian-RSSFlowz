@@ -448,6 +448,10 @@ export class ReadingService {
       .replace(/\r?\n|\r/g, ' ')     // Collapse line breaks
       .replace(/\s+/g, ' ')           // Normalize whitespace
       .replace(/<img.*?src="(.*?)".*?>/g, '![]($1)')  // Regex fallback for images
+                                      // Pattern: <img...src="URL"...> → ![](URL)
+                                      // Limitations: Doesn't handle src='single-quotes' or unquoted src
+                                      // Acceptable: DOM parser above handles most cases
+                                      // This catches any remaining HTML images in text
       .trim();
   }
 

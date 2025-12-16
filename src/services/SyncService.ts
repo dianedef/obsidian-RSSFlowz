@@ -165,7 +165,9 @@ export class SyncService {
         newContent += this.renderTemplate(
           feed.settings.template || this.getSingleFileTemplate(),
           enhancedItem
-        ) + '\n\n---\n\n';  // Separator between articles
+        ) + '\n\n---\n\n';  // Separator: '---' is Markdown horizontal rule
+                              // Renders as visual divider between articles in Obsidian
+                              // Also used by Obsidian for page breaks in exports
       }
       
       if (await this.fileExists(filePath)) {
