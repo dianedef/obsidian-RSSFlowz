@@ -18,26 +18,41 @@ import { Feed } from "./types/rss";
 import { PluginSettings } from "./types/settings";
 import { PluginData } from "./types/pluginData";
 
+/**
+ * Tracks the initialization state of each service
+ * Used to ensure services are ready before dependent operations
+ */
 interface ServiceStatus {
 	isReady: boolean;
 	error?: Error;
 }
 
+/**
+ * Main plugin class for RSS Reader
+ * Manages service lifecycle, initialization order, and dependency injection
+ * 
+ * Architecture:
+ * - Base services (Log, Storage, I18n, File) are initialized first
+ * - Dependent services (RSS, Sync, Scheduler) are initialized once base services are ready
+ * - UI and commands are registered after all services are available
+ */
 export default class RSSReaderPlugin extends Plugin {
-	// Services
+	// Core services - initialized first with no dependencies
 	private storageService!: StorageService;
 	private logService!: LogService;
 	private i18nService!: I18nService;
-	fileService!: FileService;
+	fileService!: FileService; // Public: accessed by settings tab
+	
+	// Business logic services - depend on core services
 	private rssService!: RSSService;
 	private syncService!: SyncService;
 	private schedulerService!: SchedulerService;
 	private readingService!: ReadingService;
 	private opmlService!: OpmlService;
-	settingsService!: SettingsService;
+	settingsService!: SettingsService; // Public: accessed by settings tab
 	private stylesService!: RegisterStyles;
 
-	// État des services
+	// Tracks service initialization state to prevent race conditions
 	private serviceStatus = new Map<string, ServiceStatus>();
 
 	// Méthodes pour la gestion des settings
@@ -63,17 +78,27 @@ export default class RSSReaderPlugin extends Plugin {
 		return requiredServices.every(service => this.isServiceReady(service));
 	}
 
+	/**
+	 * Initialize core services that have no dependencies
+	 * These services must be available before any other initialization
+	 * 
+	 * Order matters: LogService first to capture logs from other initializations
+	 */
 	private async initializeBaseServices(): Promise<void> {
 		try {
+			// LogService first - needed for debugging other initializations
 			this.logService = new LogService(console);
 			this.markServiceReady('LogService');
 
+			// StorageService - handles data persistence
 			this.storageService = new StorageService(this);
 			this.markServiceReady('StorageService');
 
+			// I18nService - provides translations
 			this.i18nService = new I18nService(this);
 			this.markServiceReady('I18nService');
 
+			// FileService - manages vault file operations
 			this.fileService = new FileService(this);
 			this.markServiceReady('FileService');
 
@@ -84,8 +109,19 @@ export default class RSSReaderPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * Initialize services that depend on base services
+	 * Each service is initialized in dependency order to avoid initialization errors
+	 * 
+	 * Critical dependencies:
+	 * - SettingsService → StorageService (loads/saves plugin settings)
+	 * - ReadingService → SettingsService (needs settings for reading mode)
+	 * - SyncService → RSSService (fetches and processes feeds)
+	 * - SchedulerService → SyncService (schedules automatic syncs)
+	 */
 	private async initializeDependentServices(): Promise<void> {
 		try {
+			// SettingsService manages plugin configuration
 			this.settingsService = new SettingsService(
 				this,
 				this.storageService,
@@ -93,6 +129,7 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.markServiceReady('SettingsService');
 
+			// ReadingService handles distraction-free reading mode
 			this.readingService = new ReadingService(
 				this,
 				this.storageService,
@@ -101,7 +138,8 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.markServiceReady('ReadingService');
 
-			// Configuration du handler de mode lecture
+			// Setup callback to toggle reading mode when settings change
+			// This ensures UI updates when user enables/disables reading mode
 			this.settingsService.setReadingModeHandler(async (isReading: boolean) => {
 				if (!this.isServiceReady('ReadingService')) {
 					throw new Error('ReadingService n\'est pas prêt');
@@ -113,9 +151,11 @@ export default class RSSReaderPlugin extends Plugin {
 				}
 			});
 
+			// RSSService parses RSS/Atom feeds using fast-xml-parser
 			this.rssService = new RSSService(this, this.logService);
 			this.markServiceReady('RSSService');
 
+			// SyncService coordinates feed fetching and article creation
 			this.syncService = new SyncService(
 				this,
 				this.rssService,
@@ -124,6 +164,7 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.markServiceReady('SyncService');
 
+			// SchedulerService manages automatic feed updates based on user-configured frequency
 			this.schedulerService = new SchedulerService(
 				this,
 				this.storageService,
@@ -132,6 +173,7 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.markServiceReady('SchedulerService');
 
+			// OpmlService handles OPML import/export for feed migration
 			this.opmlService = new OpmlService(
 				this,
 				this.storageService,
@@ -139,6 +181,7 @@ export default class RSSReaderPlugin extends Plugin {
 			);
 			this.markServiceReady('OpmlService');
 
+			// StylesService registers custom CSS for the plugin
 			this.stylesService = new RegisterStyles(this);
 			this.markServiceReady('StylesService');
 
@@ -317,6 +360,23 @@ export default class RSSReaderPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * Plugin initialization lifecycle
+	 * 
+	 * Critical order of operations:
+	 * 1. Base services → No dependencies, must be available first
+	 * 2. Verify base services → Fail fast if core infrastructure is broken
+	 * 3. Dependent services → Build on base services
+	 * 4. UI → Register settings tab, views, and ribbon icons
+	 * 5. Commands → Register keyboard shortcuts and command palette entries
+	 * 6. Automatic services → Start scheduled feed syncing
+	 * 
+	 * Why this order matters:
+	 * - LogService must exist before logging errors
+	 * - StorageService must exist before loading settings
+	 * - SettingsService must exist before initializing folders
+	 * - All services must exist before UI accesses them
+	 */
 	async onload() {
 		try {
 			// 1. Services de base
@@ -347,26 +407,37 @@ export default class RSSReaderPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * Plugin cleanup lifecycle
+	 * 
+	 * Services are stopped in reverse order of initialization to safely unwind dependencies.
+	 * This prevents errors from services trying to use already-cleaned-up dependencies.
+	 * 
+	 * Order: Scheduler → Reading → RSS → Styles → Clear state
+	 */
 	async onunload() {
 		try {
-			// Arrêt des services dans l'ordre inverse de leur démarrage
+			// Stop scheduler first to prevent new sync operations
 			if (this.isServiceReady('SchedulerService')) {
 				await this.schedulerService?.stopScheduler();
 			}
 
+			// Exit reading mode and clean up UI state
 			if (this.isServiceReady('ReadingService')) {
 				await this.readingService?.cleanup?.();
 			}
 
+			// Cancel any pending RSS fetch operations
 			if (this.isServiceReady('RSSService')) {
 				await this.rssService?.cleanup?.();
 			}
 
+			// Remove custom CSS from document
 			if (this.isServiceReady('StylesService')) {
 				this.stylesService?.unregister();
 			}
 
-			// Nettoyage des états
+			// Clear service status tracking
 			this.serviceStatus.clear();
 			
 			this.logService?.info(this.i18nService.t("plugin.unloaded"));

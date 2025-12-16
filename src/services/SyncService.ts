@@ -7,6 +7,22 @@ import { Feed } from '../types/rss'
 import { createSyncError, SyncErrorCode } from '../types/errors'
 import { ContentEnhancerService } from './ContentEnhancerService'
 
+/**
+ * Orchestrates feed synchronization and article processing
+ * 
+ * Key responsibilities:
+ * - Fetch new articles from all active feeds
+ * - Filter duplicates based on publication date
+ * - Enhance article content using Readability when needed
+ * - Create/update markdown files in vault
+ * - Clean up old articles based on retention policy
+ * - Track sync status and errors per feed
+ * 
+ * Design decisions:
+ * - One file per article OR single file per feed (user-configurable)
+ * - ContentEnhancer only used when RSS content is insufficient (<500 chars)
+ * - Template-based rendering for consistency
+ */
 export class SyncService {
   private contentEnhancer: ContentEnhancerService;
 
@@ -59,6 +75,20 @@ export class SyncService {
     }
   }
 
+  /**
+   * Synchronize a single feed
+   * 
+   * Workflow:
+   * 1. Fetch RSS/Atom feed
+   * 2. Filter new articles (if duplicate filtering enabled)
+   * 3. Limit to maxArticles setting
+   * 4. Process each article (create/update markdown files)
+   * 5. Clean old articles (if retention policy set)
+   * 6. Update feed metadata (lastUpdate, error state)
+   * 
+   * Error handling: Feed-level errors are caught and stored in feed.lastError
+   * This allows other feeds to continue syncing even if one fails
+   */
   async syncFeed(feed: Feed): Promise<void> {
     try {
       this.logService.debug(`Synchronisation du feed ${feed.settings.title}`);
@@ -66,30 +96,34 @@ export class SyncService {
       const data = await this.storageService.loadData();
       const { maxArticles, retentionDays } = data.settings;
       
+      // Filter duplicates by comparing publication date with last sync
+      // This prevents re-creating articles that already exist
       const lastUpdate = new Date(feed.lastUpdate || 0);
       const newItems = feed.settings.filterDuplicates
         ? rssFeed.items.filter(item => new Date(item.pubDate) > lastUpdate)
         : rssFeed.items;
 
-      // Limiter le nombre d'articles selon le paramètre maxArticles
+      // Respect maxArticles to avoid overwhelming vault with thousands of articles
       const itemsToProcess = newItems.slice(0, maxArticles);
       
-      // Traiter les nouveaux articles
+      // Create markdown files for new articles
       await this.processItems(itemsToProcess, feed);
       
-      // Nettoyer les anciens articles si nécessaire
+      // Remove old articles to keep vault clean (if enabled)
       if (retentionDays > 0) {
         await this.cleanOldArticles(feed, retentionDays);
       }
       
+      // Update feed status on success
       feed.lastUpdate = new Date().toISOString();
       feed.lastSuccessfulFetch = Date.now();
-      feed.lastError = undefined;
+      feed.lastError = undefined;  // Clear any previous errors
       
       await this.saveUpdatedFeed(feed);
       
       this.logService.debug(`Feed ${feed.settings.title} synchronisé avec succès (${itemsToProcess.length} articles)`);
     } catch (error) {
+      // Store error in feed for debugging, but don't stop other feeds
       const syncError = error instanceof Error 
         ? createSyncError(SyncErrorCode.SYNC_FAILED, error.message, feed.id)
         : createSyncError(SyncErrorCode.SYNC_FAILED, 'Erreur inconnue lors de la synchronisation', feed.id);
@@ -104,11 +138,25 @@ export class SyncService {
     }
   }
 
+  /**
+   * Process articles and create markdown files
+   * 
+   * Two modes supported:
+   * 1. Single file mode: All articles appended to one file (like a digest)
+   *    - Good for: Daily news roundups, brief summaries
+   *    - Appends to existing file to preserve history
+   * 
+   * 2. Multiple files mode: One markdown file per article (default)
+   *    - Good for: Long-form content, research articles
+   *    - Easier to organize with tags and backlinks
+   * 
+   * Skip existing files to avoid duplicates (idempotent operation)
+   */
   private async processItems(items: RSSItem[], feed: Feed): Promise<void> {
     await this.ensureFolder(feed.settings.folder);
 
     if (feed.settings.type === 'single') {
-      // Mode fichier unique : tous les articles dans un seul fichier
+      // Single file mode: Append all articles to one file
       const filePath = `${feed.settings.folder}/${feed.settings.title}.md`;
       let newContent = '';
       
@@ -117,27 +165,28 @@ export class SyncService {
         newContent += this.renderTemplate(
           feed.settings.template || this.getSingleFileTemplate(),
           enhancedItem
-        ) + '\n\n---\n\n';
+        ) + '\n\n---\n\n';  // Separator between articles
       }
       
       if (await this.fileExists(filePath)) {
-        // Récupérer le contenu existant et ajouter les nouveaux articles à la fin
+        // Append to existing file to preserve article history
         const existingContent = await this.plugin.app.vault.adapter.read(filePath);
         await this.plugin.app.vault.adapter.write(
           filePath,
           existingContent + newContent
         );
       } else {
-        // Créer le fichier avec un en-tête et les nouveaux articles
+        // Create new file with header
         const content = `# ${feed.settings.title}\n\n${newContent}`;
         await this.plugin.app.vault.create(filePath, content);
       }
     } else {
-      // Mode fichiers multiples : un fichier par article
+      // Multiple files mode: Create one file per article
       for (const item of items) {
         const fileName = this.sanitizeFileName(`${item.title}.md`);
         const filePath = `${feed.settings.folder}/${fileName}`;
 
+        // Skip if file already exists (idempotent sync)
         if (await this.fileExists(filePath)) {
           continue;
         }
@@ -153,6 +202,26 @@ export class SyncService {
     }
   }
 
+  /**
+   * Enhance article content when RSS feed provides insufficient content
+   * 
+   * Strategy:
+   * - Use RSS content if available and sufficiently long (≥500 chars)
+   * - Otherwise, fetch full article HTML and extract main content with Readability
+   * 
+   * Why 500 chars threshold:
+   * - Many feeds only include summaries (100-200 chars)
+   * - Full articles are typically 1000+ chars
+   * - 500 chars is a good middle ground to detect truncated content
+   * 
+   * Readability fallback:
+   * - Fetches article URL
+   * - Parses HTML and extracts main content
+   * - Strips ads, navigation, and clutter
+   * - Estimates reading time
+   * 
+   * Trade-off: Additional HTTP request per article, but much better user experience
+   */
   private async enhanceItem(item: RSSItem, feed: Feed): Promise<any> {
     let enhancedItem = {
       title: item.title,
@@ -167,8 +236,8 @@ export class SyncService {
       tags: item.categories
     };
 
-    // N'utiliser Readability que si le contenu est vide ou trop court
-    const minContentLength = 500; // Minimum 500 caractères
+    // Only use Readability if RSS content is insufficient
+    const minContentLength = 500;
     const currentContent = item.content || item.description || '';
     
     if (currentContent.length < minContentLength) {
@@ -176,6 +245,8 @@ export class SyncService {
         this.logService.debug(`Récupération du contenu complet pour ${item.title}`);
         enhancedItem = await this.contentEnhancer.enhanceArticleContent(enhancedItem);
       } catch (error) {
+        // Readability might fail (paywalls, anti-scraping, etc.)
+        // Fall back to original RSS content rather than failing sync
         this.logService.warn(
           `Impossible de récupérer le contenu complet pour ${item.title}`,
           { error }
@@ -247,6 +318,18 @@ export class SyncService {
     ].join('\n')
   }
 
+  /**
+   * Delete articles older than retention period
+   * 
+   * Purpose: Prevent vault from growing infinitely with old articles
+   * 
+   * Implementation:
+   * - Uses file modification time (mtime) as age indicator
+   * - Only processes files in this feed's folder (to avoid accidents)
+   * - Deletion failures are logged but don't stop cleanup
+   * 
+   * Safety: Only deletes within feed folder to avoid deleting user's other notes
+   */
   private async cleanOldArticles(feed: Feed, retentionDays: number): Promise<void> {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
@@ -255,18 +338,20 @@ export class SyncService {
     const feedPath = feed.settings.folder;
 
     for (const file of files) {
-      // Vérifier si le fichier appartient à ce feed
+      // Safety check: Only delete files in this feed's folder
       if (!file.path.startsWith(feedPath)) continue;
 
       const stat = await this.plugin.app.vault.adapter.stat(file.path);
       if (!stat) continue;
 
+      // Use modification time as age indicator
       const fileDate = new Date(stat.mtime);
       if (fileDate < cutoffDate) {
         try {
           await this.plugin.app.vault.delete(file);
           this.logService.debug(`Article supprimé car trop ancien : ${file.path}`);
         } catch (error) {
+          // Don't fail entire cleanup if one file can't be deleted
           this.logService.warn(`Impossible de supprimer l'article : ${file.path}`, { error });
         }
       }
