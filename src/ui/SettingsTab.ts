@@ -15,7 +15,28 @@ import { Feed } from '../types/rss';
 import { StorageData } from '../types';
 import { FetchFrequency as _FetchFrequency, DigestMode } from '../types/settings';
 
+/**
+ * Settings UI for RSS Reader plugin
+ * 
+ * Sections:
+ * 1. General settings (template, folder, API keys)
+ * 2. Sync settings (frequency, retention, limits)
+ * 3. Digest settings (daily/weekly summaries)
+ * 4. Import/Export (OPML)
+ * 5. Feed management (add, edit, delete)
+ * 
+ * Design patterns:
+ * - Reactive updates: Settings saved immediately on change
+ * - Defensive rendering: Check isDisplaying to prevent duplicate renders
+ * - State reload: Force fresh data from storage on display
+ * 
+ * Why reload on display?
+ * - Settings might be modified externally (data.json edited)
+ * - Other parts of plugin might update settings
+ * - Ensures UI shows current state
+ */
 export class RSSReaderSettingsTab extends PluginSettingTab {
+  // Prevents duplicate render if display() called multiple times
   private isDisplaying = false;
   private searchInput: TextComponent;
   private filterAndDisplayFeeds: (searchTerm?: string) => Promise<void>;
@@ -27,30 +48,44 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
     super(app, plugin)
   }
 
+  /**
+   * Render settings UI
+   * 
+   * Rendering strategy:
+   * 1. Clear container (remove old UI)
+   * 2. Reload data (ensure fresh state)
+   * 3. Build UI sections
+   * 4. Set isDisplaying flag
+   * 
+   * Re-entrant protection: isDisplaying prevents overlapping renders
+   * This can happen if user switches tabs quickly
+   */
   async display(): Promise<void> {
     if (this.isDisplaying) {
-      return;
+      return;  // Prevent re-entrant calls
     }
     this.isDisplaying = true;
 
     try {
       const { containerEl } = this
 
-      // Nettoyer complètement le conteneur avant de recréer les éléments
+      // Clear existing UI elements
       containerEl.empty();
 
-      // Forcer le rechargement des données depuis le stockage
+      // Reload settings from storage (defensive: ensure UI matches disk)
       await this.plugin.settingsService.loadSettings(false);
       
-      // Récupérer les settings actuels
+      // Get current settings
       const settings = this.plugin.settingsService.getSettings()
       
-      // Créer le conteneur principal avec une classe unique
+      // Create scoped container to avoid CSS conflicts
       const mainContainer = containerEl.createDiv('rssflowz-settings-container');
       
       mainContainer.createEl('h1', {text: this.plugin.t('settings.title')})
 
-      // Template des notes
+      // Note template setting
+      // Supports template variables: {{title}}, {{description}}, {{link}}, {{pubDate}}
+      // Applied when creating markdown files from RSS articles
       new Setting(mainContainer)
         .setName('Template des notes')
         .setDesc('Template pour la création des notes (utilise {{title}}, {{description}}, {{link}}, {{pubDate}})')
@@ -72,7 +107,9 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
             await this.plugin.settingsService.updateSettings({ openaiKey: value })
           }))
 
-      // Dossier RSS
+      // RSS folder setting
+      // When changed, recreates folder structure to match new location
+      // Important: Doesn't move existing files (user must do manually)
       new Setting(mainContainer)
         .setName(this.plugin.t('settings.rssFolder.name'))
         .setDesc(this.plugin.t('settings.rssFolder.desc'))
@@ -80,7 +117,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           .setValue(settings.rssFolder)
           .onChange(async (value: string) => {
             await this.plugin.settingsService.updateSettings({ rssFolder: value });
-            // Réinitialiser les dossiers avec la nouvelle valeur
+            // Recreate folder structure in new location
             await this.plugin.fileService.initializeFolders(value, settings.groups);
             new Notice(this.plugin.t('settings.rssFolder.updated'));
           }));
@@ -99,7 +136,9 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
             })
         })
 
-      // Nombre maximum d'articles
+      // Max articles per feed
+      // Limits number of articles fetched per sync to prevent vault bloat
+      // Validation: Must be positive integer
       new Setting(mainContainer)
         .setName(this.plugin.t('settings.maxArticles.name'))
         .setDesc(this.plugin.t('settings.maxArticles.desc'))
@@ -107,12 +146,15 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           .setValue(String(settings.maxArticles))
           .onChange(async (value: string) => {
             const numValue = parseInt(value)
+            // Validate: positive integer only
             if (!isNaN(numValue) && numValue > 0) {
               await this.plugin.settingsService.updateSettings({ maxArticles: numValue })
             }
           }))
 
-      // Période de rétention
+      // Retention period (days)
+      // Articles older than this are automatically deleted during sync
+      // Set to 0 to disable automatic cleanup
       new Setting(mainContainer)
         .setName(this.plugin.t('settings.retentionDays.name'))
         .setDesc(this.plugin.t('settings.retentionDays.desc'))
@@ -120,6 +162,7 @@ export class RSSReaderSettingsTab extends PluginSettingTab {
           .setValue(String(settings.retentionDays))
           .onChange(async (value: string) => {
             const numValue = parseInt(value)
+            // Validate: positive integer only
             if (!isNaN(numValue) && numValue > 0) {
               await this.plugin.settingsService.updateSettings({ retentionDays: numValue })
             }
