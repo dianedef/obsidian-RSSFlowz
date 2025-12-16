@@ -1,22 +1,52 @@
 import { Plugin, TAbstractFile } from 'obsidian'
 import { RSSItem } from '../types'
 
+/**
+ * Manages vault file/folder operations
+ * 
+ * Responsibilities:
+ * - Create folder structure for RSS articles
+ * - Safely delete folders with validation
+ * - Sanitize file/folder names for cross-platform compatibility
+ * - Clean old articles based on retention policy
+ * 
+ * Safety features:
+ * - Path validation (prevent deleting non-RSS folders)
+ * - Root folder protection (never delete RSS root)
+ * - Path normalization (handles Windows/Unix differences)
+ * 
+ * Design philosophy: Fail-safe
+ * - Validate all destructive operations
+ * - Log errors but don't crash
+ * - Idempotent operations (safe to call multiple times)
+ */
 export class FileService {
   constructor(private plugin: Plugin) {}
 
   /**
-   * Initialise les dossiers nécessaires pour le plugin
-   * @param rssFolder - Dossier racine RSS
-   * @param groups - Liste des groupes à créer
+   * Initialize folder structure for RSS content
+   * 
+   * Structure:
+   * RSS/              ← Root folder
+   *   group1/        ← User-defined groups (e.g., "tech", "news")
+   *   group2/
+   *   feed1/         ← Individual feed folders
+   *   feed2/
+   * 
+   * Why separate groups and feeds?
+   * - Groups: User organization (like tags)
+   * - Feeds: Automatic structure per RSS source
+   * 
+   * Idempotent: Safe to call on every plugin load
    */
   async initializeFolders(rssFolder: string, groups: string[]): Promise<void> {
     try {
-      // Créer le dossier racine s'il n'existe pas
+      // Ensure root RSS folder exists
       await this.ensureFolder(rssFolder);
 
-      // Créer les dossiers des groupes
+      // Create group subfolders for organization
       for (const group of groups) {
-        if (group) {
+        if (group) {  // Skip empty group names
           await this.ensureFolder(`${rssFolder}/${group}`);
         }
       }
@@ -43,9 +73,24 @@ export class FileService {
   }
 
   /**
-   * Supprime un dossier et son contenu de manière sécurisée
-   * @param path - Chemin du dossier à supprimer
-   * @param isRootFolder - Indique si c'est le dossier racine RSS
+   * Safely delete folder with validation
+   * 
+   * Safety measures (prevent accidental data loss):
+   * 1. Root folder protection: Never delete RSS root
+   * 2. Path validation: Only delete folders under RSS/
+   * 3. Recursive deletion: Clean up all subfolders/files
+   * 
+   * Deletion order:
+   * 1. Files first (leaf nodes)
+   * 2. Subfolders recursively (bottom-up)
+   * 3. Target folder last (after contents removed)
+   * 
+   * Why this order?
+   * - Obsidian requires folders to be empty before deletion
+   * - Bottom-up ensures all contents are cleared
+   * - Prevents "folder not empty" errors
+   * 
+   * Use case: User removes a feed or changes folder structure
    */
   async removeFolder(path: string, isRootFolder: boolean = false): Promise<void> {
     try {
@@ -53,25 +98,26 @@ export class FileService {
       const exists = await this.plugin.app.vault.adapter.exists(normalizedPath);
       
       if (!exists) {
-        return;
+        return;  // Idempotent: no-op if already deleted
       }
 
-      // Protection contre la suppression du dossier racine
+      // SAFETY CHECK 1: Never delete RSS root folder
       if (isRootFolder) {
         console.warn('Tentative de suppression du dossier racine RSS empêchée');
         return;
       }
 
-      // Vérifier que le chemin est bien dans le dossier RSS
+      // SAFETY CHECK 2: Only delete folders under RSS/
+      // Prevents accidental deletion of user's other notes
       if (!normalizedPath.startsWith('RSS/')) {
         console.warn('Tentative de suppression d\'un dossier hors RSS empêchée');
         return;
       }
 
-      // Récupérer la liste des fichiers et sous-dossiers
+      // Get all contents (files and subfolders)
       const listing = await this.plugin.app.vault.adapter.list(normalizedPath);
       
-      // Supprimer d'abord les fichiers
+      // Delete files first (leaf nodes)
       for (const file of listing.files) {
         const abstractFile = this.plugin.app.vault.getAbstractFileByPath(file);
         if (abstractFile) {
@@ -79,12 +125,12 @@ export class FileService {
         }
       }
       
-      // Supprimer récursivement les sous-dossiers
+      // Recursively delete subfolders (bottom-up traversal)
       for (const folder of listing.folders) {
         await this.removeFolder(folder, false);
       }
       
-      // Enfin, supprimer le dossier lui-même
+      // Finally delete the now-empty folder
       const folderFile = this.plugin.app.vault.getAbstractFileByPath(normalizedPath);
       if (folderFile) {
         await this.plugin.app.vault.delete(folderFile);
@@ -96,14 +142,27 @@ export class FileService {
   }
 
   /**
-   * Normalise un chemin de fichier/dossier
-   * @param path - Chemin à normaliser
+   * Normalize file paths for cross-platform compatibility
+   * 
+   * Transformations:
+   * - Windows backslashes → Unix forward slashes
+   * - Multiple slashes → single slash
+   * - Leading/trailing slashes → removed
+   * 
+   * Why needed:
+   * - Obsidian uses Unix-style paths internally
+   * - Users might provide Windows paths (C:\folder\file)
+   * - String comparison needs consistent format
+   * 
+   * Example:
+   * "RSS\\tech\\article.md" → "RSS/tech/article.md"
+   * "//RSS/tech/" → "RSS/tech"
    */
   private normalizePath(path: string): string {
     return path
-      .replace(/\\/g, '/') // Remplacer les backslashes par des slashes
-      .replace(/\/+/g, '/') // Remplacer les slashes multiples par un seul
-      .replace(/^\/|\/$/g, '') // Supprimer les slashes en début et fin
+      .replace(/\\/g, '/')       // Windows → Unix
+      .replace(/\/+/g, '/')      // Collapse multiple slashes
+      .replace(/^\/|\/$/g, '')   // Remove leading/trailing slashes
       .trim();
   }
 
@@ -172,15 +231,31 @@ export class FileService {
   }
 
   /**
-   * Nettoie un nom de fichier en remplaçant les caractères invalides
-   * @param fileName - Nom de fichier à nettoyer
-   * @returns Nom de fichier nettoyé
+   * Sanitize filename for cross-platform compatibility
+   * 
+   * Forbidden characters in filenames:
+   * - Windows: < > : " / \ | ? *
+   * - macOS: :
+   * - Linux: /
+   * 
+   * Strategy: Replace all non-alphanumeric with hyphens
+   * 
+   * Transformations:
+   * - Lowercase (consistent, searchable)
+   * - Non-alphanumeric → hyphens
+   * - Multiple hyphens → single hyphen
+   * - Leading/trailing hyphens → removed
+   * 
+   * Example:
+   * "Breaking News: AI & Robots!" → "breaking-news-ai-robots"
+   * 
+   * Trade-off: Loses some information but ensures universal compatibility
    */
   sanitizeFileName(fileName: string): string {
     return fileName
-      .toLowerCase() // Conversion en minuscules
-      .replace(/[^a-z0-9]+/g, '-') // Remplace les caractères non alphanumériques par des tirets
-      .replace(/^-+|-+$/g, '') // Supprime les tirets en début et fin
-      .replace(/-{2,}/g, '-') // Remplace les tirets multiples par un seul
+      .toLowerCase()                    // Consistent casing
+      .replace(/[^a-z0-9]+/g, '-')     // Non-alphanumeric → hyphens
+      .replace(/^-+|-+$/g, '')         // Remove edge hyphens
+      .replace(/-{2,}/g, '-')          // Collapse multiple hyphens
   }
 } 
