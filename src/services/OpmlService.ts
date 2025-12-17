@@ -4,6 +4,26 @@ import { StorageService } from './StorageService'
 import { LogService } from './LogService'
 import { createOpmlError, OpmlErrorCode } from '../types/errors'
 import { Feed } from '../types'
+/**
+ * Handles OPML import/export for feed migration
+ * 
+ * OPML (Outline Processor Markup Language):
+ * - XML format for sharing feed lists
+ * - Supported by all major RSS readers (Feedly, Reeder, NewsBlur)
+ * - Enables easy migration between readers
+ * 
+ * Features:
+ * - Export all feeds to OPML file (for backup or migration)
+ * - Import OPML from other readers
+ * - Preserve custom metadata (category, status, settings)
+ * - Validate feeds during import (skip broken URLs)
+ * - Detect and skip duplicates
+ * 
+ * Common use cases:
+ * - Migrating from another RSS reader
+ * - Backing up feed list
+ * - Sharing curated feed lists with others
+ */
 export class OpmlService {
   private parser: XMLParser
   private builder: XMLBuilder
@@ -13,23 +33,51 @@ export class OpmlService {
     private storageService: StorageService,
     private logService: LogService
   ) {
+    // Configure XML parser for OPML 2.0 format
     this.parser = new XMLParser({
-      ignoreAttributes: false,
-      attributeNamePrefix: '@_'
+      ignoreAttributes: false,        // Keep XML attributes (xmlUrl, type, etc.)
+      attributeNamePrefix: '@_'       // Prefix for attribute keys
     })
+    // Configure XML builder for clean OPML output
     this.builder = new XMLBuilder({
       ignoreAttributes: false,
       attributeNamePrefix: '@',
-      format: true
+      format: true                    // Pretty-print XML (readable)
     })
   }
 
+  /**
+   * Export all feeds to OPML file
+   * 
+   * OPML structure:
+   * <opml version="2.0">
+   *   <head>...</head>
+   *   <body>
+   *     <outline type="rss" xmlUrl="..." title="..."/>
+   *   </body>
+   * </opml>
+   * 
+   * Custom attributes (non-standard but preserved):
+   * - @_status: active/paused (our feed state)
+   * - @_saveType: single/multiple (file mode)
+   * - @_summarize, @_transcribe: AI features
+   * 
+   * These allow re-importing to RSSFlowz without losing settings
+   * Other readers ignore unknown attributes (graceful degradation)
+   * 
+   * Download process:
+   * 1. Generate XML string
+   * 2. Create Blob (in-memory file)
+   * 3. Create temporary download link
+   * 4. Trigger download
+   * 5. Clean up (prevent memory leaks)
+   */
   async exportOpml(): Promise<void> {
     try {
       const data = await this.storageService.loadData();
       const now = new Date().toISOString();
       
-      // Création d'un document OPML 2.0 propre
+      // Build OPML 2.0 compliant document
       const opmlDoc = {
         '?xml': { '@_version': '1.0', '@_encoding': 'UTF-8' },
         opml: {
@@ -45,14 +93,16 @@ export class OpmlService {
             outline: {
               '@_text': 'Feeds',
               '@_title': 'Feeds',
+              // Map each feed to OPML outline element
               outline: data.feeds.map(feed => ({
                 '@_text': feed.settings.title || feed.settings.url,
                 '@_title': feed.settings.title || feed.settings.url,
-                '@_type': 'rss',
-                '@_xmlUrl': this.sanitizeUrl(feed.settings.url),
-                '@_htmlUrl': feed.settings.link || '',
+                '@_type': 'rss',                      // Standard OPML
+                '@_xmlUrl': this.sanitizeUrl(feed.settings.url),  // Feed URL
+                '@_htmlUrl': feed.settings.link || '',            // Website URL
                 '@_description': feed.settings.description || '',
                 '@_category': feed.settings.category || '',
+                // Custom attributes (specific to RSSFlowz)
                 '@_status': feed.settings.status || 'active',
                 '@_saveType': feed.settings.type || 'multiple',
                 '@_summarize': String(feed.settings.summarize || false),
@@ -63,21 +113,22 @@ export class OpmlService {
         }
       };
 
-      // Utilisation du builder XML pour générer le document
+      // Generate XML string from object structure
       const opml = this.builder.build(opmlDoc);
 
-      // Création et téléchargement du fichier
+      // Create downloadable file (browser download API)
       const blob = new Blob([opml], { type: 'text/xml;charset=utf-8' });
       const url = window.URL.createObjectURL(blob);
       const filename = `rss-feeds-${new Date().toISOString().split('T')[0]}.opml`;
       
+      // Trigger download via temporary anchor element
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(url);  // Clean up object URL
 
       this.logService.info('Export OPML réussi');
     } catch (error) {
@@ -94,6 +145,26 @@ export class OpmlService {
     }
   }
 
+  /**
+   * Extract feed entries from OPML document
+   * 
+   * Challenge: OPML supports nested outlines (folders)
+   * - Some readers export flat lists
+   * - Others use nested structure (folders/groups)
+   * 
+   * Strategy: Recursive traversal
+   * - Find all outlines with xmlUrl attribute (feeds)
+   * - Ignore organizational outlines (folders)
+   * - Flatten nested structure
+   * 
+   * Why flatten? We use categories instead of folders
+   * - Categories more flexible (one feed, multiple categories)
+   * - Easier to implement in Obsidian's flat structure
+   * 
+   * Handles both formats:
+   * - Flat: <outline xmlUrl="..."/> (most common)
+   * - Nested: <outline text="Tech"><outline xmlUrl="..."/></outline> (some readers)
+   */
   private extractFeedOutlines(doc: any): Array<{
     title: string;
     xmlUrl: string;
@@ -108,7 +179,9 @@ export class OpmlService {
   }> {
     const outlines: any[] = [];
     
+    // Recursive function to traverse nested outlines
     const processOutline = (node: any) => {
+      // If has xmlUrl, it's a feed (not a folder)
       if (node['@_xmlUrl']) {
         outlines.push({
           title: node['@_title'],
@@ -124,12 +197,14 @@ export class OpmlService {
         });
       }
       
+      // Recursively process children (for nested folders)
       if (node.outline) {
         const children = Array.isArray(node.outline) ? node.outline : [node.outline];
         children.forEach(processOutline);
       }
     };
 
+    // Start traversal from root outlines
     if (doc.opml?.body?.outline) {
       const rootOutlines = Array.isArray(doc.opml.body.outline) 
         ? doc.opml.body.outline 
@@ -324,6 +399,25 @@ export class OpmlService {
     }
   }
 
+  /**
+   * Translate technical errors to user-friendly messages
+   * 
+   * Common RSS feed errors:
+   * - ERR_NAME_NOT_RESOLVED: Domain doesn't exist (blog moved/deleted)
+   * - CERT_*: SSL certificate issue (expired, self-signed)
+   * - ECONNREFUSED: Server explicitly rejected connection
+   * - ETIMEDOUT: Server not responding (down or slow)
+   * - 404: Feed URL changed or removed
+   * - 403: Server blocking our requests (anti-scraping)
+   * 
+   * Why translate?
+   * - Technical errors confuse non-technical users
+   * - Actionable messages improve UX
+   * - Helps users understand what went wrong
+   * 
+   * Example: "ERR_NAME_NOT_RESOLVED" → "Le site web n'existe plus"
+   * User knows to remove feed instead of retrying
+   */
   private getReadableErrorMessage(error: any): string {
     const message = error.message || String(error);
     
@@ -346,7 +440,7 @@ export class OpmlService {
       return 'Accès refusé par le serveur';
     }
     
-    return message;
+    return message;  // Fallback to original message
   }
 
   private showImportSummary(

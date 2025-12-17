@@ -7,13 +7,35 @@ import { Article, Feed, FeedSettings } from '../types'
 import { PluginSettings } from '../types/settings'
 import { VIEW_TYPE_READING } from '../ui/ReadingViewUI'
 
+/**
+ * Manages distraction-free reading mode for RSS articles
+ * 
+ * Features:
+ * - Full-screen modal view for focused reading
+ * - Article navigation (next/previous with keyboard shortcuts)
+ * - Read status tracking per article
+ * - Group/feed filtering
+ * - Custom CSS for immersive experience
+ * 
+ * Design philosophy:
+ * - Inspired by reader modes in browsers and RSS readers (Feedly, Reeder)
+ * - Removes Obsidian UI chrome for distraction-free reading
+ * - Keyboard-first navigation (Cmd+Left/Right)
+ * - Preserves reading position between sessions
+ * 
+ * Implementation:
+ * - Uses Obsidian's modal API for full-screen experience
+ * - Injects custom CSS scoped to reading mode
+ * - Tracks state (current file, reading status) for navigation
+ */
 export class ReadingService {
   private currentState: ReadingState = {
     isReading: false,
-    currentFile: null,
-    lastFile: null
+    currentFile: null,      // Currently displayed article
+    lastFile: null          // Last read article (for resuming)
   }
 
+  // CSS element ID for scoped styling (prevents conflicts)
   private static readonly READING_MODE_STYLE_ID = 'rss-reading-mode-styles'
 
   constructor(
@@ -23,6 +45,23 @@ export class ReadingService {
     private logService: LogServiceInterface
   ) {}
 
+  /**
+   * Enter distraction-free reading mode
+   * 
+   * Article selection strategy (priority order):
+   * 1. Currently active file (if in RSS folder)
+   * 2. Last read article (resume reading)
+   * 3. Most recent article (by modification time)
+   * 
+   * This ensures users always have something to read and can resume where they left off.
+   * 
+   * UI setup:
+   * - Injects custom CSS for full-screen experience
+   * - Opens reading view in right sidebar
+   * - Updates modal with article content
+   * 
+   * Why right sidebar?: Obsidian convention for auxiliary views (outline, backlinks, etc.)
+   */
   async enterReadingMode(): Promise<void> {
     if (this.currentState.isReading) {
       this.logService.warn('Déjà en mode lecture')
@@ -30,26 +69,26 @@ export class ReadingService {
     }
 
     try {
-      // Appliquer les styles CSS
+      // Inject CSS for full-screen reading experience
       this.applyReadingModeStyles()
 
-      // Récupérer la feuille active
+      // Determine which article to display
       const activeLeaf = this.plugin.app.workspace.activeLeaf
       const activeFile = activeLeaf?.view && 'file' in activeLeaf.view ? (activeLeaf.view as any).file as TFile | null : null
       const settings = this.settingsService.getSettings()
       const rssFolder = settings.rssFolder || 'RSS'
 
       if (activeFile && activeFile.path.startsWith(rssFolder)) {
-        // Si la feuille active est dans le dossier RSS, l'utiliser
+        // Priority 1: Use currently active RSS article
         await this.navigateToArticle(activeFile)
       } else if (this.currentState.lastFile) {
-        // Sinon, utiliser le dernier article lu
+        // Priority 2: Resume last read article
         await this.navigateToArticle(this.currentState.lastFile)
       } else {
-        // Si aucun article n'est disponible, chercher le plus récent dans le dossier RSS
+        // Priority 3: Find most recent article
         const files = this.plugin.app.vault.getFiles()
           .filter(file => file.path.startsWith(rssFolder))
-          .sort((a, b) => b.stat.mtime - a.stat.mtime)
+          .sort((a, b) => b.stat.mtime - a.stat.mtime)  // Newest first
 
         if (files.length > 0) {
           await this.navigateToArticle(files[0])
@@ -60,14 +99,14 @@ export class ReadingService {
         }
       }
 
-      // Ouvrir la vue de lecture
+      // Open reading view in right sidebar
       const leaf = this.plugin.app.workspace.getRightLeaf(false)
       await leaf.setViewState({
         type: VIEW_TYPE_READING,
         active: true
       })
 
-      // Récupérer la vue et mettre à jour la modale
+      // Update modal content with selected article
       const view = leaf.view as any
       if (view && typeof view.updateModal === 'function') {
         await view.updateModal()
@@ -103,12 +142,28 @@ export class ReadingService {
   }
 
   /**
-   * Applique les styles CSS du mode lecture
+   * Inject CSS for distraction-free reading experience
+   * 
+   * Design goals:
+   * - Full-screen modal (90vw × 90vh) for immersion
+   * - Hide Obsidian UI chrome (header, sidebars)
+   * - Readable typography and spacing
+   * - Dark/light mode compatible (uses CSS variables)
+   * 
+   * Scoping strategy:
+   * - All CSS scoped to .rss-reading-modal class
+   * - Prevents conflicts with Obsidian's global styles
+   * - Easy to remove when exiting reading mode
+   * 
+   * Why inject CSS instead of external file?
+   * - Simplifies distribution (one plugin file)
+   * - Dynamic loading/unloading
+   * - No CSS file conflicts
    */
   private applyReadingModeStyles(): void {
     const existingStyle = document.getElementById(ReadingService.READING_MODE_STYLE_ID)
     if (existingStyle) {
-      return
+      return  // Idempotent: only inject once
     }
 
     const styleEl = document.createElement('style')
@@ -226,6 +281,23 @@ export class ReadingService {
     }
   }
 
+  /**
+   * Navigate between articles in reading mode
+   * 
+   * Navigation scope: Articles within the same feed folder
+   * - Keeps user focused on one feed at a time
+   * - Articles sorted by modification time (newest first)
+   * 
+   * Wraparound behavior:
+   * - 'next' from last article → wraps to first article
+   * - 'previous' from first article → wraps to last article
+   * 
+   * This provides infinite navigation without dead ends.
+   * 
+   * Keyboard shortcuts (registered in main.ts):
+   * - Cmd+Right: next article
+   * - Cmd+Left: previous article
+   */
   async navigateArticles(direction: 'next' | 'previous' | 'current'): Promise<void> {
     if (!this.currentState.isReading) {
       this.logService.warn('Pas en mode lecture');
@@ -238,9 +310,11 @@ export class ReadingService {
       return;
     }
 
+    // Extract feed folder from path (RSS/tech/article.md → tech)
     const currentPath = currentFile.path;
-    const feedFolder = currentPath.split('/')[1]; // Exemple: RSS/tech/article.md -> tech
+    const feedFolder = currentPath.split('/')[1];
     
+    // Get all articles in same feed, sorted by recency
     const files = this.plugin.app.vault.getFiles()
       .filter(file => file.path.startsWith(`RSS/${feedFolder}/`))
       .sort((a, b) => b.stat.mtime - a.stat.mtime);
@@ -256,6 +330,7 @@ export class ReadingService {
       return;
     }
 
+    // Wraparound navigation: modulo ensures index stays in bounds
     const nextIndex = direction === 'next'
       ? (currentIndex + 1) % files.length
       : (currentIndex - 1 + files.length) % files.length;
@@ -329,12 +404,31 @@ export class ReadingService {
     return { ...this.currentState };
   }
 
+  /**
+   * Sanitize HTML content for clean Markdown display
+   * 
+   * Transformations:
+   * 1. Parse HTML with DOMParser (handles malformed HTML)
+   * 2. Convert <img> tags to Markdown ![](url)
+   * 3. Strip inline styles (prevents formatting issues)
+   * 4. Normalize whitespace (collapsed newlines/spaces)
+   * 
+   * Why needed:
+   * - RSS content often has inline styles from original sites
+   * - Obsidian's Markdown renderer expects clean text
+   * - Images need Markdown syntax for proper rendering
+   * 
+   * Double conversion (DOM + regex):
+   * - DOM conversion: Handles complex nested HTML
+   * - Regex conversion: Catches any remaining HTML images
+   * This redundancy ensures robustness with diverse RSS feeds
+   */
   private cleanText(text: string): string {
-    // Utiliser DOMParser pour parser correctement le HTML
+    // Parse HTML safely with browser's DOM parser
     const parser = new DOMParser();
     const doc = parser.parseFromString(text, 'text/html');
     
-    // Convertir les images en Markdown
+    // Convert HTML images to Markdown syntax
     doc.querySelectorAll('img').forEach(img => {
       const markdown = `![](${img.src})`;
       const textNode = document.createTextNode(markdown);
@@ -343,20 +437,36 @@ export class ReadingService {
       }
     });
     
-    // Supprimer les styles des balises p
+    // Remove inline styles that interfere with Obsidian's theme
     doc.querySelectorAll('p').forEach(p => {
       p.removeAttribute('style');
     });
     
-    // Récupérer le texte nettoyé
+    // Extract and normalize text
     const cleanedText = doc.body?.textContent || '';
     return cleanedText
-      .replace(/\r?\n|\r/g, ' ')  // Remplace les sauts de ligne par des espaces
-      .replace(/\s+/g, ' ')       // Normalise les espaces multiples
-      .replace(/<img.*?src="(.*?)".*?>/g, '![]($1)') // Convertit les images HTML en Markdown
-      .trim();                    // Supprime les espaces en début et fin
+      .replace(/\r?\n|\r/g, ' ')     // Collapse line breaks
+      .replace(/\s+/g, ' ')           // Normalize whitespace
+      .replace(/<img.*?src="(.*?)".*?>/g, '![]($1)')  // Regex fallback for images
+                                      // Pattern: <img...src="URL"...> → ![](URL)
+                                      // Limitations: Doesn't handle src='single-quotes' or unquoted src
+                                      // Acceptable: DOM parser above handles most cases
+                                      // This catches any remaining HTML images in text
+      .trim();
   }
 
+  /**
+   * Generate unique ID for article state tracking
+   * 
+   * Format: feedUrl::articleLink
+   * 
+   * Why composite key:
+   * - Same article URL can appear in multiple feeds (syndication)
+   * - Need to track read status per feed-article pair
+   * - :: delimiter unlikely to appear in URLs (safe separator)
+   * 
+   * Used for: Tracking read/deleted status in settings.articleStates
+   */
   private getArticleId(feedUrl: string, articleLink: string): string {
     return `${feedUrl}::${articleLink}`;
   }
