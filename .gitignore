@@ -3,10 +3,11 @@ node_modules/
 
 # Build
 *.js
-main.js
-esbuild.config.js
 *.js.map
 *.d.ts
+# Exclude build output from git, except the build config
+!esbuild.config.js
+# main.js will be built and attached to releases
 
 # IDE
 .idea/
