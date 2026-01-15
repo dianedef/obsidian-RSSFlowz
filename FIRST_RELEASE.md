@@ -4,6 +4,21 @@ This repository is now fully configured to work with BRAT (Beta Reviewers Auto-u
 
 ## Quick Start
 
+### Option 1: Using the Helper Script (Easiest)
+
+```bash
+# Run the automated script
+./create-first-release.sh
+```
+
+The script will:
+- ✅ Verify you're on the right branch
+- ✅ Test the build process
+- ✅ Check that all required files exist
+- ✅ Create and push the 1.0.0 tag
+
+### Option 2: Manual Steps
+
 ```bash
 # 1. Ensure you're on master/main branch with latest changes
 git checkout master  # or main
