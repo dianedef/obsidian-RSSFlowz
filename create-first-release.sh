@@ -28,7 +28,7 @@ if [ "$CURRENT_BRANCH" != "master" ] && [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 
 # Check if tag already exists
-if git rev-parse 1.0.0 >/dev/null 2>&1; then
+if git show-ref --tags --quiet refs/tags/1.0.0; then
     echo "⚠️  Tag 1.0.0 already exists locally"
     read -p "Do you want to delete and recreate it? (y/N): " -n 1 -r
     echo
@@ -44,13 +44,21 @@ fi
 # Verify build works
 echo ""
 echo "🔨 Testing build process..."
-npm run build >/dev/null 2>&1
+BUILD_OUTPUT=$(npm run build 2>&1)
+BUILD_EXIT=$?
+
+if [ $BUILD_EXIT -ne 0 ]; then
+    echo "❌ Build failed:"
+    echo "$BUILD_OUTPUT"
+    exit 1
+fi
 
 if [ -f "main.js" ]; then
     MAIN_SIZE=$(du -h main.js | cut -f1)
     echo "✓ Build successful (main.js: $MAIN_SIZE)"
 else
     echo "❌ Build failed - main.js not created"
+    echo "$BUILD_OUTPUT"
     exit 1
 fi
 
