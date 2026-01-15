@@ -8,6 +8,44 @@ This guide explains how to create a new release that works with BRAT and Obsidia
 - Make sure the build passes: `npm run build`
 - Update CHANGELOG if applicable
 
+## Creating the First Release (v1.0.0)
+
+If this is the first release, follow these steps:
+
+1. **Ensure you're on the main/master branch**
+   ```bash
+   git checkout master  # or main
+   git pull origin master
+   ```
+
+2. **Verify the build works**
+   ```bash
+   npm install
+   npm run build
+   ```
+
+3. **Create and push the v1.0.0 tag**
+   ```bash
+   git tag 1.0.0
+   git push origin 1.0.0
+   ```
+
+4. **The GitHub Actions workflow will automatically**:
+   - Install dependencies with `npm ci`
+   - Build the plugin with `npm run build`
+   - Create a GitHub release named "1.0.0"
+   - Attach `main.js`, `manifest.json`, and `styles.css` to the release
+
+5. **Verify the release was created**:
+   - Go to https://github.com/dianedef/obsidian-RSSFlowz/releases
+   - Check that release "1.0.0" exists
+   - Verify all three files are attached: main.js, manifest.json, styles.css
+
+6. **Test with BRAT**:
+   - In Obsidian, install the BRAT plugin
+   - Add `dianedef/obsidian-RSSFlowz` as a beta plugin
+   - Verify it installs and works correctly
+
 ## Creating a Release
 
 ### Method 1: Automated (Recommended)
