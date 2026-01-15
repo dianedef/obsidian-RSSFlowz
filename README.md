@@ -25,6 +25,16 @@ Un puissant lecteur RSS pour Obsidian qui transforme vos flux RSS en notes Markd
 
 ### 🚀 Installation
 
+#### Installation via BRAT (recommandé pour les versions de développement)
+
+1. Installez le plugin [BRAT](https://github.com/TfTHacker/obsidian42-brat)
+2. Ouvrez les paramètres de BRAT
+3. Cliquez sur "Add Beta plugin"
+4. Entrez: `dianedef/obsidian-RSSFlowz`
+5. Activez le plugin dans les paramètres d'Obsidian
+
+#### Installation manuelle
+
 1. Dans Obsidian, allez dans Paramètres > Extensions tierces
 2. Désactivez le mode restreint
 3. Cliquez sur "Parcourir" et recherchez "RSS Reader"
@@ -73,6 +83,16 @@ A powerful RSS reader for Obsidian that transforms your RSS feeds into Markdown 
   - Automatic YouTube video transcription
 
 ### 🚀 Installation
+
+#### Installation via BRAT (recommended for development versions)
+
+1. Install the [BRAT](https://github.com/TfTHacker/obsidian42-brat) plugin
+2. Open BRAT settings
+3. Click "Add Beta plugin"
+4. Enter: `dianedef/obsidian-RSSFlowz`
+5. Enable the plugin in Obsidian settings
+
+#### Manual Installation
 
 1. In Obsidian, go to Settings > Third-party plugins
 2. Disable restricted mode

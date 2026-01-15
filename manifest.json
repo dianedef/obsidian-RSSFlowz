@@ -6,9 +6,5 @@
 	"description": "Un lecteur RSS qui sauvegarde les articles en markdown avec support OPML, résumés AI et transcription YouTube.",
 	"author": "dianedef",
 	"authorUrl": "https://github.com/dianedef/obsidian-RSSFlowz",
-	"isDesktopOnly": false,
-	"js": "main.js",
-	"dependencies": {
-		"fast-xml-parser": "^4.3.2"
-	}
+	"isDesktopOnly": false
 }
